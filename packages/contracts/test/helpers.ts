@@ -61,7 +61,7 @@ export const builder = (provider: MockNetworkProvider) => new TransactionBuilder
 
 /** MockNetworkProvider.addUtxo sets lockingBytecode at runtime but is typed as Utxo; narrow it. */
 export function addSpendable(provider: MockNetworkProvider, address: string, utxo: Utxo): SpendableUtxo {
-  const u = addSpendable(provider, address, utxo);
+  const u = provider.addUtxo(address, utxo);
   if (!u.lockingBytecode) throw new Error('mock provider did not attach lockingBytecode');
   return u as SpendableUtxo;
 }
