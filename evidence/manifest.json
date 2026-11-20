@@ -12,11 +12,11 @@
     },
     {
       "path": "evidence/paryon-deployment-verification.json",
-      "sha256": "06a751882802ecfdd9a844f01d8ebb3dd155f43867c77d8ef16490ee3bce89f8",
-      "checkedAt": "2026-11-20T13:21:38.991Z",
-      "producedBy": "scripts/verification/verify-paryon-deployment.ts",
+      "sha256": "7d6d0b03dec327710d183523e222f6398ca92dd296494b9f38ee1aa64593c9ce",
+      "checkedAt": "2026-11-20T15:03:14.854Z",
+      "producedBy": "scripts/verification/verify-paryon-deployment.ts (genesis) + scripts/verification/refresh-paryon-esplora.ts (live refresh via bchexplorer.cash; Chaingraph unspent queries timed out)",
       "mode": "READ-ONLY mainnet",
-      "description": "Paryon V1 deployment: genesis scripts and live loan/oracle snapshot used by the Guardian radar (F14, X02)"
+      "description": "Paryon V1 deployment: genesis scripts and live loan/oracle snapshot used by the Guardian radar (F14, X02). Refresh 2026-11-20 15:03 UTC: 191 decoded loans (137 active) at tip 978179; endpoint capped at 200 UTXOs; 141 previous-snapshot outpoints were unconfirmed txs later dropped (absent on bchexplorer; no block inclusion on Chaingraph)."
     },
     {
       "path": "evidence/moria-historical-replay.json",
