@@ -97,6 +97,25 @@ export class ChaingraphClient {
         spentBy: [],
       }));
   }
+
+  /** Unspent token outputs of a category (display-order hex), excluding OP_RETURN burns. Optionally filter NFT capability. */
+  async getUnspentByCategory(categoryHex: string, opts: { capability?: 'none' | 'mutable' | 'minting'; limit?: number } = {}): Promise<ChainOutput[]> {
+    if (!/^[0-9a-f]{64}$/.test(categoryHex)) throw new Error('invalid category');
+    const capFilter = opts.capability ? `, nonfungible_token_capability:{_eq:"${opts.capability}"}` : '';
+    const d = await this.query<{ output: Array<{ transaction_hash: string; output_index: string; value_satoshis: string; locking_bytecode: string; token_category: string | null; fungible_token_amount: string | null; nonfungible_token_capability: string | null; nonfungible_token_commitment: string | null }> }>(
+      `query($c: bytea!, $limit: Int!){ output(where:{token_category:{_eq:$c}${capFilter}, locking_bytecode:{_neq:"\\\\x6a"}, _not:{spent_by:{}}}, limit:$limit){ transaction_hash output_index value_satoshis locking_bytecode token_category fungible_token_amount nonfungible_token_capability nonfungible_token_commitment } }`,
+      { c: `\\x${categoryHex}`, limit: opts.limit ?? 1000 });
+    return d.output.map((o) => ({
+      outpoint: `${strip(o.transaction_hash)}:${o.output_index}`,
+      valueSatoshis: BigInt(o.value_satoshis),
+      lockingBytecode: strip(o.locking_bytecode)!,
+      tokenCategory: strip(o.token_category),
+      fungibleAmount: o.fungible_token_amount == null ? null : BigInt(o.fungible_token_amount),
+      nftCapability: o.nonfungible_token_capability,
+      nftCommitment: strip(o.nonfungible_token_commitment),
+      spentBy: [],
+    }));
+  }
 }
 
 export class IndexerError extends Error {

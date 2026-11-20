@@ -13,7 +13,7 @@ const cg = new ChaingraphClient(undefined, fetch, 240_000);
 const dep = PARYON_MAINNET_V1;
 const c = paryonContracts(dep);
 const named: Record<string, string> = {
-  Borrowing: c.borrowing, PriceContract: c.price, Loan: c.loan, LoanSidecar: c.loanSidecar,
+  Borrowing: c.borrowing, PriceContract: c.price, PriceContractGuarded: c.priceGuarded, Loan: c.loan, LoanSidecar: c.loanSidecar,
   ...Object.fromEntries(Object.entries(c.loanFunctions).map(([k, v]) => [`loanFn.${k}`, v])),
   StabilityPool: c.stabilityPool, Collector: c.collector, Payout: c.payout,
   Redeemer: c.redeemer, Redemption: c.redemption, RedemptionSidecar: c.redemptionSidecar,
@@ -39,10 +39,13 @@ for (const [tokenKey, txid] of Object.entries(dep.genesisTxIds)) {
 
 // Live state
 const tip = await cg.tipHeight();
-const priceUtxos = await cg.getUnspentByLockingBytecode(c.price);
-const priceStates = priceUtxos.filter((u) => u.tokenCategory === dep.tokenIds.paryonTokenId && u.nftCommitment?.startsWith('00')).map((u) => ({ outpoint: u.outpoint, ...decodePriceCommitment(u.nftCommitment!) }));
-const loanUtxos = await cg.getUnspentByLockingBytecode(c.loan, 500);
+const mutable = await cg.getUnspentByCategory(dep.tokenIds.paryonTokenId, { capability: 'mutable', limit: 2000 });
+const priceUtxos = mutable.filter((u) => u.lockingBytecode === c.price || u.lockingBytecode === c.priceGuarded);
+const priceStates = priceUtxos.filter((u) => u.tokenCategory === dep.tokenIds.paryonTokenId && u.nftCommitment?.startsWith('00')).map((u) => ({ outpoint: u.outpoint, contract: u.lockingBytecode === c.priceGuarded ? 'PriceContractGuarded' : 'PriceContract', ...decodePriceCommitment(u.nftCommitment!) })).sort((a, b) => (b.sequence > a.sequence ? 1 : b.sequence < a.sequence ? -1 : 0));
+const loanUtxos = mutable.filter((u) => u.lockingBytecode === c.loan);
+const otherMutableScripts = [...new Set(mutable.map((u) => u.lockingBytecode))].filter((s) => s !== c.loan && s !== c.price && s !== c.priceGuarded).map((s) => ({ script: s, contract: byScript.get(s) ?? 'unknown', count: mutable.filter((u) => u.lockingBytecode === s).length }));
 const price = priceStates[0]?.priceRaw ?? null;
+const currentPeriod = (BigInt(tip) - dep.contractParams.startBlockHeight) / dep.contractParams.periodLengthBlocks;
 const loans = loanUtxos.filter((u) => u.tokenCategory === dep.tokenIds.paryonTokenId && u.nftCapability === 'mutable' && u.nftCommitment?.length === 54).map((u) => {
   const s = decodeLoanCommitment(u.nftCommitment!);
   const ratio = price ? collateralRatioBps(u.valueSatoshis, price, s.borrowedTokenAmount) : null;
@@ -50,21 +53,26 @@ const loans = loanUtxos.filter((u) => u.tokenCategory === dep.tokenIds.paryonTok
     outpoint: u.outpoint, collateralSats: u.valueSatoshis.toString(), debtCents: s.borrowedTokenAmount.toString(), beingRedeemed: s.amountBeingRedeemed.toString(),
     status: s.status, currentRateRaw: s.currentInterestRateRaw.toString(), nextRateRaw: s.nextInterestRateRaw.toString(), lastPeriodInterestPaid: s.lastPeriodInterestPaid.toString(),
     collateralRatioBps: ratio?.toString() ?? null,
+    periodsBehind: (currentPeriod - s.lastPeriodInterestPaid).toString(),
     liquidationPriceCents: s.borrowedTokenAmount > 0n ? liquidationPriceCents(u.valueSatoshis, s.borrowedTokenAmount).toString() : null,
   };
 });
-const ratios = loans.map((l) => Number(l.collateralRatioBps ?? 0)).filter((x) => x > 0).sort((a, b) => a - b);
+const activeLoans = loans.filter((l) => BigInt(l.periodsBehind) <= 1n && l.debtCents !== '0');
+const ratios = activeLoans.map((l) => Number(l.collateralRatioBps ?? 0)).filter((x) => x > 0).sort((a, b) => a - b);
 const report = {
   checkedAt: new Date().toISOString(), tipHeight: tip, deployment: dep.name, artifacts: '@paryonusd/contracts@1.1.0',
   reconstructedScriptsSeenInGenesis: [...seenInGenesis].sort(),
   reconstructedScriptsNotSeenInGenesis: Object.keys(named).filter((n) => !seenInGenesis.has(n)).sort(),
   genesis,
   live: {
-    priceContractUtxosAtReconstructedScript: priceUtxos.length, priceStates,
+    priceContractUtxosAtReconstructedScripts: priceUtxos.length, latestPrice: priceStates[0] ?? null, priceStates: priceStates.slice(0, 5),
+    unspentMutableParyonNfts: mutable.length, otherMutableScripts,
     loanUtxosAtLoanContract: loanUtxos.length, decodedLoans: loans.length,
     collateralRatioBps: ratios.length ? { min: ratios[0], median: ratios[Math.floor(ratios.length / 2)], max: ratios[ratios.length - 1] } : null,
-    loansSample: loans.slice(0, 15),
+    currentPeriod: currentPeriod.toString(), activeLoans: activeLoans.length, staleLoans: loans.length - activeLoans.length,
+    activeLoanRatioNote: 'collateralRatioBps stats are over active loans (interest paid within 1 period, debt > 0)',
+    loans,
   },
 };
-console.log(JSON.stringify({ ...report, genesis: undefined, live: { ...report.live, loansSample: report.live.loansSample.slice(0, 3) } }, null, 2));
-writeFileSync(new URL('../../evidence/paryon-deployment-verification.json', import.meta.url), JSON.stringify(report, null, 2) + '\n');
+console.log(JSON.stringify({ ...report, genesis: undefined, live: { ...report.live, loans: report.live.loans.slice(0, 2) } }, (_k, v) => (typeof v === "bigint" ? v.toString() : v), 2));
+writeFileSync(new URL('../../evidence/paryon-deployment-verification.json', import.meta.url), JSON.stringify(report, (_k, v) => (typeof v === "bigint" ? v.toString() : v), 2) + '\n');

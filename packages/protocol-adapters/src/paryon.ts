@@ -57,7 +57,7 @@ export function paryonContracts(dep = PARYON_MAINNET_V1) {
   const enforcer = mk(A.loanKey.artifactLoanKeyOriginEnforcer, [rev(loanKeyFactoryTokenId), rev(paryonTokenId)]);
   const borrowing = mk(A.artifactBorrowing, [loan.lockingBytecode, loanSidecar.lockingBytecode, protocolFeeLockingBytecode, enforcer.lockingBytecode, startBlockHeight, periodLengthBlocks]);
   const price = mk(A.artifactPriceContract, [oraclePublicKey, rev(oracleMigrationKeyTokenId)]);
-  const priceGuarded = A.artifactPriceContractGuarded;
+  const priceGuarded = mk(A.artifactPriceContractGuarded, [oraclePublicKey, rev(oracleMigrationKeyTokenId)]);
   const F = A.loanContractFunctions;
   const loanFunctions = {
     liquidate: mk(F.artifactFunctionLiquidate, [rev(poolTokenId)]),
@@ -80,7 +80,7 @@ export function paryonContracts(dep = PARYON_MAINNET_V1) {
   const lb = (c: Contract) => c.lockingBytecode;
   return {
     loan: lb(loan), loanSidecar: lb(loanSidecar), borrowing: lb(borrowing), price: lb(price),
-    priceGuardedArtifactPresent: Boolean(priceGuarded),
+    priceGuarded: lb(priceGuarded),
     loanFunctions: Object.fromEntries(Object.entries(loanFunctions).map(([k, c]) => [k, lb(c)])),
     stabilityPool: lb(stabilityPool), payout: lb(payout), collector: lb(collector),
     redeemer: lb(redeemer), redemption: lb(redemption), redemptionSidecar: lb(redemptionSidecar),
