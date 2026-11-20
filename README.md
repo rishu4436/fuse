@@ -1,19 +1,33 @@
-# FUSE: intent execution for Bitcoin Cash
+# FUSE: live BCH DeFi execution, with an integrated simulation and risk engine
 
-**Live demo: https://fuse-rust-eight.vercel.app** (hosted LOCAL simulation; mainnet panels READ-ONLY; the site never broadcasts).
+**Live app: https://fuse-rust-eight.vercel.app** (opens in **LIVE mainnet** mode; the local sandbox is an explicit opt-in toggle).
 
-FUSE runs intent auctions on Bitcoin Cash. A user states what they want and the most they will spend. Independent
-solvers bid **complete, atomic transactions** that combine Cauldron pools, their own inventory and **FlashVault**
-covenant liquidity, which is borrowed and repaid inside the same transaction. FUSE accepts a bid only after it passes
-the BCH 2026 VM and the user's outcome has been recomputed from the transaction itself. Every settlement produces a
-**certificate** that anyone can verify independently against chain data.
+FUSE executes DeFi transactions on **Bitcoin Cash mainnet**: FlashVault flash loans, flash loans routed through live
+**Cauldron** pools and repaid in the same transaction, FlashVault LP deposits/withdrawals, vault deployment and wallet
+consolidation. Every transaction goes through one pipeline:
 
-> **Honesty first.** The demo runs on a local BCH VM (cashscript `MockNetworkProvider`, real compiled bytecode) with
-> simulated coins. Mainnet panels are **READ-ONLY**. **Mainnet:** one owner-authorized, small-value test run of a real
-> FlashVaultBCH on BCH mainnet ([docs/DEMO-RUNBOOK.md](docs/DEMO-RUNBOOK.md#mainnet-results-20-nov-2026)): genesis [`481c0949a090…`](https://bchexplorer.cash/tx/481c0949a0908ed9c763e6544a7a18a76902687a0c36402fa7dc892f89fc6fc4),
-> flash use [`d50fed30913d…`](https://bchexplorer.cash/tx/d50fed30913d4f11912bed073d623eaf1f7e07b9571197fa40d4bc6d073566fe) (its certificate VERIFIED against chain data), LP deposit [`234b1e1db49e…`](https://bchexplorer.cash/tx/234b1e1db49e79072dc5a470057b9ebed4bebdcdaae523c1ef47b24e9e431037), LP withdraw
-> [`84a4a223cf5d…`](https://bchexplorer.cash/tx/84a4a223cf5d298b975c632dde682dd0a59d167f119d5cdd4d39cd436ddbac7a) and a sweep [`fa0c5163b849…`](https://bchexplorer.cash/tx/fa0c5163b8490a12d995f09ebc6c5cc32ebe3b3fc104951819b7cfee5d74549b) back to the wallet. All 5 are in block 978191. Miner fees: 5,320 sats in total.
-> An underpaying flash was rejected by the local VM and never sent. The hosted site never broadcasts. No chipnet transaction was made. See [docs/STATUS.md](docs/STATUS.md).
+**compose from live chain state → simulate every covenant in the BCH 2026 VM → Guardian risk pre-flight → sign in your
+wallet → broadcast → confirmation tracking → certificate verified against mainnet.**
+
+The server never holds a key. `/api/broadcast` only relays already-signed hex, after re-deriving every spent output from
+chain and running the full BCH 2026 VM over it (fee guard, rate limit, and it is off unless the deployment sets
+`FUSE_BROADCAST=1`).
+
+> **Proof (round 4, 21 Nov 2026 IST).** Executed through the **hosted app's** live path (`/api/live/prepare` → a box-only
+> test signer that plays the wallet → the deployed `/api/broadcast`), all in block 978214 unless noted:
+> * vault genesis `fuse-live-1` [`5463522e…`](https://bchexplorer.cash/tx/5463522e639a4c06cc6b03bb5891cf700a5041f91156074c0c3577925025ceef) (30,000 sats principal)
+> * flash loan [`7d5a261e…`](https://bchexplorer.cash/tx/7d5a261e800dd11f55f56e0756c5f82648d62e79cd4a01d248f222c8d59ebb79). Certificate FLASH_USE **VERIFIED**
+> * **flash loan routed through two live Cauldron PUSD pools** [`994b63ba…`](https://bchexplorer.cash/tx/994b63ba75533bb36506a406ac09737fb96812c45e9224ba089f0f3e66a3dd3f). Borrowed sats buy 1 PUSD unit on one pool and sell it on another, and the vault is repaid atomically. Certificate FLASH_VIA_CAULDRON **VERIFIED**, with both pools' k-invariant recomputed from chain. The round trip lost 33 sats to pool fees: this proves atomic routing, not profit
+> * LP deposit [`2f8503c8…`](https://bchexplorer.cash/tx/2f8503c88a3a65d2b6cc3e6dd71794a096acb67d78a7918d700696e6fd1c763e) and LP withdraw [`1cb03229…`](https://bchexplorer.cash/tx/1cb032299e5009c96195ecd3615d6a814c7670e9a437fc15b18d0912d03d5930). Certificates **VERIFIED**
+> * wallet consolidation [`603bcd3a…`](https://bchexplorer.cash/tx/603bcd3abc2451587039ea88ddf1366e3e798ff9a5e3e9eaeef074f74472c494)
+>
+> The vault stays live with 30,200 sats, so anyone can flash-borrow from it in the app. Round 3's script-driven mainnet
+> run (block 978191, vault `fuse-r4`, now closed) is in [docs/DEMO-RUNBOOK.md](docs/DEMO-RUNBOOK.md).
+>
+> **Still sandbox-only or blocked:** intent auctions with solver processes, Parallel Worlds, Replay, the strategy builder
+> and the recipe marketplace run on the local BCH VM with simulated coins (labelled SANDBOX). Signing with a real
+> WizardConnect wallet is wired but untested. WalletConnect v2 (Paytaca/Cashonize) needs a Reown project ID. Paryon
+> write paths are blocked (builders are unpublished). Moria V1 is disabled and shown as history only. See [docs/STATUS.md](docs/STATUS.md).
 
 ## What is real
 
@@ -28,7 +42,7 @@ the BCH 2026 VM and the user's outcome has been recomputed from the transaction 
   worlds (F42), and cross-intent netting (X01). Each one is verified in the VM.
 * **Flash liquidity**: a shard manager with leases, TTLs and exposure caps (tested with 100 concurrent reservations),
   an adaptive layout, and LP deposit, withdraw, merge, split and pause through the vault's owner path in the VM.
-* **Guardian** (READ-ONLY): a liquidation and redemption radar on the real Paryon V1 snapshot, policies, readiness,
+* **Guardian** (live reads, advice only): a liquidation and redemption radar on the real Paryon V1 snapshot, policies, readiness,
   sentinel, in-app alerts, and rescue bounties (X03). Proposals are never executable.
 * **Round 3:** shard leases wired into auctions (F30); SQLite persistence with migrations; staged recovery with
   rebuild/rebroadcast/reorg handling (F11); typed intents; interest-rate optimizer (F16) and redemption-arbitrage
@@ -38,8 +52,12 @@ the BCH 2026 VM and the user's outcome has been recomputed from the transaction 
   `evidence/screenshots/`.
 * **Moria V1 historical replay**: 12/12 real MUSD mainnet transactions re-evaluated valid in a fresh VM.
 * **FEP-1** portable policy standard with published conformance vectors ([docs/standards/FEP-1.md](docs/standards/FEP-1.md)).
-* **WizardConnect**: pairing, and signing requests for FUSE-built transactions with a mainnet preflight. The request
-  always carries `broadcast:false`. FUSE has **no broadcast route**. Signing with a real wallet is not yet tested.
+* **Live execute path** (`/app/execute/live`, `services/api/src/live/`): live UTXO, vault, Cauldron and Paryon reads
+  through public indexers (raw txs re-hashed); VM simulation and Guardian before signing; WizardConnect signing
+  (token-aware source outputs) or an exported raw-hex signing package with paste-back; signed-hex relay; confirmation
+  tracking; mainnet certificates.
+* **WizardConnect**: pairing, plus signing requests with `broadcast:false` (FUSE relays the signed hex itself). Signing
+  with a real wallet app is not yet tested.
 * **Studio** (Next.js 15): every spec §16 route under `/app/*`, with an animated transaction graph, certificates,
   replay, explorer, strategy builder and developer docs.
 

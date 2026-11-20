@@ -73,6 +73,18 @@
    "guardian": "PASS",
    "route": null,
    "at": "2026-11-20T21:29:53.515Z"
+  },
+  {
+   "action": "consolidate",
+   "txid": "603bcd3abc2451587039ea88ddf1366e3e798ff9a5e3e9eaeef074f74472c494",
+   "explorer": "https://bchexplorer.cash/tx/603bcd3abc2451587039ea88ddf1366e3e798ff9a5e3e9eaeef074f74472c494",
+   "minerFee": "656",
+   "netCost": "656",
+   "relayedBy": "https://fuse-rust-eight.vercel.app/api/broadcast",
+   "serverVmCheck": "all inputs valid in the BCH 2026 VM against chain-derived source outputs",
+   "guardian": "PASS",
+   "route": null,
+   "at": "2026-11-20T21:53:45.438Z"
   }
  ]
 }

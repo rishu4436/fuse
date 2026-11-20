@@ -169,6 +169,7 @@ export default function LiveExecute() {
               {sent && (
                 <div className="grid gap-2 text-[12px]" data-testid="live-sent">
                   <div className="text-volt-300">Broadcast · txid <a className="underline" href={sent.explorer} target="_blank" rel="noreferrer"><Mono>{sent.txid}</Mono></a></div>
+                  <div className="text-[11.5px] text-fog-400">Public indexers can lag the mempool by up to a minute: wait until this tx shows in the vault history before composing another action on the same vault, or the node will reject it as a double-spend (nothing is lost).</div>
                   <div className="text-fog-300">{st ? (st.confirmations > 0 ? `${st.confirmations} confirmation(s) · block ${st.block_height}` : 'in mempool · waiting for a block (~10 min)') : 'checking…'}</div>
                   <Button variant="ghost" onClick={certify} disabled={!st || st.confirmations < 1 || Boolean(busy)} className="self-start" data-testid="live-certify">Verify certificate against mainnet</Button>
                   {cert && <div className={cert.verification.status === 'VERIFIED' ? 'text-volt-300' : 'text-rose-bad'} data-testid="live-cert">{cert.verification.status === 'VERIFIED' ? '✓' : '✗'} certificate {cert.verification.status} — {cert.verification.note} · {cert.kind}<pre className="mt-2 max-h-72 overflow-auto rounded-md bg-ink-900 p-2 text-[10.5px] text-fog-400">{JSON.stringify(cert, (_k, v) => (typeof v === 'bigint' ? v.toString() : v), 1)}</pre></div>}

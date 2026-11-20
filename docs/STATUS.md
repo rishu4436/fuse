@@ -1,51 +1,73 @@
-# Status: 20 Nov 2026 (IST), round 3
+# Status: 21 Nov 2026 (IST), round 4
 
-**Real and working (LOCAL BCH VM):** FlashVault BCH and token covenants. Atomic flash arbitrage through the real
-Cauldron script. Composer with an independent verifier. FEP-1 policies. Auction with 3 honest solver processes and
-1 adversarial one, with **F30 shard leases wired into auction close** (conflicting bids invalidated, leases released on
-settle/fail/fallback). Certificates and an independent verifier. Intent compiler (10 stages, fee accounting,
-explanation) with typed intents (swap, atomic arbitrage, LP deposit/withdraw; Paryon types stop as BLOCKED), parallel
-worlds, cross-intent netting (X01). **Staged recovery (F11)**: per-stage verify, conflict classification, rebuild,
-rebroadcast, reorg watch, RECOVERABLE position. Shard manager and LP deposit/withdraw/merge/split/pause in the VM,
-**LP risk history (F40)**. **SQLite persistence** (node:sqlite, versioned migrations 1–3) for intents, auctions,
-certificates, policies, alerts, solver ledger (F32), recipes, notification deliveries and vault snapshots; restored
-across API restarts. **Recipe marketplace (F47)**: signed, content-addressed recipes verified in the BCH VM, never
-auto-executed. **Notifications (F22)**: webhook (HMAC), Telegram and email adapters, OFF unless configured and
-opted in. **@fuse/sdk (F45)** plus a standalone quickstart app that runs end-to-end in CI. Studio UI on 34 routes.
+**Product:** FUSE is a **live BCH DeFi execution platform** with an integrated simulation and risk-analysis engine.
+The hosted app (https://fuse-rust-eight.vercel.app) opens in **LIVE mainnet** mode. The local BCH-VM sandbox is an
+explicit opt-in toggle (sidebar "Live mainnet / Sandbox", stored in `localStorage['fuse-mode']`, or `?mode=sandbox`).
 
-**Real and working (mainnet, READ-ONLY):** Cauldron pools verified against the published script (10/10). Paryon V1
-deployment verified against npm artifacts. **Live snapshot refreshed 15:03 UTC 20 Nov 2026 via bchexplorer.cash**
-(Chaingraph unspent queries time out): 191 loans decoded, 137 active, tip 978179, oracle 199.11 USD. Guardian radar,
-redemption ordering grounded in contract source (F15), **interest-rate optimizer (F16)** and **redemption-arbitrage
-search (F27)**, both advice only. **Mainnet tx explorer (F50)**: raw tx re-hashed locally, Paryon contracts and
-state labelled. **XO (F48)**: official templates validated and pinned with @xo-cash/utils, payout scripts compiled by
-the XO compiler. Moria V1 history: 12/12 MUSD transactions replayed valid (history only; Moria V1 is disabled).
+## Live on BCH mainnet (real chain reads, real execution)
 
-**Tests:** vitest 143/143 (34 files), Playwright 78 passed (12 skipped by design) locally and again against the hosted URL (`--workers=1`), tsc 0 errors, eslint 0 problems,
-next build OK. See [TEST-REPORT.md](TEST-REPORT.md). Screenshots: `evidence/screenshots/*.png` (1440×900).
+| Area | What is live | Route / endpoint |
+|---|---|---|
+| Execute | Compose from live UTXOs → BCH 2026 VM simulation of every covenant input → Guardian pre-flight (hidden transfers, fee cap, net cost, spend limit, vault repaid, token side effects, unconfirmed coins) → sign (WizardConnect, or exported raw-hex package + paste signed hex) → `/api/broadcast` → confirmation tracking → certificate | `/app/execute/live`, `POST /api/live/prepare`, `/api/live/verify-signed`, `/api/broadcast`, `GET /api/live/tx/:txid`, `POST /api/live/certificate` |
+| Actions | `flash` (permissionless), `flash-cauldron` (flash loan routed through two live Cauldron PUSD pools, repaid in the same tx), `deposit` / `withdraw` (vault owner only, FlashVaultBCH v1 owner path), `deploy-vault` (anyone can deploy their own vault), `consolidate` (wallet sweep) | same |
+| FlashVault | `fuse-live-1` tracked from its identity-NFT genesis through every spend (flash / flash+cauldron / deposit / withdraw) | `/app/liquidity`, `GET /api/live/vaults` |
+| Cauldron | PUSD pools from the Cauldron indexer, each re-verified against the raw mainnet output (script, category, sats, tokens); best 1-unit round trip | `/app/opportunities`, `GET /api/live/cauldron` |
+| Guardian | Paryon V1 oracle price read live from the price contracts; loan list read live (unchanged outpoints reuse the decoded snapshot, moved/new loans decoded now; coverage reported); sentinel | `/app/guardian`, `GET /api/live/paryon-view`, `/api/live/guardian/sentinel`, `/api/live/guardian/radar` |
+| Certificates | Rebuilt from the confirmed mainnet tx and verified independently | `/app/certificates` (verify any txid) |
 
-**Live transactions:** 5 owner-authorized, small-value BCH **mainnet** txs from the FUSE test wallet. All are in block 978191.
-* FlashVaultBCH genesis [`481c0949a090…`](https://bchexplorer.cash/tx/481c0949a0908ed9c763e6544a7a18a76902687a0c36402fa7dc892f89fc6fc4)
-* Flash use [`d50fed30913d…`](https://bchexplorer.cash/tx/d50fed30913d4f11912bed073d623eaf1f7e07b9571197fa40d4bc6d073566fe). Its certificate is VERIFIED.
-* LP deposit [`234b1e1db49e…`](https://bchexplorer.cash/tx/234b1e1db49e79072dc5a470057b9ebed4bebdcdaae523c1ef47b24e9e431037)
-* LP withdraw [`84a4a223cf5d…`](https://bchexplorer.cash/tx/84a4a223cf5d298b975c632dde682dd0a59d167f119d5cdd4d39cd436ddbac7a)
-* Sweep back to the wallet [`fa0c5163b849…`](https://bchexplorer.cash/tx/fa0c5163b8490a12d995f09ebc6c5cc32ebe3b3fc104951819b7cfee5d74549b). The vault NFT is burned, so no contract remains funded.
+**The server holds no keys.** `/api/broadcast` accepts only signed hex. It re-derives every source output from chain
+(raw parents re-hashed), runs `vm.verify` over the whole tx, refuses fees above 50,000 sats, rate-limits 12/min per
+client, and is disabled (503) unless `FUSE_BROADCAST=1` is set. Live caps for composed txs: miner fee ≤ 5,000 sats at 2 sat/B,
+vault principal 10,000–50,000 sats.
 
-Miner fees were 5,320 sats in total. No chipnet transaction was made, and no external notification has been sent.
-**Hosted demo:** https://fuse-rust-eight.vercel.app. It is the LOCAL simulation with the API running in-process.
-State is ephemeral and kept per instance, and the site has no broadcast path.
+## Round 4 mainnet proof (hosted path, box-only test signer)
 
-**Blockers**
-1. A user-wallet mainnet flow (WizardConnect signing) is still untested with a real wallet. The Mainnet-track
-   transactions were made from the owner-funded box wallet with `scripts/mainnet/` instead. The app has no broadcast
-   route.
-2. Electrum/Fulcrum WSS ports blocked from the build box: chipnet and XO Engine sessions are unreachable from here.
-3. Paryon write paths (F17–F20, F29, F27 execution): `@paryonusd/library` builders are not published.
-4. Owner-only actions: DoraHacks registration, roll call, Telegram confirmation, EMBER2026 donation address
-   (`NEXT_PUBLIC_DONATION_ADDRESS`), presentation link (`NEXT_PUBLIC_PRESENTATION_URL`), XO feedback (must be written
-   personally), npm publishing of @fuse/sdk.
-5. Production deployment of the demo (live link): needs owner approval.
+Authorized by the owner (pt29u). Signed by `scripts/mainnet/test-signer.ts`, which runs on the build box only and is
+never deployed. It refuses to sign unless the template hash matches, Guardian passed, the unsigned hex re-derives
+byte-for-byte, and the net cost is within its caps. Every tx was relayed by the **deployed** `/api/broadcast`.
+Evidence: `evidence/mainnet/live-run.json`, `evidence/mainnet/certificates/*.json`, `evidence/mainnet/live-vaults.json`.
 
-**Next:** see [ROADMAP.md](ROADMAP.md). Real-wallet signing test (unbroadcast), F02 token vault in the demo world,
-F05 pluggable adapter registry, F13 portfolio discovery by address, F26 liquidation execution (blocked on Paryon),
-hosting after owner approval.
+| # | Action | txid | Block | Miner fee | What it proves |
+|---|---|---|---|---|---|
+| 1 | deploy-vault | [`5463522e…`](https://bchexplorer.cash/tx/5463522e639a4c06cc6b03bb5891cf700a5041f91156074c0c3577925025ceef) | 978214 | 566 | New FlashVaultBCH `fuse-live-1` (identity category = txid of the funding coin fa0c5163…), 30,000 sats, owner = box wallet |
+| 2 | flash | [`7d5a261e…`](https://bchexplorer.cash/tx/7d5a261e800dd11f55f56e0756c5f82648d62e79cd4a01d248f222c8d59ebb79) | 978214 | 1,086 | Permissionless flash: 30,000 borrowed, 30,100 returned in the same tx; commitment flashCount 0→1. Certificate FLASH_USE VERIFIED |
+| 3 | flash-cauldron | [`994b63ba…`](https://bchexplorer.cash/tx/994b63ba75533bb36506a406ac09737fb96812c45e9224ba089f0f3e66a3dd3f) | 978214 | 1,858 | Flash loan routed through live Cauldron pools fac5a4a6… (+5,306 sats, −1 PUSD unit) and a9a2d622… (+1 unit, −5,273 sats); vault repaid 30,200. Certificate FLASH_VIA_CAULDRON VERIFIED, k-invariant holds on both legs. Loss 33 sats = pool fees (routing proof, not arbitrage) |
+| 4 | deposit 10,000 | [`2f8503c8…`](https://bchexplorer.cash/tx/2f8503c88a3a65d2b6cc3e6dd71794a096acb67d78a7918d700696e6fd1c763e) | 978214 | 1,290 | LP deposit via the owner path. Certificate LP_DEPOSIT VERIFIED |
+| 5 | withdraw 10,000 | [`1cb03229…`](https://bchexplorer.cash/tx/1cb032299e5009c96195ecd3615d6a814c7670e9a437fc15b18d0912d03d5930) | 978214 | 1,008 | LP withdraw via the owner path (fee paid from the withdrawn amount). Certificate LP_WITHDRAW VERIFIED |
+| 6 | consolidate | [`603bcd3a…`](https://bchexplorer.cash/tx/603bcd3abc2451587039ea88ddf1366e3e798ff9a5e3e9eaeef074f74472c494) | CONSOLIDATE_BLOCK | 656 | Sweep: both remaining wallet coins → one coin (709,697 sats) back to the same box wallet |
+
+One more broadcast attempt (flash-cauldron `17847454…`) was **rejected by the node** (`-26`): it had been composed from
+a stale vault view (a Vercel fetch cache), so it double-spent the vault. Nothing was spent. Fixed with `cache: 'no-store'`
+on every chain read; the next attempt was tx 3.
+
+**Sats accounting (box wallet `bitcoincash:qqtvuzkypa5y75jl05hatzh8jlfsly2d6v28mh8ge9`):** start 746,394. Miner fees
+6,464, Cauldron round-trip loss 33, so 6,497 sats left the owner's control (cap 150,000). The 200 sats of flash fees
+went into the owner's own vault. Now: wallet **709,697** + vault `fuse-live-1` **30,200** = 739,897.
+**The vault is deliberately kept funded** so judges can flash-borrow from it in the app. Only the box key can withdraw
+it (`withdraw` action, or `pnpm mainnet sweep`-style owner close).
+
+## Sandbox only (local BCH 2026 VM, simulated coins, labelled SANDBOX)
+
+Intent compiler and auctions with 4 solver processes (3 honest + 1 adversarial), Parallel Worlds, Replay, the strategy
+builder, recipe marketplace, staged recovery, shard leases, SQLite persistence, notifications (OFF unless opted in),
+`@fuse/sdk`. All run the real compiled contracts in the VM; none of them move mainnet value.
+
+## Tests
+
+vitest 151/151 (35 files), tsc 0 errors (root + web), eslint 0 problems, next build OK, Playwright PLAYWRIGHT_RESULT against
+the hosted URL (`--workers=1`). Screenshots: `evidence/screenshots/live-*.png` (LIVE) and the round-3 sandbox set. See [TEST-REPORT.md](TEST-REPORT.md).
+
+## Open problems / blockers
+
+1. **Real-wallet signing untested.** WizardConnect signing is wired (token-aware source outputs) but no WizardConnect
+   wallet was available on the build box. The live path was proven with the box-only test signer and the raw-hex package.
+2. **WalletConnect v2 (Paytaca / Cashonize)** is not wired: it needs a Reown project ID from an owner account.
+3. **Indexer lag.** bchexplorer.cash backends sometimes lag the mempool by tens of seconds. Composing right after a
+   broadcast can use a stale outpoint; the node rejects that (no loss). The UI says to wait for the previous tx to show.
+4. **Live Paryon coverage** is partial on a cold serverless instance (it decodes up to 160 moved loans per request;
+   coverage is reported in the response). The oracle price is always live.
+5. **Deposit/withdraw are owner-only** (FlashVaultBCH v1 has one owner key). Users can deploy their own vault.
+6. Paryon write paths (F17–F20, F29) blocked: `@paryonusd/library` builders are unpublished. Moria V1 is disabled
+   (history only). Paryon V2 is not deployed.
+7. Owner-only: DoraHacks registration, roll call, Telegram confirmation, EMBER2026 donation address and presentation
+   link env vars, XO feedback (must be written personally), npm publishing of @fuse/sdk.

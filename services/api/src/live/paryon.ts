@@ -12,7 +12,7 @@ const C = () => (contracts ??= paryonContracts(dep));
 const decodedLoans = new Map<string, Record<string, string> | null>();
 let cache: { at: number; value: unknown } | null = null;
 
-export async function liveParyon(snapshot: { live?: { loans?: Array<Record<string, string>> }; checkedAt?: string } | null, budget = 30) {
+export async function liveParyon(snapshot: { live?: { loans?: Array<Record<string, string>> }; checkedAt?: string } | null, budget = 160) {
   if (cache && Date.now() - cache.at < 45_000) return cache.value as Awaited<ReturnType<typeof compute>>;
   const value = await compute(snapshot, budget);
   cache = { at: Date.now(), value };
@@ -33,7 +33,7 @@ async function compute(snapshot: { live?: { loans?: Array<Record<string, string>
   const unchanged = listed.filter((o) => snapByOutpoint.has(o));
   const moved = listed.filter((o) => !snapByOutpoint.has(o));
   const todo = moved.filter((o) => !decodedLoans.has(o)).slice(0, budget);
-  await pool(todo, 5, async (op) => {
+  await pool(todo, 10, async (op) => {
     const [txid, v] = op.split(':');
     try {
       const o = await outputAt(txid, Number(v));
