@@ -3,8 +3,8 @@ import { randomBytes } from 'node:crypto';
 import { STRATEGIES, signBid, type Bid } from '@fuse/solver-sdk';
 import { signInputs } from '@fuse/transaction-composer';
 import { verifyCertificate, mockChainReader, sealCertificate } from '@fuse/proof-verifier';
-import { createLocalMarket } from '../../../tests/fixtures/local-market.js';
-import { marketViewOf, swapIntentOf, solverIdentity } from '../../../tests/fixtures/market-view.js';
+import { createLocalMarket } from '@fuse/simulation';
+import { marketViewOf, swapIntentOf, solverIdentity } from '@fuse/simulation';
 import { AuctionEngine, slidingWindowLimiter } from '../src/index.js';
 
 const strategiesFor = { direct: 'DIRECT_LIQUIDITY', routing: 'ROUTING', flash: 'FLASH_LIQUIDITY', rogue: 'ADVERSARIAL_FIXTURE' } as const;
