@@ -16,7 +16,8 @@ the BCH 2026 VM and the user's outcome has been recomputed from the transaction 
 * **Atomic flash arbitrage** through the *unmodified* Cauldron V0 pool script in the VM.
 * **Cauldron mainnet verification:** 10/10 checked live PUSD pools match the published script.
 * **ParyonUSD V1 mainnet verification:** every contract rebuilt from `@paryonusd/contracts@1.1.0` and matched on
-  chain. 360 loans decoded, live oracle read from `PriceContractGuarded`.
+  chain. Live snapshot (refreshed 15:03 UTC 20 Nov 2026 via bchexplorer.cash): 191 loans decoded, 137 active, oracle
+  read from `PriceContractGuarded`.
 * **Auction** with 4 independent solver processes (3 honest + 1 adversarial). The adversary is always rejected.
 * **Intent compiler**: 10 stages (parse → … → certify), exact fee accounting, a plain-language explanation, parallel
   worlds (F42), and cross-intent netting (X01). Each one is verified in the VM.
@@ -24,6 +25,12 @@ the BCH 2026 VM and the user's outcome has been recomputed from the transaction 
   an adaptive layout, and LP deposit, withdraw, merge, split and pause through the vault's owner path in the VM.
 * **Guardian** (READ-ONLY): a liquidation and redemption radar on the real Paryon V1 snapshot, policies, readiness,
   sentinel, in-app alerts, and rescue bounties (X03). Proposals are never executable.
+* **Round 3:** shard leases wired into auctions (F30); SQLite persistence with migrations; staged recovery with
+  rebuild/rebroadcast/reorg handling (F11); typed intents; interest-rate optimizer (F16) and redemption-arbitrage
+  search (F27), both advice only; recipe marketplace verified in the VM, never auto-executed (F47); webhook/Telegram/
+  email adapters, OFF unless opted in (F22); `@fuse/sdk` + `examples/sdk-quickstart` (F45); XO template pinning and
+  XO-compiled payouts (F48); READ-ONLY mainnet tx explorer (F50); LP risk history (F40). Screenshots in
+  `evidence/screenshots/`.
 * **Moria V1 historical replay**: 12/12 real MUSD mainnet transactions re-evaluated valid in a fresh VM.
 * **FEP-1** portable policy standard with published conformance vectors ([docs/standards/FEP-1.md](docs/standards/FEP-1.md)).
 * **WizardConnect**: pairing, and signing requests for FUSE-built transactions with a mainnet preflight. The request
@@ -49,7 +56,7 @@ pnpm test && npx playwright test
 ## Layout
 
 `packages/` contracts, transaction-composer, compiler, intent, policy-engine, solver-sdk, auction, proof-verifier,
-flash-liquidity, risk-engine, notifications, wallet, protocol-adapters, indexer-client, simulation, core, math · `services/` api, solver-reference · `apps/web` Studio ·
+flash-liquidity, risk-engine, notifications, wallet, protocol-adapters, indexer-client, simulation, core, math, store, recipes, sdk, xo · `services/` api, solver-reference · `apps/web` Studio · `examples/sdk-quickstart` ·
 `scripts/verification` mainnet verification scripts · `evidence/` their outputs (indexed with sha256 in `evidence/manifest.json`).
 
 Third-party: the Cauldron pool artifact is from `@mr-zwets/cauldron-swap-sdk` (ISC). See `packages/contracts/src/third-party/`.

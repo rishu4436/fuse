@@ -9,19 +9,20 @@ Status as of 20 Nov 2026. See [FEATURE-MATRIX.md](FEATURE-MATRIX.md) for every s
    decision on a public demo deployment.
 2. Pair a real WizardConnect wallet. Run the mainnet preflight and sign with `broadcast:false`. Record the verified
    (unbroadcast) txid as evidence.
-3. Refresh the Paryon snapshot when Chaingraph's category query recovers.
+3. Paryon snapshot: refreshed via bchexplorer.cash (done, 15:03 UTC 20 Nov). Re-run before the demo.
 
 ## Next
 
-* Wire the shard manager's leases into the auction coordinator (F30). Add automatic rebalancing (F36).
-* Persist policies, notifications and the solver ledger (F21, F22, F32). Add webhook delivery behind owner approval.
-* STAGED_RECOVERABLE execution class and rebroadcast/reorg handling (F11).
-* Compiler support for more intent types (LIQUIDITY_DEPOSIT/WITHDRAWAL first, then refinance).
+* Done in round 3: leases in auctions (F30), SQLite persistence (F21, F22, F32), staged recovery (F11), typed
+  intents (arbitrage, LP deposit/withdraw), F16 optimizer, F27 search, F47 marketplace, F45 SDK + quickstart,
+  F48 XO templates/compiler, F50 mainnet explorer, F40 LP history.
+* Automatic rebalancing (F36). Token vault in the demo world (F02). Pluggable adapter registry (F05).
+* Portfolio discovery by address (F13): Paryon loan-key NFTs at an address.
 * Chipnet deployment of the FlashVaults with a throwaway, gitignored test key and faucet coins (no real funds).
 
 ## Blocked on third parties
 
 * Paryon V1 manage / changeInterest / liquidate / redemption transaction builders (F17–F20, F27, X03 payout). Needs
   the builders published, then owner-approved live tests.
-* XO integration (F48). The engine is in early development. Bounty feedback must be written by the developer personally.
-* Recipe marketplace (F47) and npm publication of the SDKs (F45, F51).
+* XO Engine sessions (F48): need Electrum WSS from a network that allows it. Bounty feedback must be written by the developer personally.
+* npm publication of the SDKs (F45, F51): needs the owner's npm account.

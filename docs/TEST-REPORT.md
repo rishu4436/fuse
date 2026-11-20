@@ -2,7 +2,7 @@
 
 Environment: Linux build box, Node v24.22.1, pnpm 9.15.4, cashc/cashscript 0.14.0, libauth 3.1.0-next.8,
 Next.js 15.5.29, Playwright 1.65.1 (Chrome). Run on 20 Nov 2026 (IST), branch `feat/phase-0-1-foundation`,
-tested at commit `3198d61` plus the scanner test (committed with this report). Every number below comes from an actual run.
+round 3 re-run at commit `3df3bcf` (plus this docs commit). Every number below comes from an actual run.
 Nothing is estimated.
 
 | # | Command | Result |
@@ -10,9 +10,9 @@ Nothing is estimated.
 | 1 | `pnpm compile:contracts` | FlashVaultBCH 145 ops, FlashVaultToken 96 ops. Artifacts byte-identical to the committed ones |
 | 2 | `npx tsc --noEmit -p .` | **0 errors** (packages, services, tests) |
 | 3 | `npx eslint .` | **0 problems** (all workspaces, including apps/web) |
-| 4 | `npx vitest run` | **20 files, 102 tests passed, 0 failed** |
-| 5 | `pnpm --filter @fuse/web build` (`next build`) | **Compiled successfully.** 31 Studio routes (3 dynamic), 32 static pages generated |
-| 6 | `npx playwright test` (API + 4 solver processes + `next start` running) | **68 passed, 0 failed, 8 skipped** (feature flows run on desktop only, by design) |
+| 4 | `npx vitest run` | **32 files, 140 tests passed, 0 failed** |
+| 5 | `pnpm --filter @fuse/web build` (`next build`) | **Compiled successfully** (34 Studio routes) |
+| 6 | `npx playwright test` (API + 4 solver processes + `next start` running) | **78 passed, 0 failed, 12 skipped** (feature flows run on desktop only, by design) |
 
 ## Unit / integration tests (vitest) per file
 
@@ -37,7 +37,19 @@ Nothing is estimated.
 | packages/policy-engine/test/fep1-vectors.test.ts | 3 | X04: the published FEP-1 vectors reproduce byte-for-byte. An **independent implementation** (node:crypto plus its own canonicalizer) reaches the same hash and accepts the signature. Negative vectors are rejected |
 | packages/solver-sdk/test/scanner.test.ts | 1 | F28: finds the profitable size on a 15% gap and reports none when the gap is below two pool fees |
 | services/api/test/extra-api.test.ts | 4 | Compile and parallel worlds over HTTP. Netting is verified in the VM and not submitted. Guardian radar, policy → in-app notification, readiness and sentinel. LP deposit on the local chain, explorer decode, contracts listing |
-| services/api/test/network.e2e.test.ts | 1 | A real HTTP API plus **4 separate OS solver processes** with distinct keys. Two consecutive auctions settle, the adversary is rejected, and the certificate verifies over HTTP |
+| services/api/test/network.e2e.test.ts | 2 | A real HTTP API plus **4 separate OS solver processes** with distinct keys. Two consecutive auctions settle, the adversary is rejected, and the certificate verifies over HTTP. **F45: the standalone `examples/sdk-quickstart` app runs against it and verifies its certificate client-side (VERIFIED)** |
+| packages/auction/test/leases.test.ts | 2 | F30: two bids needing the same shard → the second is invalid with "F30 shard lease conflict"; leases are released on settle and on fallback |
+| packages/compiler/test/staged.test.ts | 6 | F11: error classification; clean two-stage run; competitor between stages → REBUILD → completed; impossible bound → RECOVERABLE with owner outputs unspent; change to a non-owner script refused; reorg → REBROADCAST / CONFLICTED |
+| packages/compiler/test/intent-types.test.ts | 3 | Typed intents: ATOMIC_ARBITRAGE and LIQUIDITY_DEPOSIT/WITHDRAWAL compile; Paryon types stop with a BLOCKED reason; unsupported types stop at RESOLVE |
+| packages/store/test/store.test.ts | 2 | SQLite migrations (versioned, transactional), round-trips of intents/auctions/certificates/policies/alerts/solvers; ledger performance math |
+| packages/notifications/test/adapters.test.ts | 4 | Webhook HMAC signature, Telegram and email payloads (mocked HTTP); nothing sent unless FUSE_NOTIFY_EXTERNAL=1; secrets redacted |
+| packages/risk-engine/test/rates-redemption.test.ts | 4 | F16 on the real snapshot: interest formula, recommended rate is the cheapest that covers demand × multiple, never executable. F27: redemptionPrice = oracle × 1.005, exact Cauldron fills, best size reported, never executable |
+| packages/recipes/test/recipes.test.ts | 3 | F47: structural rules, signature and content-hash tamper detection, compile-probe failure blocks listing, schema/envelope rejection |
+| packages/xo/test/xo.test.ts | 3 | F48: 5 official XO templates validated and pinned by identifier; malformed template rejected by the XO validator; XO-compiled P2PKH payout equals an independent libauth encoding |
+| packages/flash-liquidity/test/lp-history.test.ts | 1 | F40: exact drawdown net of LP flows, utilization, fee growth |
+| services/api/test/persistence.test.ts | 1 | Full auction with F30 lease, API restart on the same SQLite file restores intents/auctions/certificates/ledger/policies/alerts; Telegram delivery logged SKIPPED (not opted in) |
+| services/api/test/round3-api.test.ts | 6 | Typed compile, staged run (rebuild / recoverable), rates + redemption READ-ONLY, marketplace (adversarial rejected, tamper caught, publish), XO API, LP history |
+| services/api/test/mainnet-explorer.test.ts | 2 | F50: decodes a **real mainnet Paryon oracle tx** (fixture fetched from bchexplorer.cash, txid re-derived), labels PriceContract and decodes priceRaw 19911; a lying indexer (hash mismatch) is rejected |
 
 ## Browser tests (Playwright, tests/browser/routes.spec.ts)
 
@@ -52,14 +64,19 @@ Nothing is estimated.
   = flash, paused vault ≠ flash). Guardian policy → non-executable proposal → readiness → in-app alert. LP deposit
   accepted on the local chain and decoded in the explorer. Strategy builder rejects an unrepaid borrow and compiles a
   valid flash recipe. The settings broadcast switch is disabled and off.
+* Round 3 flows (desktop): staged recovery (competitor → REBUILD, impossible bound → RECOVERABLE with "Unspent, yours"), recipe marketplace (adversarial recipe REJECTED; composer submission without repay rejected with "must be repaid"), rate optimizer + redemption search (READ-ONLY, "not published" blocker shown), XO payout compile (76a914…), LP history panel after a deposit. 34 routes × 2 viewports.
 * WizardConnect (desktop): the pairing QR (PNG data URI) is generated from `initiateDappRelay().qrUri`.
 
 ## Mainnet READ-ONLY evidence runs
 
 * `scripts/verification/replay-moria-history.ts` (20 Nov 2026): 18 MUSD transactions found and 12 replayed. **12/12
   valid** in a fresh BCH 2026 VM (blocks 897957–898378). See evidence/moria-historical-replay.json.
-* `scripts/verification/verify-paryon-deployment.ts` refresh: **failed** with a Chaingraph "database query error" on
-  the category query. The committed snapshot (13:21 UTC, 20 Nov 2026) is used.
+* Paryon live refresh (round 3): Chaingraph unspent queries still time out (~60 s, "database query error"), so
+  `scripts/verification/refresh-paryon-esplora.ts` refreshed via bchexplorer.cash (esplora API; raw txs re-hashed
+  locally): **191 loans decoded (137 active) at tip 978179, 15:03 UTC 20 Nov 2026**, oracle 199.11 USD. The endpoint
+  caps unspent lists at 200; loans were also traced forward from the previous snapshot. 141 outpoints from the previous
+  snapshot were unconfirmed transactions later dropped (absent on bchexplorer, no block inclusion on Chaingraph).
+* Screenshots (1440×900, `scripts/demo/screenshots.ts`): evidence/screenshots/01-landing … 08-recipe-marketplace.png.
 
 ## Reproduce
 
@@ -80,3 +97,5 @@ npx playwright test
 * Fulcrum WSS coin listing for the preflight runs in the user's browser and could not be reached from the build box
   (non-443 ports blocked).
 * Paryon write paths: BLOCKED (see INTEGRATION-FEASIBILITY.md).
+* External notifications: adapters are tested with mocked HTTP only; nothing was sent to a real webhook, Telegram chat or mailbox.
+* XO Engine sessions: Electrum WSS is not reachable from the build box.
