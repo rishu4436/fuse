@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { randomUtxo } from 'cashscript';
-import { setupBchVault, builder, randomHex32, testKey, addSpendable, spendableUtxos } from './helpers.js';
+import { setupBchVault, builder, randomHex32, testKey, addSpendable } from './helpers.js';
 import { cauldronPoolContract, cauldronBuyQuote, cauldronSellQuote, encodeVaultState } from '../src/index.js';
 
 // Demo 1: transaction-scoped liquidity composed with the *unmodified production Cauldron pool script*.

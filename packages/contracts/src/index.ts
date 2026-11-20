@@ -151,7 +151,7 @@ export function cauldronSellQuote(sats: bigint, tokens: bigint, tokensIn: bigint
   const k = sats * tokens;
   const exFee = (k + newTokens - 1n) / newTokens;
   const tradeValue = sats - exFee;
-  let fee = (tradeValue * 3n + 999n) / 1000n;
+  const fee = (tradeValue * 3n + 999n) / 1000n;
   let newSats = exFee + fee;
   while (!cauldronSwapIsValid(sats, tokens, newSats, newTokens)) { newSats += 1n; }
   void fee;

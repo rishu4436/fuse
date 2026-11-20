@@ -51,7 +51,7 @@ export function paryonContracts(dep = PARYON_MAINNET_V1) {
   const mk = (a: unknown, args: unknown[]) => new Contract(a as Artifact, args as never, { provider });
   const { paryonTokenId, poolTokenId, redeemerTokenId, loanKeyFactoryTokenId, oracleMigrationKeyTokenId } = dep.tokenIds;
   const { oraclePublicKey, protocolFeeLockingBytecode, startBlockHeight, periodLengthBlocks, timeLockRedemption } = dep.contractParams;
-  const A = paryonArtifacts as unknown as Record<string, any>;
+  const A = paryonArtifacts as unknown as { [k: string]: Artifact & Record<string, Artifact> };
   const loan = mk(A.artifactLoan, []);
   const loanSidecar = mk(A.artifactLoanSidecar, []);
   const enforcer = mk(A.loanKey.artifactLoanKeyOriginEnforcer, [rev(loanKeyFactoryTokenId), rev(paryonTokenId)]);
