@@ -4,18 +4,47 @@ import { sats, short } from '@/lib/api';
 import { PageHeader, Panel, Stat, Badge, ApiOffline, Mono } from '@/components/ui';
 
 interface Pool { pool_id: string; outpoint: string; scriptMatchesPublishedCauldronArtifact: boolean; satsMatchIndexer: boolean; tokensMatchIndexer: boolean; categoryMatches: boolean; sats: string; tokens: string }
+interface Opp { buyFrom: string; sellTo: string; spotGapBps: bigint; bestTokens: bigint; costSats: bigint; proceedsSats: bigint; grossProfitSats: bigint }
+interface O { local: { opportunity: Opp | null }; mainnet: { checkedAt: string | null; poolsScanned: number; opportunity: Opp | null; note: string }; excluded: Array<{ protocol: string; reason: string }> }
+function OppCard({ title, o, mode, note }: { title: string; o: Opp | null; mode: 'SIMULATION' | 'READ-ONLY'; note?: string }) {
+  const profitable = !!o && o.grossProfitSats > 0n;
+  return (
+    <Panel title={title} kicker="Arbitrage scanner · exact Cauldron quotes" mode={mode}>
+      {!o ? <p className="text-[12.5px] text-fog-400">Fewer than two eligible pools.</p> : (
+        <div className="grid gap-3" data-testid={`opp-${mode}`}>
+          <div className="grid grid-cols-3 gap-4">
+            <Stat size="md" label="Spot gap" value={`${(Number(o.spotGapBps) / 100).toFixed(2)}%`} />
+            <Stat size="md" label="Best size" value={sats(o.bestTokens)} unit="tokens" />
+            <Stat size="md" label="Gross profit" value={`${o.grossProfitSats > 0n ? '+' : ''}${sats(o.grossProfitSats)}`} unit="sat" accent={profitable} />
+          </div>
+          <div className="text-[12px] text-fog-400">Buy on <Mono>{short(o.buyFrom, 6)}</Mono> for {sats(o.costSats)} sat, sell on <Mono>{short(o.sellTo, 6)}</Mono> for {sats(o.proceedsSats)} sat.</div>
+          <div className={`text-[12px] ${profitable ? 'text-volt-300' : 'text-fog-300'}`}>{profitable ? 'Profitable before miner fee. Flash solvers capture this inside user swaps.' : 'No profitable arbitrage: the gap is smaller than two 0.3% pool fees.'}</div>
+          {note && <div className="text-[11px] text-fog-400">{note}</div>}
+        </div>
+      )}
+    </Panel>
+  );
+}
 interface C { checkedAt: string; network: string; token: string; indexer: string; chainSource: string; poolsReturned: number; checked: Pool[] }
 const tick = (b: boolean) => <span className={b ? 'text-volt-300' : 'text-rose-bad'}>{b ? '✓' : '✕'}</span>;
 
 export default function Mainnet() {
   const { data, error } = usePoll<C>('/api/mainnet/cauldron', 0);
+  const opp = usePoll<O>('/api/opportunities', 5000);
   const ok = data?.checked.filter((p) => p.scriptMatchesPublishedCauldronArtifact && p.satsMatchIndexer && p.tokensMatchIndexer && p.categoryMatches).length ?? 0;
   return (
     <div className="mx-auto max-w-6xl">
-      <PageHeader eyebrow="Mainnet · Cauldron" title="Live pools, checked against the published contract"
+      <PageHeader eyebrow="Opportunities · Cauldron" title="Arbitrage scanner and verified mainnet pools"
         lede="For each PUSD pool returned by the Cauldron indexer, FUSE rebuilds the pool's P2SH32 locking bytecode from the published, unmodified Cauldron artifact and the pool owner's pkh. It then fetches the UTXO from Chaingraph and checks script, satoshis, token amount and category. The solver routes through this same artifact in the local VM."
         right={<Badge mode="READ-ONLY" />} />
       <ApiOffline error={error} />
+      {opp.data && (
+        <div className="mb-5 grid gap-5 lg:grid-cols-2">
+          <OppCard title="Local pools" o={opp.data.local.opportunity} mode="SIMULATION" />
+          <OppCard title={`Mainnet PUSD pools (${opp.data.mainnet.poolsScanned} verified)`} o={opp.data.mainnet.opportunity} mode="READ-ONLY" note={opp.data.mainnet.note} />
+          <div className="text-[11.5px] text-fog-400 lg:col-span-2">Excluded: {opp.data.excluded.map((e) => `${e.protocol} (${e.reason})`).join(' · ')}</div>
+        </div>
+      )}
       {data && (
         <>
           <div className="mb-5 grid grid-cols-2 gap-5 md:grid-cols-4">

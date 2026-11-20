@@ -18,7 +18,7 @@ export default function Activity() {
                 <motion.li key={e.id} layout initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} className="grid grid-cols-[78px_180px_1fr] gap-3 border-b hairline py-2 text-[12px] last:border-0">
                   <Mono className="text-fog-400">{new Date(e.at).toLocaleTimeString()}</Mono>
                   <span className={tone(e.type)}>{e.type}</span>
-                  <span className="truncate text-fog-400" title={e.detail}>{e.auctionId && <Link href={`/auctions/${e.auctionId}`} className="mr-2 text-fog-300 hover:text-volt-300">{e.auctionId.slice(0, 12)}</Link>}{e.detail}</span>
+                  <span className="truncate text-fog-400" title={e.detail}>{e.auctionId && <Link href={`/app/execute/${e.auctionId}`} className="mr-2 text-fog-300 hover:text-volt-300">{e.auctionId.slice(0, 12)}</Link>}{e.detail}</span>
                 </motion.li>
               ))}
             </AnimatePresence>

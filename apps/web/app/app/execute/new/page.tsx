@@ -7,6 +7,7 @@ import type { Auction, Solver } from '@/lib/types';
 import { Button, PageHeader, Panel, Badge, ApiOffline } from '@/components/ui';
 import { AuctionView } from '@/components/auction-view';
 import { WalletConnect } from '@/components/wallet-connect';
+import { CompilePreview } from '@/components/compile-preview';
 
 const presets = [{ out: 30_000n, max: 40_000_000n, label: '30k FUSD' }, { out: 10_000n, max: 15_000_000n, label: '10k FUSD' }, { out: 60_000n, max: 80_000_000n, label: '60k FUSD' }];
 
@@ -75,7 +76,7 @@ export default function Studio() {
             </ul>
           </Panel>
         </div>
-        <div className="min-w-0">
+        <div className="flex min-w-0 flex-col gap-5">
           {current ? <AuctionView id={current} /> : (
             <Panel title="No auction running">
               <div className="py-12 text-center">
@@ -85,6 +86,7 @@ export default function Studio() {
               </div>
             </Panel>
           )}
+          <CompilePreview minOut={minOut} maxIn={maxIn} maxFee={maxFee} />
         </div>
       </div>
     </div>

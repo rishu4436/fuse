@@ -4,6 +4,7 @@ import { motion } from 'motion/react';
 import clsx from 'clsx';
 import { usePoll } from '@/lib/hooks';
 import { sats, short, usd } from '@/lib/api';
+import Link from 'next/link';
 import { PageHeader, Panel, Stat, Badge, ApiOffline, Mono, type DataMode } from '@/components/ui';
 
 interface Loan { outpoint: string; collateralSats: string; debtCents: string; status: string; collateralRatioBps: string | null; periodsBehind: string; liquidationPriceCents: string | null; currentRateRaw: string }
@@ -13,6 +14,7 @@ const BUCKETS = [[11000, 12500], [12500, 15000], [15000, 20000], [20000, 30000],
 export default function Guardian() {
   const { data, error } = usePoll<P>('/api/mainnet/paryon', 0);
   const [shock, setShock] = useState(0);
+  const sentinel = usePoll<{ overall: string; signals: Array<{ name: string; status: string; detail: string }> }>('/api/guardian/sentinel', 0);
   const price = data ? Number(data.live.latestPrice.priceRaw) : 0;
   const active = useMemo(() => (data?.live.loans ?? []).filter((l) => Number(l.periodsBehind) <= 1 && l.debtCents !== '0' && l.collateralRatioBps), [data]);
   const shocked = price * (1 - shock / 100);
@@ -28,6 +30,16 @@ export default function Guardian() {
       <ApiOffline error={error} />
       {data && (
         <div className="flex flex-col gap-5">
+          <Panel title="Protocol health sentinel" kicker={`Overall: ${sentinel.data?.overall ?? '—'}`} mode="READ-ONLY" actions={<span className="flex gap-3 text-[12px]"><Link href="/app/guardian/policies" className="text-volt-300">Policies →</Link><Link href="/app/guardian/alerts" className="text-volt-300">Alerts →</Link></span>}>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5" data-testid="sentinel">
+              {(sentinel.data?.signals ?? []).map((x) => (
+                <div key={x.name} className="rounded-lg border hairline p-3">
+                  <div className="flex items-center justify-between gap-2"><span className="text-[12px] text-fog-200">{x.name}</span><span className={clsx('num text-[10.5px]', x.status === 'OK' ? 'text-volt-300' : x.status === 'WARN' ? 'text-amber-sim' : x.status === 'ALERT' ? 'text-rose-bad' : 'text-fog-400')}>{x.status}</span></div>
+                  <div className="mt-1 text-[11px] leading-snug text-fog-400">{x.detail}</div>
+                </div>
+              ))}
+            </div>
+          </Panel>
           <div className="grid grid-cols-2 gap-5 md:grid-cols-4">
             <Panel><Stat label="Oracle price" value={usd(data.live.latestPrice.priceRaw)} sub={`seq ${data.live.latestPrice.sequence}`} accent /></Panel>
             <Panel><Stat label="Active loans" value={data.live.activeLoans} sub={`${data.live.staleLoans} stale (interest overdue)`} /></Panel>

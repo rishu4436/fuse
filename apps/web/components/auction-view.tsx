@@ -115,7 +115,7 @@ export function AuctionView({ id }: { id: string }) {
 
       {sel?.template && (
         <Panel title={`${strategyLabel[sel.strategy] ?? sel.strategy}: transaction ${sel.winner ? '(selected)' : '(preview)'}`} kicker={sel.explanation}
-          actions={a.certificateId && sel.winner ? <Link href={`/certificates/${a.certificateId}`} className="text-[12.5px] text-volt-300 hover:text-volt-400">Open certificate →</Link> : null}>
+          actions={a.certificateId && sel.winner ? <Link href={`/app/certificates/${a.certificateId}`} className="text-[12.5px] text-volt-300 hover:text-volt-400">Open certificate →</Link> : null}>
           <TxGraph key={sel.templateHash} template={sel.template} txid={sel.winner ? a.txid : undefined} caption="Every arrow is a real input or output in the transaction. FlashVault liquidity is borrowed and repaid inside the same transaction." />
           {sel.verification && (
             <div className="mt-5 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">

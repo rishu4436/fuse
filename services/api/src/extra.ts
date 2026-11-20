@@ -13,6 +13,7 @@ import { ShardManager, vaultHealth, buildDeposit, buildWithdraw, buildMerge, bui
 import { artifactManifest, artifacts } from '@fuse/contracts';
 import { contractUnlocks, signInputs, finalize, verifyTemplateAndRaw, inspectRaw, txidOfRaw, sourceOutputsOf, type TxTemplate } from '@fuse/transaction-composer';
 import { PARYON_OPERATION_STATUS } from '@fuse/protocol-adapters';
+import { scanArbitrage } from '@fuse/solver-sdk';
 import type { FuseState } from './state.js';
 
 export function draftIntent(state: FuseState, over: { minOut?: bigint; maxIn?: bigint; maxFee?: bigint } = {}) {
@@ -119,6 +120,16 @@ export function registerExtra(app: FastifyInstance, state: FuseState) {
     await m().provider.sendRawTransaction(raw);
     state.emit('LP_OPERATION', `${b.op} → ${txidOfRaw(raw)} (LOCAL)`);
     return { ok: true, txid: txidOfRaw(raw), verification: v, template: t };
+  });
+
+  // ---- opportunities (F28): LOCAL pools + READ-ONLY mainnet Cauldron snapshot ----
+  app.get('/api/opportunities', async () => {
+    const v = await liveMarketView(m());
+    const local = scanArbitrage(v.pools.map((p) => ({ id: p.id, sats: p.utxo.satoshis, tokens: p.utxo.token!.amount })));
+    const c = state.evidence('cauldron');
+    const pools = ((c?.checked ?? []) as Array<{ outpoint: string; sats: string; tokens: string; scriptMatchesPublishedCauldronArtifact: boolean }>).filter((p) => p.scriptMatchesPublishedCauldronArtifact).map((p) => ({ id: p.outpoint, sats: BigInt(p.sats), tokens: BigInt(p.tokens) }));
+    const mainnet = scanArbitrage(pools);
+    return { local: { network: 'local', simulated: true, opportunity: local }, mainnet: { network: 'mainnet', mode: 'READ-ONLY', checkedAt: c?.checkedAt ?? null, poolsScanned: pools.length, opportunity: mainnet, note: 'Gross profit before miner fee and before any competing transaction; snapshot analysis only, nothing executed.' }, excluded: [{ protocol: 'Moria V1', reason: 'disabled April 2026: never an active opportunity' }, { protocol: 'Paryon V2', reason: 'not deployed' }] };
   });
 
   // ---- explorer (F50), contracts (F44), replay (F43) over the LOCAL chain ----

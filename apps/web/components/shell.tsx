@@ -6,12 +6,15 @@ import clsx from 'clsx';
 import { AnimatePresence, motion } from 'motion/react';
 
 const NAV: Array<{ group: string; items: Array<{ href: string; label: string; tag?: 'SIM' | 'RO' }> }> = [
-  { group: 'Execute', items: [{ href: '/studio', label: 'Intent Studio', tag: 'SIM' }, { href: '/auctions', label: 'Auctions', tag: 'SIM' }, { href: '/solvers', label: 'Solver network', tag: 'SIM' }] },
-  { group: 'Liquidity', items: [{ href: '/vault', label: 'FlashVault', tag: 'SIM' }] },
-  { group: 'Proof', items: [{ href: '/certificates', label: 'Certificates', tag: 'SIM' }, { href: '/verify', label: 'Verify' }] },
-  { group: 'Mainnet', items: [{ href: '/mainnet', label: 'Cauldron pools', tag: 'RO' }, { href: '/guardian', label: 'Guardian · Paryon', tag: 'RO' }] },
-  { group: 'Project', items: [{ href: '/status', label: 'Integration status' }, { href: '/activity', label: 'Activity' }] },
+  { group: 'Workspace', items: [{ href: '/app', label: 'Overview', tag: 'SIM' }, { href: '/app/portfolio', label: 'Portfolio', tag: 'SIM' }] },
+  { group: 'Execute', items: [{ href: '/app/execute/new', label: 'Intent Studio', tag: 'SIM' }, { href: '/app/execute', label: 'Executions', tag: 'SIM' }, { href: '/app/parallel-worlds', label: 'Parallel Worlds', tag: 'SIM' }, { href: '/app/strategies', label: 'Strategies' }, { href: '/app/strategies/builder', label: 'Strategy builder', tag: 'SIM' }] },
+  { group: 'Guardian', items: [{ href: '/app/guardian', label: 'Risk radar', tag: 'RO' }, { href: '/app/guardian/policies', label: 'Policies', tag: 'RO' }, { href: '/app/guardian/alerts', label: 'Alerts' }] },
+  { group: 'Liquidity', items: [{ href: '/app/liquidity', label: 'Shards & LP', tag: 'SIM' }, { href: '/app/liquidity/vaults', label: 'Vaults', tag: 'SIM' }] },
+  { group: 'Solvers', items: [{ href: '/app/solvers', label: 'Solver network', tag: 'SIM' }, { href: '/app/solvers/auctions', label: 'Bids', tag: 'SIM' }, { href: '/app/opportunities', label: 'Opportunities', tag: 'RO' }] },
+  { group: 'Proof', items: [{ href: '/app/certificates', label: 'Certificates', tag: 'SIM' }, { href: '/verify', label: 'Verify' }, { href: '/app/replay', label: 'Replay', tag: 'SIM' }, { href: '/app/explorer', label: 'Explorer', tag: 'SIM' }, { href: '/app/contracts', label: 'Contracts' }] },
+  { group: 'Project', items: [{ href: '/app/activity', label: 'Activity' }, { href: '/status', label: 'Integration status' }, { href: '/developers', label: 'Developers' }, { href: '/app/settings', label: 'Settings' }] },
 ];
+const ALL_HREFS = NAV.flatMap((g) => g.items.map((i) => i.href));
 
 export function Logo({ className }: { className?: string }) {
   return (
@@ -45,18 +48,19 @@ function HackathonBanner() {
 export function AppShell({ children }: { children: ReactNode }) {
   const path = usePathname();
   const [open, setOpen] = useState(false);
+  const activeHref = ALL_HREFS.filter((h) => path === h || path.startsWith(h + '/')).sort((a, b) => b.length - a.length)[0];
   const nav = (
-    <nav aria-label="Primary" className="flex flex-col gap-6">
+    <nav aria-label="Primary" className="flex flex-col gap-5">
       {NAV.map((g) => (
         <div key={g.group}>
           <div className="mb-2 px-3 text-[10.5px] uppercase tracking-[0.16em] text-fog-400">{g.group}</div>
           <ul className="flex flex-col gap-0.5">
             {g.items.map((it) => {
-              const active = path === it.href || path.startsWith(it.href + '/');
+              const active = it.href === activeHref;
               return (
                 <li key={it.href}>
                   <Link href={it.href} onClick={() => setOpen(false)} aria-current={active ? 'page' : undefined}
-                    className={clsx('group relative flex items-center justify-between rounded-lg px-3 py-2 text-[13px] transition-colors', active ? 'text-fog-100' : 'text-fog-300 hover:bg-ink-800 hover:text-fog-100')}>
+                    className={clsx('group relative flex items-center justify-between rounded-lg px-3 py-1.5 text-[13px] transition-colors', active ? 'text-fog-100' : 'text-fog-300 hover:bg-ink-800 hover:text-fog-100')}>
                     {active && <motion.span layoutId="nav-active" className="absolute inset-0 rounded-lg border border-volt-400/25 bg-volt-400/[0.06]" transition={{ type: 'spring', stiffness: 500, damping: 40 }} />}
                     <span className="relative">{it.label}</span>
                     {it.tag && <span className={clsx('relative text-[9.5px] font-medium tracking-[0.1em]', it.tag === 'SIM' ? 'text-amber-sim/80' : 'text-sky-ro/80')}>{it.tag === 'SIM' ? 'SIM' : 'READ'}</span>}
@@ -76,8 +80,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="mx-auto flex max-w-[1400px]">
         <aside className="sticky top-0 hidden h-dvh w-[236px] shrink-0 flex-col border-r hairline px-3 py-6 lg:flex">
           <Link href="/" className="mb-8 flex items-center gap-2.5 px-3"><Logo className="size-7" /><span className="text-[17px] font-semibold tracking-[-0.02em]">fuse</span></Link>
-          {nav}
-          <div className="mt-auto px-3 text-[11px] leading-relaxed text-fog-400">
+          <div className="scrollbar-thin -mx-1 min-h-0 flex-1 overflow-y-auto px-1 pb-4">{nav}</div>
+          <div className="mt-3 px-3 text-[11px] leading-relaxed text-fog-400">
             <div className="mb-1 flex items-center gap-1.5"><span className="size-1.5 rounded-full bg-amber-sim" />SIM: local BCH VM</div>
             <div className="flex items-center gap-1.5"><span className="size-1.5 rounded-full bg-sky-ro" />READ: mainnet, read only</div>
           </div>

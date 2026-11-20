@@ -34,7 +34,7 @@ export default function Home() {
             FUSE runs intent auctions on Bitcoin Cash. Solvers bid complete, atomic transactions that combine Cauldron pools, solver inventory and FlashVault covenant liquidity. A bid is only accepted after it passes the BCH virtual machine and the user&apos;s outcome has been recomputed from the transaction.
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-3">
-            <Link href="/studio"><Button>Open Intent Studio →</Button></Link>
+            <Link href="/app/execute/new"><Button>Open Intent Studio →</Button></Link>
             <Link href="/verify"><Button variant="ghost">Verify a certificate</Button></Link>
             <span className="ml-1 text-[12px] text-fog-400">The demo runs on a local BCH VM. Mainnet panels are read only.</span>
           </div>

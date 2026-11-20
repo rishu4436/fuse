@@ -21,7 +21,7 @@ export default function CertificatePage({ params }: { params: Promise<{ id: stri
   const download = () => { if (!c) return; const url = URL.createObjectURL(new Blob([plainJson(c)], { type: 'application/json' })); const a = document.createElement('a'); a.href = url; a.download = `${c.certificateId}.json`; a.click(); URL.revokeObjectURL(url); };
   return (
     <div className="mx-auto max-w-5xl">
-      <Link href="/certificates" className="mb-5 inline-block text-[12.5px] text-fog-400 hover:text-fog-100">← Certificates</Link>
+      <Link href="/app/certificates" className="mb-5 inline-block text-[12.5px] text-fog-400 hover:text-fog-100">← Certificates</Link>
       <PageHeader eyebrow="Certificate" title={id} right={c ? <Badge mode={c.simulated ? 'SIMULATION' : 'READ-ONLY'} /> : null} />
       <ApiOffline error={error} />
       {c && (

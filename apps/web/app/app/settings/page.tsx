@@ -1,0 +1,36 @@
+'use client';
+import { usePoll } from '@/lib/hooks';
+import { PageHeader, Panel, Badge } from '@/components/ui';
+import { KV } from '@/components/kit';
+import { ELECTRUM_SERVERS } from '@/lib/electrum';
+
+interface N { local: { mode: string; engine: string }; mainnet: { mode: string; broadcast: string; source: string }; chipnet: { mode: string; reason: string } }
+interface Notes { channels: Record<string, string> }
+
+export default function Settings() {
+  const n = usePoll<N>('/api/network/status', 0);
+  const c = usePoll<Notes>('/api/notifications', 0);
+  return (
+    <div className="mx-auto max-w-4xl">
+      <PageHeader eyebrow="Settings" title="Networks, safety and channels" lede="Safety switches are read-only here on purpose. Mainnet broadcasting cannot be turned on from the UI; it needs explicit owner authorization in the deployment configuration." />
+      <div className="grid gap-5">
+        <Panel title="Networks">
+          <KV rows={[['Local', <span key="l"><Badge mode="SIMULATION" /> <span className="ml-2 text-fog-300">{n.data?.local.engine}</span></span>], ['Mainnet', <span key="m"><Badge mode="READ-ONLY" /> <span className="ml-2 text-fog-300">{n.data?.mainnet.source}</span></span>], ['Chipnet', <span key="c" className="text-fog-300">{n.data?.chipnet.mode}: {n.data?.chipnet.reason}</span>]]} />
+        </Panel>
+        <Panel title="Safety">
+          <div className="flex items-center justify-between rounded-lg border hairline p-3">
+            <div><div className="text-[13px] text-fog-100">Mainnet broadcast</div><div className="text-[11.5px] text-fog-400">{n.data?.mainnet.broadcast ?? 'disabled'}</div></div>
+            <button role="switch" aria-checked="false" disabled className="h-6 w-11 cursor-not-allowed rounded-full bg-ink-600 p-0.5 opacity-60" aria-label="Mainnet broadcast (locked off)" data-testid="broadcast-switch"><span className="block size-5 rounded-full bg-fog-400" /></button>
+          </div>
+          <p className="mt-3 text-[11.5px] text-fog-400">Wallet signing requests are always sent with broadcast:false. Signed transactions are verified and shown, never sent.</p>
+        </Panel>
+        <Panel title="Wallet data (your browser)">
+          <KV rows={[['Fulcrum servers', ELECTRUM_SERVERS.join(', ')], ['Used for', 'listing your own coins for the mainnet preflight (read only)']]} />
+        </Panel>
+        <Panel title="Notification channels">
+          <KV rows={Object.entries(c.data?.channels ?? {}).map(([k, v]) => [k, v.replace('_', ' ').toLowerCase()])} />
+        </Panel>
+      </div>
+    </div>
+  );
+}

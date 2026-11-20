@@ -9,6 +9,13 @@ const config: NextConfig = {
     config.output = { ...config.output, environment: { ...(config.output?.environment ?? {}), asyncFunction: true } };
     return config;
   },
+  async redirects() {
+    return [
+      ['/studio', '/app/execute/new'], ['/auctions', '/app/execute'], ['/auctions/:id', '/app/execute/:id'], ['/solvers', '/app/solvers'],
+      ['/vault', '/app/liquidity/flashvault-bch'], ['/certificates', '/app/certificates'], ['/certificates/:id', '/app/certificates/:id'],
+      ['/mainnet', '/app/opportunities'], ['/guardian', '/app/guardian'], ['/activity', '/app/activity'],
+    ].map(([source, destination]) => ({ source, destination, permanent: false }));
+  },
   async rewrites() { return [{ source: '/api/:path*', destination: `${api}/api/:path*` }]; },
   async headers() {
     return [{ source: '/(.*)', headers: [
