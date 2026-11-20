@@ -13,6 +13,7 @@ export const STATUS: Row[] = [
   { area: 'ParyonUSD', item: 'Manage / change interest / liquidation', status: 'BLOCKED', evidence: 'Transaction builders (@paryonusd/library) not published; needs owner-approved live tests' },
   { area: 'ParyonUSD', item: 'Paryon V2', status: 'UNSUPPORTED', evidence: 'Not deployed' },
   { area: 'Moria', item: 'Moria V1 as live venue', status: 'UNSUPPORTED', evidence: 'Disabled April 2026; never used as an active opportunity' },
+  { area: 'Wallet', item: 'WizardConnect pairing (hdwalletv1)', status: 'IMPLEMENTED', evidence: 'QR and relay tested in browser. Real-wallet pairing untested. No signing requested' },
   { area: 'Execution', item: 'Transaction composer + independent verifier', status: 'TESTED', evidence: 'composer.test.ts: conservation, sighash, tamper checks' },
   { area: 'Execution', item: 'FEP-1 policy engine', status: 'TESTED', evidence: 'policy.test.ts' },
   { area: 'Execution', item: 'Auction engine, fallback, anti-replay', status: 'TESTED', evidence: 'auction.test.ts (5) + network e2e across 5 processes' },

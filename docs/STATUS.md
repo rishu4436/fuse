@@ -7,14 +7,14 @@ Cauldron script. Composer with an independent verifier. FEP-1 policies. Auction 
 **Real and working (mainnet, READ-ONLY):** Cauldron pools verified against the published script (10/10). Paryon V1
 deployment verified against npm artifacts. 360 loans decoded, live PriceContractGuarded oracle, Guardian radar.
 
-**Tests:** vitest 64/64, Playwright 25/25 (1 skipped by design), tsc 0 errors, eslint 0 problems, next build OK.
+**Tests:** vitest 64/64, Playwright 26 passed (2 skipped by design), tsc 0 errors, eslint 0 problems, next build OK.
 See [TEST-REPORT.md](TEST-REPORT.md).
 
 **Live transactions:** **none.** No mainnet or chipnet transaction has been broadcast. No contract is deployed.
 
 **Blockers**
 1. Mainnet transaction feature (required for the Mainnet track): needs explicit owner authorization, a funded wallet
-   held by the owner, and WizardConnect signing (not built yet).
+   held by the owner, and WizardConnect signing. Pairing is IMPLEMENTED, signing is not built yet.
 2. Electrum ports blocked from the build box. Chipnet is unreachable from here.
 3. Paryon write paths: `@paryonusd/library` builders are not published.
 4. Owner-only actions: DoraHacks registration, roll call, Telegram confirmation, EMBER2026 donation address

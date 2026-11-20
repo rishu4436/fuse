@@ -9,15 +9,20 @@
     "start": "next start -p 3000"
   },
   "dependencies": {
+    "@bitauth/libauth": "3.1.0-next.8",
+    "@wizardconnect/core": "0.2.11",
+    "@wizardconnect/dapp": "0.2.8",
     "clsx": "^2.1.1",
     "geist": "^1.9.2",
     "motion": "^14.14.0",
     "next": "15",
+    "qrcode": "^1.5.4",
     "react": "19",
     "react-dom": "19"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "4",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "19",
     "@types/react-dom": "19",
     "postcss": "^8.5.33",

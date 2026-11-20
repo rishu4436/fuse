@@ -3,6 +3,12 @@ const api = process.env.FUSE_API ?? 'http://127.0.0.1:8787';
 const config: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  webpack(config) {
+    // libauth (used by WizardConnect) relies on top-level await + WebAssembly.
+    config.experiments = { ...config.experiments, topLevelAwait: true, asyncWebAssembly: true };
+    config.output = { ...config.output, environment: { ...(config.output?.environment ?? {}), asyncFunction: true } };
+    return config;
+  },
   async rewrites() { return [{ source: '/api/:path*', destination: `${api}/api/:path*` }]; },
   async headers() {
     return [{ source: '/(.*)', headers: [

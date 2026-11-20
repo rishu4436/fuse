@@ -40,7 +40,8 @@ Labels follow [INTEGRATION-FEASIBILITY.md](INTEGRATION-FEASIBILITY.md). "Not bui
 | | Moria historical replay | Not built | |
 | | Studio UI (11 routes, honest labels) | TESTED | Playwright 25/25 |
 | | Animated transaction graph | TESTED | Playwright (rendered) |
-| | WizardConnect wallet | Not built | API researched, 0x61 aligned |
+| | WizardConnect wallet pairing | IMPLEMENTED | QR and relay tested in Playwright. Real-wallet pairing untested |
+| | WizardConnect transaction signing | Not built | |
 | | XO integration | Not built | |
 | | Mainnet transaction feature | BLOCKED | Owner authorization required |
 | | Chipnet deployment | BLOCKED | No network path from the box. No faucet key |
@@ -54,4 +55,4 @@ Labels follow [INTEGRATION-FEASIBILITY.md](INTEGRATION-FEASIBILITY.md). "Not bui
 | X03 | Rescue bounties | Not built | |
 | X04 | (see spec) | Not built | |
 
-Summary by status: VERIFIED 2 · TESTED 20 · READ-ONLY 1 · IMPLEMENTED 3 · BLOCKED 3 · UNSUPPORTED 2 · Not built 12.
+Summary by status: VERIFIED 2 · TESTED 20 · READ-ONLY 1 · IMPLEMENTED 4 · BLOCKED 3 · UNSUPPORTED 2 · Not built 12.

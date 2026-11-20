@@ -24,8 +24,8 @@ Research date: 20 Nov 2026 (snapshot timestamps are in `evidence/*.json`).
   with 0x61, the FlashVault owner path accepts only 0x61, and the verifier rejects any other hashtype.
 * API surface: `DappConnectionManager.signTransaction({ transaction: WcSignTransactionRequest, inputPaths })`.
   `TransactionBuilder.generateWcTransactionObject()` in cashscript produces the transaction object.
-* Status: the API was researched and the hashtype is aligned. A Studio connect and sign flow is **not built yet**
-  (see STATUS.md).
+* Status: Studio pairing is **IMPLEMENTED** (`apps/web/components/wallet-connect.tsx`). It creates a `DappConnectionManager`,
+  calls `initiateDappRelay`, shows a QR code and derives the receive address from the shared xpub. Signing is not built yet.
 
 ## 3. Cauldron (V0 AMM pools)
 

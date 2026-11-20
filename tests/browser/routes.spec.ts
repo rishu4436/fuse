@@ -44,3 +44,13 @@ test('Demo: run an auction in the Studio, adversary rejected, settlement + certi
   await expect(page.getByTestId('verify-result')).toContainText('FAILED');
   if (process.env.SHOTS) await page.screenshot({ path: 'test-results/shots/desktop-certificate.png', fullPage: true });
 });
+
+test('WizardConnect: pairing QR is generated in the browser (no wallet needed)', async ({ page }, info) => {
+  test.skip(info.project.name === 'mobile', 'desktop only');
+  await page.goto('/studio');
+  await page.getByTestId('wc-connect').click();
+  await expect(page.getByTestId('wc-qr').or(page.getByRole('alert'))).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByTestId('wc-qr')).toBeVisible();
+  const src = await page.getByTestId('wc-qr').getAttribute('src');
+  expect(src).toMatch(/^data:image\/png;base64,/);
+});

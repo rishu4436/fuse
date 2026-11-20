@@ -18,7 +18,8 @@ the BCH 2026 VM and the user's outcome has been recomputed from the transaction 
 * **ParyonUSD V1 mainnet verification:** every contract rebuilt from `@paryonusd/contracts@1.1.0` and matched on
   chain. 360 loans decoded, live oracle read from `PriceContractGuarded`.
 * **Auction** with 4 independent solver processes (3 honest + 1 adversarial). The adversary is always rejected.
-* **Studio** (Next.js 15): live auctions, animated transaction graph, certificates, Guardian radar.
+* **Studio** (Next.js 15): live auctions, animated transaction graph, certificates, Guardian radar, and WizardConnect
+  wallet pairing (read-only; signing not built).
 
 ## Quick start
 

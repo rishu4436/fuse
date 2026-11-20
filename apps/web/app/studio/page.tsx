@@ -6,6 +6,7 @@ import { usePoll } from '@/lib/hooks';
 import type { Auction, Solver } from '@/lib/types';
 import { Button, PageHeader, Panel, Badge, ApiOffline } from '@/components/ui';
 import { AuctionView } from '@/components/auction-view';
+import { WalletConnect } from '@/components/wallet-connect';
 
 const presets = [{ out: 30_000n, max: 40_000_000n, label: '30k FUSD' }, { out: 10_000n, max: 15_000_000n, label: '10k FUSD' }, { out: 60_000n, max: 80_000_000n, label: '60k FUSD' }];
 
@@ -61,6 +62,7 @@ export default function Studio() {
               <p className="text-[11px] leading-relaxed text-fog-400">Arbitrage closes the gap between the two pools, so the flash solver may stop bidding after it has run. Reset the world to replay the demo. The local demo wallet is a fixed test key that only holds simulated coins. On mainnet the same template would be signed in your own wallet through WizardConnect with SIGHASH_ALL|FORKID|UTXOS.</p>
             </form>
           </Panel>
+          <Panel title="Your wallet" kicker="WizardConnect · mainnet, read only"><WalletConnect /></Panel>
           <Panel title="Solvers listening" kicker="Separate processes, each with its own key">
             <ul className="flex flex-col gap-2">
               {(solvers.data ?? []).map((s) => (

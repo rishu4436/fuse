@@ -11,7 +11,7 @@ base commit `781b54c`. Every number below comes from an actual run. Nothing is e
 | 3 | `npx eslint .` | **0 problems** (all workspaces, including apps/web) |
 | 4 | `npx vitest run` | **9 files, 64 tests passed, 0 failed** |
 | 5 | `pnpm --filter @fuse/web build` (`next build`) | **Compiled successfully. 14 routes** (12 static, 2 dynamic) |
-| 6 | `npx playwright test` (API + 4 solver processes + `next start` running) | **25 passed, 0 failed, 1 skipped** (the full demo flow runs on desktop only, by design) |
+| 6 | `npx playwright test` (API + 4 solver processes + `next start` running) | **26 passed, 0 failed, 2 skipped** (the demo flow and the WizardConnect QR test run on desktop only, by design) |
 
 ## Unit / integration tests (vitest) per file
 
@@ -34,6 +34,8 @@ base commit `781b54c`. Every number below comes from an actual run. Nothing is e
 * Labels: /mainnet and /guardian show READ-ONLY. /vault shows SIMULATION.
 * Demo flow (desktop): reset the world, then Run auction → Settled, adversary "Rejected" with a minOut reason, flash
   back-run "Winner", transaction graph rendered, open certificate → **VERIFIED**, tampered copy → **FAILED**.
+* WizardConnect (desktop): the pairing QR (PNG data URI) is generated from `initiateDappRelay().qrUri`. In a manual probe the relay
+  status reached `connected`. No wallet was paired.
 
 ## Reproduce
 
@@ -49,5 +51,5 @@ npx playwright test
 ## Not tested (and why)
 
 * No chipnet or mainnet transaction was sent. Broadcast is not authorized, Electrum ports are blocked, and no funds were used.
-* WizardConnect signing: not built yet.
+* WizardConnect: pairing with a real wallet not tested (no wallet available). Signing not built yet.
 * Paryon write paths: BLOCKED (see INTEGRATION-FEASIBILITY.md).
