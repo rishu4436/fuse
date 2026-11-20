@@ -7,12 +7,12 @@ import { AnimatePresence, motion } from 'motion/react';
 
 const NAV: Array<{ group: string; items: Array<{ href: string; label: string; tag?: 'SIM' | 'RO' }> }> = [
   { group: 'Workspace', items: [{ href: '/app', label: 'Overview', tag: 'SIM' }, { href: '/app/portfolio', label: 'Portfolio', tag: 'SIM' }] },
-  { group: 'Execute', items: [{ href: '/app/execute/new', label: 'Intent Studio', tag: 'SIM' }, { href: '/app/execute', label: 'Executions', tag: 'SIM' }, { href: '/app/parallel-worlds', label: 'Parallel Worlds', tag: 'SIM' }, { href: '/app/strategies', label: 'Strategies' }, { href: '/app/strategies/builder', label: 'Strategy builder', tag: 'SIM' }] },
-  { group: 'Guardian', items: [{ href: '/app/guardian', label: 'Risk radar', tag: 'RO' }, { href: '/app/guardian/policies', label: 'Policies', tag: 'RO' }, { href: '/app/guardian/alerts', label: 'Alerts' }] },
+  { group: 'Execute', items: [{ href: '/app/execute/new', label: 'Intent Studio', tag: 'SIM' }, { href: '/app/execute', label: 'Executions', tag: 'SIM' }, { href: '/app/execute/staged', label: 'Staged recovery', tag: 'SIM' }, { href: '/app/parallel-worlds', label: 'Parallel Worlds', tag: 'SIM' }, { href: '/app/strategies', label: 'Strategies' }, { href: '/app/strategies/builder', label: 'Strategy builder', tag: 'SIM' }] },
+  { group: 'Guardian', items: [{ href: '/app/guardian', label: 'Risk radar', tag: 'RO' }, { href: '/app/guardian/rates', label: 'Rate optimizer', tag: 'RO' }, { href: '/app/guardian/policies', label: 'Policies', tag: 'RO' }, { href: '/app/guardian/alerts', label: 'Alerts' }] },
   { group: 'Liquidity', items: [{ href: '/app/liquidity', label: 'Shards & LP', tag: 'SIM' }, { href: '/app/liquidity/vaults', label: 'Vaults', tag: 'SIM' }] },
   { group: 'Solvers', items: [{ href: '/app/solvers', label: 'Solver network', tag: 'SIM' }, { href: '/app/solvers/auctions', label: 'Bids', tag: 'SIM' }, { href: '/app/opportunities', label: 'Opportunities', tag: 'RO' }] },
   { group: 'Proof', items: [{ href: '/app/certificates', label: 'Certificates', tag: 'SIM' }, { href: '/verify', label: 'Verify' }, { href: '/app/replay', label: 'Replay', tag: 'SIM' }, { href: '/app/explorer', label: 'Explorer', tag: 'SIM' }, { href: '/app/contracts', label: 'Contracts' }] },
-  { group: 'Project', items: [{ href: '/app/activity', label: 'Activity' }, { href: '/status', label: 'Integration status' }, { href: '/developers', label: 'Developers' }, { href: '/app/settings', label: 'Settings' }] },
+  { group: 'Project', items: [{ href: '/app/activity', label: 'Activity' }, { href: '/status', label: 'Integration status' }, { href: '/developers', label: 'Developers' }, { href: '/developers/recipes', label: 'Recipe marketplace', tag: 'SIM' }, { href: '/app/settings', label: 'Settings' }] },
 ];
 const ALL_HREFS = NAV.flatMap((g) => g.items.map((i) => i.href));
 

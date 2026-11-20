@@ -279,7 +279,16 @@ export function registerExtra(app: FastifyInstance, state: FuseState) {
       mk('Free money (unrepaid borrow)', ['BORROW', 'BUY_CHEAP', 'PAY_USER'], 'anon', 'Borrows a shard and never repays it. The marketplace must reject this.', '30000', ['adversarial']),
     ]) await listRecipe(r);
   };
-  app.get('/api/marketplace/recipes', async () => { await seed(); return { mode: 'LOCAL', autoExecute: false, legs: LEGS, recipes: store.listRecipes() }; });
+  // Verdicts are recomputed against the CURRENT local market on every read: a recipe that compiled yesterday may not
+  // compile now (e.g. the pool gap a flash back-run needs has closed). The first verdict is kept for audit.
+  app.get('/api/marketplace/recipes', async () => {
+    await seed(); marketCache = await ctx();
+    const recipes = store.listRecipes().map((r) => {
+      const v = verifyRecipe({ recipe: r.body, hash: r.hash, signature: r.signature }, probe);
+      return { ...r, verdict: { listed: v.listed, checks: v.checks, strategy: v.strategy, probe: v.probe, autoExecute: false, verifiedAt: Date.now(), firstListed: (r.verdict as { listed?: boolean }).listed } };
+    }).sort((a, b) => Number(b.verdict.listed) - Number(a.verdict.listed));
+    return { mode: 'LOCAL', autoExecute: false, legs: LEGS, verifiedAgainst: 'current LOCAL market state', recipes };
+  });
   app.post('/api/marketplace/recipes', async (req) => listRecipe(req.body));
   app.post('/api/marketplace/publish-local', async (req) => {
     const b = z.object({ name: z.string().min(3).max(60), description: z.string().max(400).default(''), legs: z.array(z.string()).min(1).max(8), minOutTokens: z.string().default('30000') }).parse(req.body);

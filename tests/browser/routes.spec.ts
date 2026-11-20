@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 const routes = ['/', '/app', '/app/portfolio', '/app/guardian', '/app/guardian/policies', '/app/guardian/alerts', '/app/execute', '/app/execute/new', '/app/parallel-worlds', '/app/strategies', '/app/strategies/builder',
   '/app/liquidity', '/app/liquidity/vaults', '/app/liquidity/flashvault-bch', '/app/solvers', '/app/solvers/auctions', '/app/opportunities', '/app/replay', '/app/explorer', '/app/contracts', '/app/certificates', '/app/activity', '/app/settings',
-  '/developers', '/developers/sdk', '/developers/recipes', '/developers/api', '/status', '/verify'];
+  '/developers', '/developers/sdk', '/developers/recipes', '/developers/api', '/developers/xo', '/app/guardian/rates', '/app/execute/staged', '/status', '/verify'];
 
 for (const r of routes) {
   test(`route ${r} renders without errors and is labeled`, async ({ page }) => {
@@ -108,5 +108,33 @@ test.describe('feature flows', () => {
     await page.goto('/app/settings');
     await expect(page.getByTestId('broadcast-switch')).toBeDisabled();
     await expect(page.getByTestId('broadcast-switch')).toHaveAttribute('aria-checked', 'false');
+  });
+  test('staged recovery: competitor forces a rebuild; impossible bound ends RECOVERABLE with unspent owner coins', async ({ page }) => {
+    await page.goto('/app/execute/staged');
+    await page.getByTestId('scenario-competitor').click(); await page.getByTestId('run-staged').click();
+    await expect(page.getByTestId('staged-result')).toContainText('COMPLETED');
+    await expect(page.getByTestId('staged-result')).toContainText('REBUILD');
+    await page.getByTestId('scenario-impossible').click(); await page.getByTestId('run-staged').click();
+    await expect(page.getByTestId('staged-result')).toContainText('RECOVERABLE');
+    await expect(page.getByTestId('staged-result')).toContainText('Unspent, yours');
+  });
+  test('recipe marketplace: adversarial recipe rejected; an unrepaid borrow submitted from the composer is rejected', async ({ page }) => {
+    await page.goto('/developers/recipes');
+    await expect(page.getByTestId('recipe-list')).toContainText('Free money (unrepaid borrow)');
+    await expect(page.getByTestId('recipe-list')).toContainText('REJECTED');
+    await page.getByRole('button', { name: 'Repay shard + fee' }).click();
+    await page.getByTestId('publish-recipe').click();
+    await expect(page.getByTestId('publish-verdict')).toContainText('Rejected');
+    await expect(page.getByTestId('publish-verdict')).toContainText('must be repaid');
+  });
+  test('rate optimizer and redemption search render READ-ONLY and not executable', async ({ page }) => {
+    await page.goto('/app/guardian/rates');
+    await expect(page.getByText('Recommended').first()).toBeVisible();
+    await expect(page.getByTestId('redemption')).toContainText('not published');
+  });
+  test('XO: payout script compiled by the XO compiler', async ({ page }) => {
+    await page.goto('/developers/xo');
+    await page.getByTestId('xo-compile').click();
+    await expect(page.getByTestId('xo-payout')).toContainText('76a914');
   });
 });

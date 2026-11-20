@@ -38,6 +38,7 @@ describe('round 3 API', () => {
     const by = (n: string) => m.recipes.find((r) => r.body.name === n)!;
     expect(by('Flash back-run rebate').verdict.listed).toBe(true);
     expect(by('Plain best-pool route').verdict.listed).toBe(true);
+    expect(by('Inventory fill').verdict.listed).toBe(true); // inventory change back to the solver is allowed; net token gain is not
     expect(by('Free money (unrepaid borrow)').verdict.listed).toBe(false);
     expect(by('Free money (unrepaid borrow)').verdict.checks.find((c) => c.name === 'structure')!.ok).toBe(false);
     const k = fixtureKey('test-author');

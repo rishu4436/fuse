@@ -110,7 +110,10 @@ export function compileIntent(input: unknown, ctx: CompileContext): CompiledPlan
       if (o.userReceivesTokens < view!.minOut) c.reasons.push(`delivers ${o.userReceivesTokens} < minOut ${view!.minOut}`);
       if (o.userNetSpendSats > view!.maxIn) c.reasons.push(`net spend ${o.userNetSpendSats} > maxIn ${view!.maxIn}`);
       if (o.minerFeeSats > view!.maxFee) c.reasons.push(`miner fee ${o.minerFeeSats} > maxFee ${view!.maxFee}`);
-      if (c.template!.outputs.some((x) => x.token?.category === view!.buyToken && x.role === 'solver')) c.reasons.push('solver output receives the bought token');
+      // A solver may get back its own inventory change, but must never end up with MORE of the bought token than it put in.
+      const tok = (xs: Array<{ role?: string; token?: { category: string; amount: bigint } }>) => xs.filter((x) => x.role === 'solver' && x.token?.category === view!.buyToken).reduce((a, x) => a + x.token!.amount, 0n);
+      const solverGain = tok(c.template!.outputs) - tok(c.template!.inputs as Array<{ role?: string; token?: { category: string; amount: bigint } }>);
+      if (solverGain > 0n) c.reasons.push(`solver gains ${solverGain} of the bought token`);
       if (c.reasons.length) c.ok = false;
     }
     const n = candidates.filter((c) => c.ok).length;

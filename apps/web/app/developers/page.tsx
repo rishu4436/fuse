@@ -2,9 +2,10 @@ import Link from 'next/link';
 import { PageHeader, Panel } from '@/components/ui';
 
 const CARDS = [
-  { href: '/developers/sdk', t: 'TypeScript SDK', d: 'Run a solver: watch auctions, build templates, sign bids, co-sign the winner.' },
+  { href: '/developers/sdk', t: 'TypeScript SDKs', d: '@fuse/sdk for apps (compile, auctions, client-side certificate checks) and @fuse/solver-sdk for solvers.' },
   { href: '/developers/api', t: 'REST & real-time API', d: 'Every endpoint the Studio uses, plus the server-sent event stream.' },
-  { href: '/developers/recipes', t: 'Recipes', d: 'Intent and policy documents you can paste into the API.' },
+  { href: '/developers/recipes', t: 'Recipe marketplace', d: 'Signed strategy recipes, verified in the BCH VM before listing. Never auto-executed.' },
+  { href: '/developers/xo', t: 'XO Stack', d: 'Pinned XO template identifiers and XO-compiled payout scripts for intents.' },
   { href: '/verify', t: 'Proof verification', d: 'Check an execution certificate against the chain, independently of FUSE.' },
 ];
 export default function Developers() {

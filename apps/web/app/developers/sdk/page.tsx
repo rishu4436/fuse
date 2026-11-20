@@ -1,6 +1,15 @@
 import { PageHeader, Panel, Badge } from '@/components/ui';
 import { Code } from '@/components/code';
 
+const APP = `import { FuseClient } from '@fuse/sdk';
+
+const fuse = new FuseClient('http://127.0.0.1:8787');
+const plan = await fuse.compile(await fuse.draftSwap({ minOut: 30_000n }));
+const opened = await fuse.openSwap({ minOut: 30_000n, maxIn: 40_000_000n, maxFee: 20_000n });
+const done = await fuse.waitForAuction(opened.auctionId);
+// verified in YOUR process: raw txs are re-hashed, so the API cannot forge a pass
+const v = await fuse.verifyLocally(await fuse.certificate(done.certificateId!));
+console.log(plan.explanation?.headline, done.status, v.status);`;
 const SNIPPET = `import { SolverClient, STRATEGIES, signBid, solverIdOf } from '@fuse/solver-sdk';
 import { signInputs } from '@fuse/transaction-composer';
 
@@ -26,9 +35,10 @@ const result = await verifyCertificate(cert, indexerChainReader('mainnet', chain
 export default function Sdk() {
   return (
     <div className="mx-auto max-w-4xl">
-      <PageHeader eyebrow="Developers · SDK" title="Write a solver in TypeScript" lede="The reference workers in services/solver-reference use exactly this loop. Run four of them with pnpm solvers." right={<Badge mode="TESTED" />} />
+      <PageHeader eyebrow="Developers · SDK" title="Build on FUSE in TypeScript" lede="@fuse/sdk is the app client (a standalone example lives in examples/sdk-quickstart and runs end-to-end in CI). @fuse/solver-sdk is the loop the four reference solver processes use." right={<Badge mode="TESTED" />} />
       <div className="grid gap-5">
-        <Panel title="Solver loop"><Code>{SNIPPET}</Code></Panel>
+        <Panel title="App client · @fuse/sdk" kicker="examples/sdk-quickstart"><Code>{APP}</Code></Panel>
+        <Panel title="Solver loop · @fuse/solver-sdk"><Code>{SNIPPET}</Code></Panel>
         <Panel title="Verify a certificate"><Code>{VERIFY}</Code></Panel>
         <Panel title="Rules the coordinator enforces">
           <ul className="grid gap-1.5 text-[12.5px] text-fog-300">

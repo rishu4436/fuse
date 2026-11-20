@@ -5,11 +5,13 @@ import { KV } from '@/components/kit';
 import { ELECTRUM_SERVERS } from '@/lib/electrum';
 
 interface N { local: { mode: string; engine: string }; mainnet: { mode: string; broadcast: string; source: string }; chipnet: { mode: string; reason: string } }
-interface Notes { channels: Record<string, string> }
+interface Notes { channels: Record<string, string>; externalOptIn: boolean }
+interface Store { engine: string; path: string; migrations: Array<{ version: number; name: string }>; counts: Record<string, number> }
 
 export default function Settings() {
   const n = usePoll<N>('/api/network/status', 0);
   const c = usePoll<Notes>('/api/notifications', 0);
+  const st = usePoll<Store>('/api/store', 0);
   return (
     <div className="mx-auto max-w-4xl">
       <PageHeader eyebrow="Settings" title="Networks, safety and channels" lede="Safety switches are read-only here on purpose. Mainnet broadcasting cannot be turned on from the UI; it needs explicit owner authorization in the deployment configuration." />
@@ -27,8 +29,19 @@ export default function Settings() {
         <Panel title="Wallet data (your browser)">
           <KV rows={[['Fulcrum servers', ELECTRUM_SERVERS.join(', ')], ['Used for', 'listing your own coins for the mainnet preflight (read only)']]} />
         </Panel>
-        <Panel title="Notification channels">
-          <KV rows={Object.entries(c.data?.channels ?? {}).map(([k, v]) => [k, v.replace('_', ' ').toLowerCase()])} />
+        <Panel title="Notification channels" kicker={c.data?.externalOptIn ? 'external delivery opted in' : 'external delivery OFF (FUSE_NOTIFY_EXTERNAL not set)'}>
+          <ul className="grid gap-2 sm:grid-cols-2" data-testid="channels">
+            {Object.entries(c.data?.channels ?? {}).map(([k, v]) => (
+              <li key={k} className="flex items-center justify-between rounded-lg border hairline px-3 py-2.5">
+                <span className="text-[13px] capitalize text-fog-100">{k}</span>
+                <span className={v === 'CONFIGURED' || v === 'IMPLEMENTED' ? 'num text-[10.5px] text-volt-300' : 'num text-[10.5px] text-fog-400'}>{v.replace(/_/g, ' ')}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-3 text-[11.5px] text-fog-400">Webhook (HMAC-signed), Telegram and email adapters exist but send nothing unless the operator sets their credentials and FUSE_NOTIFY_EXTERNAL=1. Secrets are never shown or logged.</p>
+        </Panel>
+        <Panel title="Persistence">
+          <KV rows={[['Engine', st.data?.engine ?? '—'], ['Database', st.data?.path ?? '—'], ['Migrations', st.data?.migrations.map((m) => `v${m.version} ${m.name}`).join(' · ') ?? '—'], ['Rows', st.data ? Object.entries(st.data.counts).map(([k, v]) => `${k} ${v}`).join(' · ') : '—']]} />
         </Panel>
       </div>
     </div>

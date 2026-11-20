@@ -30,7 +30,7 @@ export default function Guardian() {
       <ApiOffline error={error} />
       {data && (
         <div className="flex flex-col gap-5">
-          <Panel title="Protocol health sentinel" kicker={`Overall: ${sentinel.data?.overall ?? '—'}`} mode="READ-ONLY" actions={<span className="flex gap-3 text-[12px]"><Link href="/app/guardian/policies" className="text-volt-300">Policies →</Link><Link href="/app/guardian/alerts" className="text-volt-300">Alerts →</Link></span>}>
+          <Panel title="Protocol health sentinel" kicker={`Overall: ${sentinel.data?.overall ?? '—'}`} mode="READ-ONLY" actions={<span className="flex gap-3 text-[12px]"><Link href="/app/guardian/rates" className="text-volt-300">Rates →</Link><Link href="/app/guardian/policies" className="text-volt-300">Policies →</Link><Link href="/app/guardian/alerts" className="text-volt-300">Alerts →</Link></span>}>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5" data-testid="sentinel">
               {(sentinel.data?.signals ?? []).map((x) => (
                 <div key={x.name} className="rounded-lg border hairline p-3">
