@@ -4,7 +4,7 @@ export interface Row { area: string; item: string; status: Status; evidence: str
 export const STATUS: Row[] = [
   { area: 'Contracts', item: 'FlashVaultBCH covenant (cashc 0.14)', status: 'TESTED', evidence: '27 BCH-VM tests + property tests (packages/contracts/test)' },
   { area: 'Contracts', item: 'FlashVaultToken covenant (cashc 0.14)', status: 'TESTED', evidence: '9 BCH-VM tests + property test' },
-  { area: 'Contracts', item: 'FlashVault deployment to chipnet / mainnet', status: 'BLOCKED', evidence: 'Needs funded keys and owner authorization; no deployment made' },
+  { area: 'Contracts', item: 'FlashVaultBCH on mainnet (owner-authorized, small value)', status: 'VERIFIED', evidence: 'Block 978191: genesis 481c0949…, flash use d50fed30… (certificate VERIFIED), LP deposit 234b1e1d…, LP withdraw 84a4a223…, sweep fa0c5163… (evidence/mainnet). Chipnet: none' },
   { area: 'Cauldron', item: 'V0 pool script vs. live mainnet pools', status: 'VERIFIED', evidence: '10/10 checked PUSD pools match (evidence/cauldron-pool-verification.json)' },
   { area: 'Cauldron', item: 'Atomic flash arbitrage through real pool bytecode', status: 'TESTED', evidence: 'composition.test.ts (local VM)' },
   { area: 'Cauldron', item: 'Mainnet swap broadcast', status: 'BLOCKED', evidence: 'No owner authorization for value-moving mainnet transactions' },
@@ -16,7 +16,7 @@ export const STATUS: Row[] = [
   { area: 'Moria', item: 'Moria V1 historical replay (mainnet)', status: 'VERIFIED', evidence: '12/12 MUSD txs re-evaluated valid in a fresh BCH 2026 VM (evidence/moria-historical-replay.json)' },
   { area: 'Wallet', item: 'WizardConnect pairing (hdwalletv1)', status: 'IMPLEMENTED', evidence: 'QR and relay tested in browser. Real-wallet pairing untested' },
   { area: 'Wallet', item: 'WizardConnect signing of a FUSE-built tx + preflight', status: 'IMPLEMENTED', evidence: 'broadcast:false request, 0x61 checks, independent verification (wallet.test.ts 8, wallet-api.test.ts 1). Real-wallet signing untested' },
-  { area: 'Wallet', item: 'Mainnet broadcast from FUSE', status: 'BLOCKED', evidence: 'No broadcast route exists (asserted in tests); needs explicit owner authorization' },
+  { area: 'Wallet', item: 'Mainnet broadcast from the web app', status: 'BLOCKED', evidence: 'No broadcast route exists in the app or the hosted site (asserted in tests). Mainnet txs were sent only by the owner-authorized box script' },
   { area: 'Execution', item: 'Intent compiler (10 stages) + explanation + fee accounting', status: 'TESTED', evidence: 'compiler.test.ts, Playwright compile preview' },
   { area: 'Execution', item: 'Cross-intent netting (X01), parallel worlds (F42)', status: 'TESTED', evidence: 'netting.test.ts, worlds.test.ts' },
   { area: 'Liquidity', item: 'Shard leases, adaptive layout, LP deposit/withdraw/split/merge/pause', status: 'TESTED', evidence: 'lp-shards.test.ts (VM + concurrency)' },

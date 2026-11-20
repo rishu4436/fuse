@@ -30,11 +30,15 @@ export function Logo({ className }: { className?: string }) {
 function HackathonBanner() {
   const pres = process.env.NEXT_PUBLIC_PRESENTATION_URL;
   const donation = process.env.NEXT_PUBLIC_DONATION_ADDRESS;
+  const live = process.env.NEXT_PUBLIC_LIVE_URL;
+  const hosted = process.env.NEXT_PUBLIC_FUSE_HOSTED === '1';
   return (
     <div className="border-b hairline bg-ink-900/80 text-[11.5px] text-fog-300">
       <div className="mx-auto flex max-w-[1400px] flex-wrap items-center gap-x-5 gap-y-1 px-5 py-2">
         <span className="font-medium text-fog-100">BCH BLAZE 2026</span>
         {pres ? <a className="hover:text-volt-300" href={pres} target="_blank" rel="noreferrer">Presentation ↗</a> : <span className="text-fog-400">Presentation: link pending</span>}
+        {live ? <a className="hover:text-volt-300" href={live} target="_blank" rel="noreferrer">Live demo: {live.replace('https://', '')} ↗</a> : null}
+        {hosted ? <span className="rounded border border-amber-400/30 px-1.5 text-amber-200" title="The FUSE API runs in-process in a serverless function: in-memory, per-instance state that resets on a cold start; reference solvers run one pass per request.">Hosted demo: LOCAL simulation, ephemeral state</span> : null}
         <a className="hover:text-volt-300" href="https://github.com/rishu4436/fuse" target="_blank" rel="noreferrer">Source on GitHub ↗</a>
         <span className="min-w-0 truncate">EMBER2026 donations (CashTokens):{' '}
           {donation ? <code className="num text-fog-100">{donation}</code> : <span className="text-fog-400">address not published yet (set by owner)</span>}

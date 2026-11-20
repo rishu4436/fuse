@@ -1,6 +1,6 @@
 {
   "generatedAt": "2026-11-20",
-  "note": "sha256 over the committed file bytes. checkedAt is copied from each file where present. No item reflects a broadcast or a deployment.",
+  "note": "sha256 over the committed file bytes. checkedAt is copied from each file where present. Only the evidence/mainnet/* items reflect broadcast mainnet transactions (owner-authorized, small value, swept back).",
   "items": [
     {
       "path": "evidence/cauldron-pool-verification.json",
@@ -33,6 +33,30 @@
       "producedBy": "scripts/fep1-vectors.ts",
       "mode": "deterministic",
       "description": "FEP-1 conformance vectors from a public test-only key (X04)"
+    },
+    {
+      "path": "evidence/mainnet/run.json",
+      "sha256": "22288dadd7f14a595a74f37fed0eabf7d8364fb13e5fa01845db5a7767e8b069",
+      "checkedAt": "2026-11-20T16:37:12.878Z",
+      "producedBy": "scripts/mainnet/fuse-mainnet.ts + scripts/mainnet/verify-run.ts",
+      "mode": "MAINNET (owner-authorized broadcast)",
+      "description": "Owner-authorized small-value mainnet test plan: FlashVault genesis, flash use, LP deposit, LP withdraw, sweep. All 5 txs in block 978191, raw re-hashed locally, inclusion cross-checked on Chaingraph"
+    },
+    {
+      "path": "evidence/mainnet/flash-certificate.json",
+      "sha256": "27d753e38fc65231ed003939fbe382320e7bbbbdc3d1d6170cb1af4b4773b4bb",
+      "checkedAt": "2026-11-20T16:37:12.878Z",
+      "producedBy": "scripts/mainnet/fuse-mainnet.ts certificate",
+      "mode": "MAINNET (owner-authorized broadcast)",
+      "description": "Execution certificate of mainnet flash tx d50fed30\u202666fe, verified against chain data (VERIFIED, 2 confirmations)"
+    },
+    {
+      "path": "evidence/mainnet/underpay-local-rejection.txt",
+      "sha256": "58ca073e153c071ac71ce0d587efe6bccfda2dacce766ac041562682710b2710",
+      "checkedAt": "2026-11-20T16:37:12.878Z",
+      "producedBy": "scripts/mainnet/fuse-mainnet.ts underpay",
+      "mode": "LOCAL VM (not broadcast)",
+      "description": "Preflight of a 1-sat-short flash repayment rejected by the local BCH 2026 VM; never broadcast (the txid shown was never sent)"
     }
   ],
   "notRecorded": [

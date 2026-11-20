@@ -1,0 +1,105 @@
+{
+ "network": "mainnet",
+ "explorer": "https://bchexplorer.cash/tx/",
+ "vault": {
+  "address": "bitcoincash:rwt8qfmgcfuvuad7jxueq56v8dy5kld53202u6vgm2enc40c9u62vkr0ud034",
+  "category": "9a7a2c67cd58129a33efcf47a91708f52991e0068e04f747133976d4ee17ec21",
+  "contract": "FlashVaultBCH (CashScript 0.14)",
+  "feeBps": 9,
+  "minFee": 100,
+  "principal": 20000,
+  "status": "swept (identity NFT burned)"
+ },
+ "txs": [
+  {
+   "step": "deploy/2 genesis + fund FlashVault",
+   "txid": "481c0949a0908ed9c763e6544a7a18a76902687a0c36402fa7dc892f89fc6fc4",
+   "fee": "564",
+   "at": "2026-11-20T16:13:27.067Z",
+   "rehashedTxidMatches": true,
+   "sizeBytes": 281,
+   "confirmed": true,
+   "blockHeight": 978191,
+   "blockHash": "0000000000000000001e7fe9f421f3d3eeec316534c466b70cf87e9957ea693c",
+   "confirmations": 2,
+   "link": "https://bchexplorer.cash/tx/481c0949a0908ed9c763e6544a7a18a76902687a0c36402fa7dc892f89fc6fc4"
+  },
+  {
+   "step": "flash use (borrow + repay principal + fee, one tx)",
+   "txid": "d50fed30913d4f11912bed073d623eaf1f7e07b9571197fa40d4bc6d073566fe",
+   "fee": "1084",
+   "at": "2026-11-20T16:15:22.149Z",
+   "rehashedTxidMatches": true,
+   "sizeBytes": 541,
+   "confirmed": true,
+   "blockHeight": 978191,
+   "blockHash": "0000000000000000001e7fe9f421f3d3eeec316534c466b70cf87e9957ea693c",
+   "confirmations": 2,
+   "link": "https://bchexplorer.cash/tx/d50fed30913d4f11912bed073d623eaf1f7e07b9571197fa40d4bc6d073566fe"
+  },
+  {
+   "step": "LP deposit 10000 sats (owner path, 0x61)",
+   "txid": "234b1e1db49e79072dc5a470057b9ebed4bebdcdaae523c1ef47b24e9e431037",
+   "fee": "1288",
+   "at": "2026-11-20T16:16:35.563Z",
+   "rehashedTxidMatches": true,
+   "sizeBytes": 643,
+   "confirmed": true,
+   "blockHeight": 978191,
+   "blockHash": "0000000000000000001e7fe9f421f3d3eeec316534c466b70cf87e9957ea693c",
+   "confirmations": 2,
+   "link": "https://bchexplorer.cash/tx/234b1e1db49e79072dc5a470057b9ebed4bebdcdaae523c1ef47b24e9e431037"
+  },
+  {
+   "step": "LP withdraw 10000 sats (owner path, 0x61)",
+   "txid": "84a4a223cf5d298b975c632dde682dd0a59d167f119d5cdd4d39cd436ddbac7a",
+   "fee": "1006",
+   "at": "2026-11-20T16:18:30.268Z",
+   "rehashedTxidMatches": true,
+   "sizeBytes": 502,
+   "confirmed": true,
+   "blockHeight": 978191,
+   "blockHash": "0000000000000000001e7fe9f421f3d3eeec316534c466b70cf87e9957ea693c",
+   "confirmations": 2,
+   "link": "https://bchexplorer.cash/tx/84a4a223cf5d298b975c632dde682dd0a59d167f119d5cdd4d39cd436ddbac7a"
+  },
+  {
+   "step": "sweep (vault owner path + wallet coins \u2192 wallet; identity NFT burned)",
+   "txid": "fa0c5163b8490a12d995f09ebc6c5cc32ebe3b3fc104951819b7cfee5d74549b",
+   "fee": "1378",
+   "at": "2026-11-20T16:20:19.355Z",
+   "rehashedTxidMatches": true,
+   "sizeBytes": 688,
+   "confirmed": true,
+   "blockHeight": 978191,
+   "blockHash": "0000000000000000001e7fe9f421f3d3eeec316534c466b70cf87e9957ea693c",
+   "confirmations": 2,
+   "link": "https://bchexplorer.cash/tx/fa0c5163b8490a12d995f09ebc6c5cc32ebe3b3fc104951819b7cfee5d74549b"
+  }
+ ],
+ "checkedAt": "2026-11-20T16:37:12.878Z",
+ "tipHeight": 978192,
+ "totalMinerFeesSats": "5320",
+ "wallet": "bitcoincash:qqtvuzkypa5y75jl05hatzh8jlfsly2d6v28mh8ge9",
+ "funding": {
+  "txid": "9a7a2c67cd58129a33efcf47a91708f52991e0068e04f747133976d4ee17ec21",
+  "vout": 0,
+  "satoshis": 751714,
+  "from": "owner"
+ },
+ "underpay": {
+  "result": "REJECTED locally by the BCH 2026 VM (OP_VERIFY failed at input 0: repaid 20099 < 20100 required). Never broadcast; cost 0 sats."
+ },
+ "independentCrossCheck": {
+  "source": "Chaingraph (gql.chaingraph.pat.mn)",
+  "checkedAt": "2026-11-20T16:39:08.971074Z",
+  "result": "all 5 txids found with block_inclusions height 978191"
+ },
+ "certificate": {
+  "file": "evidence/mainnet/flash-certificate.json",
+  "certificateId": "cert_d50fed30913d4f11912bed07",
+  "status": "VERIFIED",
+  "reader": "bchexplorer.cash esplora; inclusion cross-checked on Chaingraph"
+ },
+ "finalWalletBalanceSats": 746394
+}

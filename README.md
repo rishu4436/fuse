@@ -1,5 +1,7 @@
 # FUSE: intent execution for Bitcoin Cash
 
+**Live demo: https://fuse-rust-eight.vercel.app** (hosted LOCAL simulation; mainnet panels READ-ONLY; the site never broadcasts).
+
 FUSE runs intent auctions on Bitcoin Cash. A user states what they want and the most they will spend. Independent
 solvers bid **complete, atomic transactions** that combine Cauldron pools, their own inventory and **FlashVault**
 covenant liquidity, which is borrowed and repaid inside the same transaction. FUSE accepts a bid only after it passes
@@ -7,8 +9,11 @@ the BCH 2026 VM and the user's outcome has been recomputed from the transaction 
 **certificate** that anyone can verify independently against chain data.
 
 > **Honesty first.** The demo runs on a local BCH VM (cashscript `MockNetworkProvider`, real compiled bytecode) with
-> simulated coins. Mainnet panels are **READ-ONLY**. **No mainnet or chipnet transaction has been broadcast and no
-> contract is deployed.** See [docs/STATUS.md](docs/STATUS.md).
+> simulated coins. Mainnet panels are **READ-ONLY**. **Mainnet:** one owner-authorized, small-value test run of a real
+> FlashVaultBCH on BCH mainnet ([docs/DEMO-RUNBOOK.md](docs/DEMO-RUNBOOK.md#mainnet-results-20-nov-2026)): genesis [`481c0949a090…`](https://bchexplorer.cash/tx/481c0949a0908ed9c763e6544a7a18a76902687a0c36402fa7dc892f89fc6fc4),
+> flash use [`d50fed30913d…`](https://bchexplorer.cash/tx/d50fed30913d4f11912bed073d623eaf1f7e07b9571197fa40d4bc6d073566fe) (its certificate VERIFIED against chain data), LP deposit [`234b1e1db49e…`](https://bchexplorer.cash/tx/234b1e1db49e79072dc5a470057b9ebed4bebdcdaae523c1ef47b24e9e431037), LP withdraw
+> [`84a4a223cf5d…`](https://bchexplorer.cash/tx/84a4a223cf5d298b975c632dde682dd0a59d167f119d5cdd4d39cd436ddbac7a) and a sweep [`fa0c5163b849…`](https://bchexplorer.cash/tx/fa0c5163b8490a12d995f09ebc6c5cc32ebe3b3fc104951819b7cfee5d74549b) back to the wallet. All 5 are in block 978191. Miner fees: 5,320 sats in total.
+> An underpaying flash was rejected by the local VM and never sent. The hosted site never broadcasts. No chipnet transaction was made. See [docs/STATUS.md](docs/STATUS.md).
 
 ## What is real
 

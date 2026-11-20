@@ -1,0 +1,145 @@
+{
+ "certificate": {
+  "schema": "fuse.certificate/v1",
+  "certificateId": "cert_d50fed30913d4f11912bed07",
+  "intentId": "mainnet_flash_d50fed30913d",
+  "intentCommitment": "576acedc4ce7cb4925e75418612de9321fa18ce53ae6da451564d469c412743d",
+  "policyCommitment": null,
+  "network": "mainnet",
+  "executionClass": "ATOMIC_SINGLE_TX",
+  "solverId": "fuse-operator",
+  "quoteCommitment": "c57f75b22a994c229eab671c03c6eab80e3408b98e3171d060b3485414b412ba",
+  "contracts": [
+   {
+    "role": "vault",
+    "name": "FlashVaultBCH",
+    "lockingBytecode": "aa2096702768c278ce75be91b990534c3b494b7db48a9eae6988dab33c55f82f34a687"
+   }
+  ],
+  "transactions": [
+   {
+    "txid": "d50fed30913d4f11912bed073d623eaf1f7e07b9571197fa40d4bc6d073566fe",
+    "blockHeight": 978191,
+    "blockHash": "0000000000000000001e7fe9f421f3d3eeec316534c466b70cf87e9957ea693c"
+   }
+  ],
+  "inputs": [
+   {
+    "txid": "d50fed30913d4f11912bed073d623eaf1f7e07b9571197fa40d4bc6d073566fe",
+    "outpoint": "481c0949a0908ed9c763e6544a7a18a76902687a0c36402fa7dc892f89fc6fc4:0"
+   },
+   {
+    "txid": "d50fed30913d4f11912bed073d623eaf1f7e07b9571197fa40d4bc6d073566fe",
+    "outpoint": "481c0949a0908ed9c763e6544a7a18a76902687a0c36402fa7dc892f89fc6fc4:1"
+   }
+  ],
+  "outputs": [
+   {
+    "txid": "d50fed30913d4f11912bed073d623eaf1f7e07b9571197fa40d4bc6d073566fe",
+    "vout": 0,
+    "lockingBytecode": "aa2096702768c278ce75be91b990534c3b494b7db48a9eae6988dab33c55f82f34a687",
+    "satoshis": "20100",
+    "token": {
+     "category": "9a7a2c67cd58129a33efcf47a91708f52991e0068e04f747133976d4ee17ec21",
+     "amount": "0",
+     "nft": {
+      "capability": "mutable",
+      "commitment": "0100000000000000640000000000000000"
+     }
+    },
+    "role": "vault-continuation"
+   },
+   {
+    "txid": "d50fed30913d4f11912bed073d623eaf1f7e07b9571197fa40d4bc6d073566fe",
+    "vout": 1,
+    "lockingBytecode": "76a91416ce0ac40f684f525f7d2fd58ae797d30f914dd388ac",
+    "satoshis": "729966",
+    "role": "change"
+   }
+  ],
+  "vaultContinuations": [
+   {
+    "txid": "d50fed30913d4f11912bed073d623eaf1f7e07b9571197fa40d4bc6d073566fe",
+    "inputIndex": 0,
+    "minReturn": "20100",
+    "asset": "BCH"
+   }
+  ],
+  "fees": {
+   "minerFeeSats": "1084",
+   "liquidityFee": "100",
+   "solverFee": "0"
+  },
+  "outcome": {
+   "ownerLockingBytecode": "76a91416ce0ac40f684f525f7d2fd58ae797d30f914dd388ac",
+   "ownerReceives": [
+    {
+     "asset": "BCH",
+     "amount": "729966"
+    }
+   ]
+  },
+  "checks": [
+   {
+    "name": "local-vm",
+    "ok": true
+   }
+  ],
+  "confirmation": "CONFIRMED",
+  "simulated": false,
+  "issuedAt": 1795192714,
+  "issuer": "fuse-mainnet-script",
+  "commitment": "780a8867b1e855005e91bf899ecd60d198827947da3b24d02665b60b3e60b45a"
+ },
+ "verification": {
+  "status": "VERIFIED",
+  "checks": [
+   {
+    "name": "schema",
+    "ok": true
+   },
+   {
+    "name": "certificate-commitment",
+    "ok": true
+   },
+   {
+    "name": "tx-hash:d50fed30913d",
+    "ok": true
+   },
+   {
+    "name": "confirmations:d50fed30913d",
+    "ok": true,
+    "detail": "2"
+   },
+   {
+    "name": "input:481c0949a090",
+    "ok": true
+   },
+   {
+    "name": "input:481c0949a090",
+    "ok": true
+   },
+   {
+    "name": "output:d50fed30:0",
+    "ok": true,
+    "detail": "vault-continuation"
+   },
+   {
+    "name": "output:d50fed30:1",
+    "ok": true,
+    "detail": "change"
+   },
+   {
+    "name": "vault-continuation:0",
+    "ok": true,
+    "detail": "returned 20100, required 20100"
+   },
+   {
+    "name": "owner-receives:BCH",
+    "ok": true,
+    "detail": "chain shows 729966, claimed 729966"
+   }
+  ],
+  "note": "Verified against independent chain data. This is execution verification, not a security audit."
+ }
+}

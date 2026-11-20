@@ -19,7 +19,7 @@ const [step = 'status', ...flags] = process.argv.slice(2);
 const BROADCAST = flags.includes('--broadcast');
 const arg = (k: string, d: bigint) => { const i = flags.indexOf(`--${k}`); return i >= 0 ? BigInt(flags[i + 1]) : d; };
 
-interface State { params?: Omit<BchVaultParams, 'feeBps' | 'minFee' | 'maxExposure'> & { feeBps: string; minFee: string; maxExposure: string }; vault?: { txid: string; vout: number; satoshis: string; commitment: string } | null; feesPaid: string; txs: Array<{ step: string; txid: string; fee: string; at: string }>; lastFlash?: { txid: string; raw: string; fee: string } }
+interface State { params?: Omit<BchVaultParams, 'feeBps' | 'minFee' | 'maxExposure'> & { feeBps: string; minFee: string; maxExposure: string }; vault?: { txid: string; vout: number; satoshis: string; commitment: string } | null; feesPaid: string; txs: Array<{ step: string; txid: string; fee: string; at: string }>; lastFlash?: { txid: string; raw: string; fee: string }; spent?: string[] }
 const loadState = (): State => (existsSync(STATE) ? JSON.parse(readFileSync(STATE, 'utf8')) : { feesPaid: '0', txs: [] });
 const saveState = (s: State) => writeFileSync(STATE, JSON.stringify(s, null, 1), { mode: 0o600 });
 const paramsOf = (s: State): BchVaultParams | null => (s.params ? { ...s.params, feeBps: BigInt(s.params.feeBps), minFee: BigInt(s.params.minFee), maxExposure: BigInt(s.params.maxExposure) } : null);
@@ -32,14 +32,17 @@ async function http(path: string, body?: string): Promise<string> {
       const p = run('curl', args, { maxBuffer: 16 * 1024 * 1024 });
       if (body) { p.child.stdin?.write(body); p.child.stdin?.end(); }
       return (await p).stdout.trim();
-    } catch (e) { const out = String((e as { stdout?: string }).stdout ?? '') || String((e as Error).message); if (body || i >= 2 || /RPC error|No such/.test(out)) throw new Error(out.slice(0, 300)); await new Promise((r) => setTimeout(r, 1500)); }
+    } catch (e) { const out = String((e as { stdout?: string }).stdout ?? '') || String((e as Error).message); if (body || i >= 6 || /RPC error|No such/.test(out)) throw new Error(out.slice(0, 300)); await new Promise((r) => setTimeout(r, 1500)); }
   }
 }
 const tip = async () => Number(await http('/blocks/tip/height'));
-async function walletCoins(address: string): Promise<P.Coin[]> {
+async function walletCoins(address: string, spent: string[] = []): Promise<P.Coin[]> {
   const list = JSON.parse(await http(`/address/${address}/utxo`)) as Array<{ txid: string; vout: number; value: number }>;
   const coins: P.Coin[] = [];
   for (const u of list) {
+    // the address index can lag the mempool: drop coins an already-broadcast tx has spent
+    const os = JSON.parse(await http(`/tx/${u.txid}/outspend/${u.vout}`)) as { spent: boolean };
+    if (os.spent || spent.includes(`${u.txid}:${u.vout}`)) continue;
     const tx = decodeTransaction(hexToBin(await http(`/tx/${u.txid}/hex`)));
     if (typeof tx === 'string') throw new Error(tx);
     const out = tx.outputs[u.vout];
@@ -65,10 +68,12 @@ async function maybeBroadcast(name: string, s: ReturnType<typeof P.sized>, repor
   if (!BROADCAST) { console.log('DRY RUN: not broadcast. Re-run with --broadcast to send.'); return false; }
   const txid = await http('/tx', s.raw);
   if (txid !== s.txid) throw new Error(`endpoint returned ${txid}, expected ${s.txid}`);
+  st.spent = [...(st.spent ?? []), ...s.template.inputs.map((i) => `${i.txid}:${i.vout}`)];
   st.feesPaid = String(BigInt(st.feesPaid) + s.fee); st.txs.push({ step: name, txid, fee: String(s.fee), at: new Date().toISOString() });
   after(txid); saveState(st);
   mkdirSync(EVIDENCE, { recursive: true });
-  writeFileSync(`${EVIDENCE}run.json`, JSON.stringify({ network: 'mainnet', explorer: 'https://bchexplorer.cash/tx/', vault: st.params ? { address: P.vaultAddress(paramsOf(st)!), category: st.params.vaultCategory } : null, txs: st.txs }, null, 1));
+  const prev = existsSync(`${EVIDENCE}run.json`) ? JSON.parse(readFileSync(`${EVIDENCE}run.json`, 'utf8')) : {};
+  writeFileSync(`${EVIDENCE}run.json`, JSON.stringify({ ...prev, network: 'mainnet', explorer: 'https://bchexplorer.cash/tx/', vault: st.params ? { address: P.vaultAddress(paramsOf(st)!), category: st.params.vaultCategory } : (prev.vault ?? null), txs: st.txs }, null, 1));
   console.log(`BROADCAST OK ${txid}`);
   return true;
 }
@@ -77,7 +82,7 @@ const vaultFrom = (s: ReturnType<typeof P.sized>, txid: string) => { const o = s
 async function main() {
   const { priv, op, address } = loadKey();
   const st = loadState(); const params = paramsOf(st); const vault = vaultOf(st);
-  const coins = step === 'certificate' ? [] : await walletCoins(address);
+  const coins = step === 'certificate' ? [] : await walletCoins(address, st.spent ?? []);
   const bal = coins.reduce((a, c) => a + c.satoshis, 0n);
   const need = (c: P.Coin | undefined, msg: string) => { if (!c) throw new Error(msg); return c; };
   switch (step) {
@@ -130,7 +135,12 @@ async function main() {
       return;
     }
     case 'certificate': {
-      if (!params || !st.lastFlash) throw new Error('no broadcast flash tx yet');
+      if (!st.lastFlash) throw new Error('no broadcast flash tx yet');
+      // after a sweep the live params are cleared; rebuild them deterministically from the recorded category
+      const rec = existsSync(`${EVIDENCE}run.json`) ? (JSON.parse(readFileSync(`${EVIDENCE}run.json`, 'utf8')) as { vault?: { address: string; category: string } }).vault : undefined;
+      const params = paramsOf(st) ?? (rec ? P.vaultParams(rec.category, op) : null);
+      if (!params) throw new Error('vault params unknown');
+      if (rec && P.vaultAddress(params) !== rec.address) throw new Error('rebuilt vault params do not match the recorded vault address');
       const txid = flags.find((f) => /^[0-9a-f]{64}$/.test(f)) ?? st.lastFlash.txid;
       const reader: ChainReader = { network: 'mainnet', tipHeight: tip, getRawTransaction: async (t) => { try { const raw = await http(`/tx/${t}/hex`); const s = JSON.parse(await http(`/tx/${t}/status`)) as { block_height?: number; block_hash?: string }; return { rawHex: raw, blockHeight: s.block_height ?? null, blockHash: s.block_hash ?? null }; } catch { return null; } } };
       const got = await reader.getRawTransaction(txid); if (!got) throw new Error('flash tx not found on chain');

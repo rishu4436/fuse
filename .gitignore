@@ -21,3 +21,5 @@ test-results/
 playwright-report/
 *.tsbuildinfo
 .data/
+apps/web/embedded/
+.vercel

@@ -21,15 +21,24 @@ search (F27)**, both advice only. **Mainnet tx explorer (F50)**: raw tx re-hashe
 state labelled. **XO (F48)**: official templates validated and pinned with @xo-cash/utils, payout scripts compiled by
 the XO compiler. Moria V1 history: 12/12 MUSD transactions replayed valid (history only; Moria V1 is disabled).
 
-**Tests:** vitest 140/140 (32 files), Playwright 78 passed (12 skipped by design), tsc 0 errors, eslint 0 problems,
+**Tests:** vitest 143/143 (34 files), Playwright 78 passed (12 skipped by design) locally and again against the hosted URL (`--workers=1`), tsc 0 errors, eslint 0 problems,
 next build OK. See [TEST-REPORT.md](TEST-REPORT.md). Screenshots: `evidence/screenshots/*.png` (1440×900).
 
-**Live transactions:** **none.** No mainnet or chipnet transaction has been broadcast. No contract is deployed.
-No external notification has been sent.
+**Live transactions:** 5 owner-authorized, small-value BCH **mainnet** txs from the FUSE test wallet. All are in block 978191.
+* FlashVaultBCH genesis [`481c0949a090…`](https://bchexplorer.cash/tx/481c0949a0908ed9c763e6544a7a18a76902687a0c36402fa7dc892f89fc6fc4)
+* Flash use [`d50fed30913d…`](https://bchexplorer.cash/tx/d50fed30913d4f11912bed073d623eaf1f7e07b9571197fa40d4bc6d073566fe). Its certificate is VERIFIED.
+* LP deposit [`234b1e1db49e…`](https://bchexplorer.cash/tx/234b1e1db49e79072dc5a470057b9ebed4bebdcdaae523c1ef47b24e9e431037)
+* LP withdraw [`84a4a223cf5d…`](https://bchexplorer.cash/tx/84a4a223cf5d298b975c632dde682dd0a59d167f119d5cdd4d39cd436ddbac7a)
+* Sweep back to the wallet [`fa0c5163b849…`](https://bchexplorer.cash/tx/fa0c5163b8490a12d995f09ebc6c5cc32ebe3b3fc104951819b7cfee5d74549b). The vault NFT is burned, so no contract remains funded.
+
+Miner fees were 5,320 sats in total. No chipnet transaction was made, and no external notification has been sent.
+**Hosted demo:** https://fuse-rust-eight.vercel.app. It is the LOCAL simulation with the API running in-process.
+State is ephemeral and kept per instance, and the site has no broadcast path.
 
 **Blockers**
-1. Mainnet transaction feature (Mainnet track): needs explicit owner authorization, an owner-held funded wallet and a
-   real wallet. Pairing and signing requests are IMPLEMENTED, not tested with a real wallet. No broadcast route exists.
+1. A user-wallet mainnet flow (WizardConnect signing) is still untested with a real wallet. The Mainnet-track
+   transactions were made from the owner-funded box wallet with `scripts/mainnet/` instead. The app has no broadcast
+   route.
 2. Electrum/Fulcrum WSS ports blocked from the build box: chipnet and XO Engine sessions are unreachable from here.
 3. Paryon write paths (F17–F20, F29, F27 execution): `@paryonusd/library` builders are not published.
 4. Owner-only actions: DoraHacks registration, roll call, Telegram confirmation, EMBER2026 donation address

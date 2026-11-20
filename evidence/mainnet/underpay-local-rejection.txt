@@ -1,0 +1,13 @@
+── FUSE mainnet preflight: underpay (must FAIL; never broadcast) ──
+network            BCH mainnet
+txid (if sent)     a69673d6515a755a89531dd542800d9a4bc73c289873d66bdf809916a21e832b
+size / miner fee   541 bytes / 1084 sats (cap 5000)
+inputs:
+  0  481c0949a0908ed9c763e6544a7a18a76902687a0c36402fa7dc892f89fc6fc4:0  20000 sats  flashvault-bch  +identity NFT
+  1  481c0949a0908ed9c763e6544a7a18a76902687a0c36402fa7dc892f89fc6fc4:1  731150 sats  p2pkh
+outputs:
+  0  20099 sats  principal + flash fee 99  NFT mutable 0100000000000000630000000000000000
+  1  729967 sats  change
+local VM verification: FAIL — bch-vm-2026: Unable to verify transaction: error in evaluating input index 0: Program failed an OP_VERIFY operation.
+recoverability     every output pays the operator wallet or the operator-owned vault; the vault owner path (0x61 signature by the wallet key) can always withdraw
+EXPECTED: the BCH VM rejects a repayment 1 sat short. Not broadcast; costs nothing.

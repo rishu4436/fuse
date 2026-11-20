@@ -99,3 +99,24 @@ npx playwright test
 * Paryon write paths: BLOCKED (see INTEGRATION-FEASIBILITY.md).
 * External notifications: adapters are tested with mocked HTTP only; nothing was sent to a real webhook, Telegram chat or mailbox.
 * XO Engine sessions: Electrum WSS is not reachable from the build box.
+
+## Round 4 (20 Nov 2026): hosting and mainnet
+
+### Counts
+
+* **Vitest: 143/143 across 34 files.** The new files are:
+  * `tests/mainnet-plan.test.ts` (2). It rehearses the whole mainnet plan offline in the BCH 2026 VM:
+    genesis → flash → underpay (VM-rejected) → deposit → withdraw → certificate (VERIFIED, including the template
+    rebuilt purely from chain raws) → sweep. It also checks the cap refusals.
+  * `services/api/test/embedded.test.ts` (1). Hosted mode labels itself, settles an auction lazily through the
+    in-process solvers, and offers no broadcasting.
+* **Playwright against https://fuse-rust-eight.vercel.app with `--workers=1`: 78 passed, 12 skipped.**
+  * A first run with parallel workers gave 77 passed and 1 failed (the replay pick).
+  * The cause was parallel clients landing on different serverless instances, which do not share state. This is a
+    documented hosted-mode limitation.
+
+### Mainnet (owner-authorized, small value)
+
+* Five txs were sent and confirmed in block 978191; see `evidence/mainnet/run.json`.
+* The flash certificate is VERIFIED against chain data.
+* The underpay case was rejected locally and never sent.
