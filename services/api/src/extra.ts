@@ -11,7 +11,7 @@ import { radar, parseLoan, readiness, evaluateRules, sentinel, assessLoan, rateA
 import { signRecipe, verifyRecipe, PRESETS, LEGS, type Recipe, type Leg } from '@fuse/recipes';
 import { recomputeOutcome } from '@fuse/auction';
 import { NotificationCenter, adaptersFromEnv, channelStatus, dispatch, type ChannelId, type Notification } from '@fuse/notifications';
-import { vaultHealth, buildDeposit, buildWithdraw, buildMerge, buildSplit, buildPause, type ShardRef } from '@fuse/flash-liquidity';
+import { vaultHealth, lpRiskHistory, type VaultSnapshot, buildDeposit, buildWithdraw, buildMerge, buildSplit, buildPause, type ShardRef } from '@fuse/flash-liquidity';
 import { artifactManifest, artifacts } from '@fuse/contracts';
 import { contractUnlocks, signInputs, finalize, verifyTemplateAndRaw, inspectRaw, txidOfRaw, sourceOutputsOf, type TxTemplate } from '@fuse/transaction-composer';
 import { PARYON_OPERATION_STATUS } from '@fuse/protocol-adapters';
@@ -306,5 +306,16 @@ export function registerExtra(app: FastifyInstance, state: FuseState) {
   // ---- F50 READ-ONLY mainnet explorer (raw re-hashed locally) ----
   app.get('/api/explorer/mainnet/:txid', async (req, reply) => {
     try { return await fetchMainnetTx((req.params as { txid: string }).txid); } catch (e) { const code = (e as { code?: string }).code ?? 'ERROR'; return reply.status(code === 'BAD_TXID' ? 400 : code === 'HASH_MISMATCH' ? 502 : 404).send({ error: code, message: (e as Error).message }); }
+  });
+  // ---- F40 LP risk history: vault health snapshot persisted on every accepted tx / LP op / reset ----
+  const snapVault = async (event: string) => { const sh = await mgr(); const h = vaultHealth(sh.all(), sh.leased().map((l) => l.outpoint), m().vaultParams.maxExposure); store.putVaultSnapshot(event, h); };
+  const SNAP_EVENTS = new Set(['TX_ACCEPTED', 'LP_OPERATION', 'WORLD_RESET']);
+  state.listeners.add((e) => { if (SNAP_EVENTS.has(e.type)) void snapVault(e.type).catch(() => undefined); });
+  void snapVault('BOOT').catch(() => undefined);
+  app.get('/api/liquidity/history', async () => {
+    const rows = store.listVaultSnapshots<VaultSnapshot>();
+    const flows = new Map<number, bigint>();
+    rows.forEach((r, i) => { if (i && (r.event === 'LP_OPERATION' || r.event === 'WORLD_RESET')) { const p = rows[i - 1].body; flows.set(i, (r.body.totalSats - p.totalSats) - (r.body.cumulativeFees - p.cumulativeFees)); } });
+    return { network: 'local', simulated: true, metrics: lpRiskHistory(rows.map((r) => r.body), flows), series: rows.map((r) => ({ at: r.at, event: r.event, totalSats: r.body.totalSats, utilizationBps: r.body.utilizationBps, cumulativeFees: r.body.cumulativeFees, flashCount: r.body.flashCount })), note: 'Drawdown is measured on vault sats net of LP deposits/withdrawals; persisted per API session (the LOCAL chain resets on restart).' };
   });
 }

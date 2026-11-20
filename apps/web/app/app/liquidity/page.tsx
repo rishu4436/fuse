@@ -10,6 +10,31 @@ interface Health { shards: number; totalSats: bigint; leasedSats: bigint; utiliz
 interface L { health: Health; params: { feeBps: bigint; minFee: bigint; maxExposure: bigint }; leases: Array<{ id: string; outpoint: string; holder: string }>; plan: { target: bigint[]; rationale: string } }
 interface V { shards: Array<{ outpoint: string; satoshis: bigint; state: { flashCount: bigint; cumulativeFees: bigint; paused: boolean } }> }
 
+interface Hist { metrics: { points: number; peakUtilizationBps: bigint; avgUtilizationBps: bigint; maxDrawdownBps: bigint; feesEarned: bigint; flashes: bigint; pausedObservations: number }; series: Array<{ at: number; event: string; totalSats: bigint; utilizationBps: bigint }>; note: string }
+function Spark({ values, tone }: { values: number[]; tone: string }) {
+  if (values.length < 2) return <div className="h-16 text-[11px] text-fog-400">Needs at least two snapshots.</div>;
+  const lo = Math.min(...values), hi = Math.max(...values), d = values.map((v, i) => `${i ? 'L' : 'M'}${((i / (values.length - 1)) * 300).toFixed(1)},${(56 - ((v - lo) / Math.max(1e-9, hi - lo)) * 48).toFixed(1)}`).join(' ');
+  return <svg viewBox="0 0 300 60" className="h-16 w-full" aria-hidden><path d={d} fill="none" strokeWidth="1.6" className={tone} /></svg>;
+}
+function RiskHistory() {
+  const h = usePoll<Hist>('/api/liquidity/history', 5000);
+  if (!h.data) return null;
+  const m = h.data.metrics, pct = (b: bigint) => `${(Number(b) / 100).toFixed(2)}%`;
+  return (
+    <Panel title="LP risk history" kicker={`${m.points} persisted snapshots this session`} mode="SIMULATION">
+      <div className="grid gap-5 md:grid-cols-[1fr_1fr_260px]" data-testid="lp-history">
+        <div><div className="mb-1 text-[11px] uppercase tracking-[0.08em] text-fog-400">Vault sats</div><Spark values={h.data.series.map((x) => Number(x.totalSats))} tone="stroke-volt-400" /></div>
+        <div><div className="mb-1 text-[11px] uppercase tracking-[0.08em] text-fog-400">Utilization</div><Spark values={h.data.series.map((x) => Number(x.utilizationBps))} tone="stroke-sky-ro" /></div>
+        <div className="grid grid-cols-2 gap-3">
+          <Stat label="Max drawdown" value={pct(m.maxDrawdownBps)} size="md" /><Stat label="Peak util." value={pct(m.peakUtilizationBps)} size="md" />
+          <Stat label="Fees earned" value={sats(m.feesEarned)} unit="sat" size="md" accent /><Stat label="Flash loans" value={String(m.flashes)} size="md" />
+        </div>
+      </div>
+      <p className="mt-3 text-[11px] text-fog-400">{h.data.note}</p>
+    </Panel>
+  );
+}
+
 export default function Liquidity() {
   const l = usePoll<L>('/api/liquidity', 3000);
   const v = usePoll<V>('/api/vault', 3000);
@@ -55,6 +80,7 @@ export default function Liquidity() {
           </form>
         </Panel>
       </div>
+      <div className="mt-5"><RiskHistory /></div>
     </div>
   );
 }

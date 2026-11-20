@@ -91,6 +91,7 @@ test.describe('feature flows', () => {
     await expect(page.locator('#lshard option').first()).toBeAttached();
     await page.getByTestId('lp-submit').click();
     await expect(page.getByTestId('lp-result')).toContainText('Accepted on the LOCAL chain');
+    await expect(page.getByTestId('lp-history')).toContainText('Max drawdown');
     await page.goto('/app/explorer');
     await page.getByTestId('tx-row').first().click();
     await expect(page.getByTestId('tx-detail')).toBeVisible();

@@ -63,3 +63,17 @@ describe('F48 XO API', () => {
     expect(p.lockingBytecode).toMatch(/^76a914[0-9a-f]{40}88ac$/); expect(p.address).toMatch(/^bchtest:/);
   });
 });
+
+describe('F40 LP history API', () => {
+  it('persists a vault snapshot per LP op and nets the deposit out of the drawdown', async () => {
+    const before = await get<{ metrics: { points: number } }>('/api/liquidity/history');
+    const v = await get<{ shards: Array<{ outpoint: string }> }>('/api/vault');
+    const r = await post<{ ok: boolean }>('/api/liquidity/op', { op: 'deposit', shard: v.shards[0].outpoint, amount: '1000000' });
+    expect(r.ok).toBe(true);
+    await new Promise((x) => setTimeout(x, 300));
+    const h = await get<{ metrics: { points: number; maxDrawdownBps: bigint }; series: Array<{ event: string }> }>('/api/liquidity/history');
+    expect(h.metrics.points).toBeGreaterThan(before.metrics.points);
+    expect(h.series.some((x) => x.event === 'LP_OPERATION')).toBe(true);
+    expect(h.metrics.maxDrawdownBps).toBe(0n);
+  });
+});

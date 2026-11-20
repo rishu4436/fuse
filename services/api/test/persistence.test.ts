@@ -62,7 +62,7 @@ describe('API persistence (SQLite)', () => {
     expect((await get2<{ items: unknown[] }>('/api/notifications')).items.length).toBeGreaterThan(0);
     expect((await get2<Array<{ name: string; wins: number }>>('/api/solvers/performance')).find((p) => p.name === 'flash-solver')!.wins).toBe(1);
     const st = await get2<{ migrations: Array<{ version: number }>; counts: Record<string, number>; session: string }>('/api/store');
-    expect(st.session).toBe('sessionB'); expect(st.migrations.length).toBe(2);
+    expect(st.session).toBe('sessionB'); expect(st.migrations.map((m) => m.version)).toEqual([1, 2, 3]);
     expect(st.counts.intents).toBe(1); expect(st.counts.auctions).toBe(1); expect(st.counts.certificates).toBe(1);
     const ih = await get2<{ auctions: Array<{ status: string; restored: boolean }> }>('/api/intents/history');
     expect(ih.auctions[0]).toMatchObject({ status: 'SETTLED', restored: true });

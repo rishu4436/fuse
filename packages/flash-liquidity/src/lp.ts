@@ -92,3 +92,25 @@ export function vaultHealth(shards: ShardRef[], leasedOutpoints: string[], maxEx
     largestFreeSats: shards.filter((s) => !leasedOutpoints.includes(`${s.txid}:${s.vout}`)).reduce((m, s) => (s.satoshis > m ? s.satoshis : m), 0n),
   };
 }
+
+// ---- F40: LP risk history from persisted vault-health snapshots ----
+export interface VaultSnapshot { totalSats: bigint; leasedSats: bigint; utilizationBps: bigint; cumulativeFees: bigint; flashCount: bigint; paused: number; shards: number; largestFreeSats: bigint }
+/** Exact BigInt metrics over a snapshot series (oldest first). Drawdown is peak-to-trough decline of vault sats
+ *  NET of LP deposits/withdrawals (pass `flows` as signed principal changes keyed by series index). */
+export function lpRiskHistory(series: VaultSnapshot[], flows: Map<number, bigint> = new Map()) {
+  if (!series.length) return { points: 0, peakUtilizationBps: 0n, avgUtilizationBps: 0n, maxDrawdownBps: 0n, feesEarned: 0n, flashes: 0n, pausedObservations: 0, minLargestFreeSats: 0n };
+  let adj = 0n, peak = -1n, maxDd = 0n;
+  const navs = series.map((s, i) => { adj += flows.get(i) ?? 0n; return s.totalSats - adj; });
+  for (const v of navs) { if (v > peak) peak = v; if (peak > 0n) { const dd = ((peak - v) * 10_000n) / peak; if (dd > maxDd) maxDd = dd; } }
+  const first = series[0], last = series[series.length - 1];
+  return {
+    points: series.length,
+    peakUtilizationBps: series.reduce((m, s) => (s.utilizationBps > m ? s.utilizationBps : m), 0n),
+    avgUtilizationBps: series.reduce((a, s) => a + s.utilizationBps, 0n) / BigInt(series.length),
+    maxDrawdownBps: maxDd,
+    feesEarned: last.cumulativeFees - first.cumulativeFees,
+    flashes: last.flashCount - first.flashCount,
+    pausedObservations: series.filter((s) => s.paused > 0).length,
+    minLargestFreeSats: series.reduce((m, s) => (s.largestFreeSats < m ? s.largestFreeSats : m), first.largestFreeSats),
+  };
+}

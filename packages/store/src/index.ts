@@ -24,6 +24,10 @@ export const MIGRATIONS: Array<{ version: number; name: string; sql: string }> =
     CREATE TABLE recipes (id TEXT PRIMARY KEY, hash TEXT NOT NULL UNIQUE, author_pubkey TEXT NOT NULL, signature TEXT NOT NULL, body TEXT NOT NULL, verdict TEXT NOT NULL, created_at INTEGER NOT NULL);
     CREATE TABLE deliveries (seq INTEGER PRIMARY KEY AUTOINCREMENT, alert_id TEXT NOT NULL, channel TEXT NOT NULL, status TEXT NOT NULL, detail TEXT, at INTEGER NOT NULL);
   ` },
+  { version: 3, name: 'LP vault health snapshots (F40)', sql: `
+    CREATE TABLE vault_snapshots (seq INTEGER PRIMARY KEY AUTOINCREMENT, session TEXT NOT NULL, event TEXT NOT NULL, body TEXT NOT NULL, at INTEGER NOT NULL);
+    CREATE INDEX vault_snapshots_session ON vault_snapshots(session, seq);
+  ` },
 ];
 
 export type LedgerOutcome = 'WIN' | 'LOSS' | 'REJECTED' | 'LEASE_CONFLICT' | 'FALLBACK' | 'SETTLE_FAILED';
@@ -111,5 +115,7 @@ export class FuseStore {
     this.db.prepare('INSERT INTO recipes VALUES (?, ?, ?, ?, ?, ?, ?)').run(r.id, r.hash, r.authorPubkey, r.signature, enc(r.body), enc(r.verdict), Date.now());
   }
   listRecipes() { return (this.db.prepare('SELECT * FROM recipes ORDER BY created_at DESC').all() as Array<Record<string, string | number>>).map((r) => ({ id: r.id as string, hash: r.hash as string, authorPubkey: r.author_pubkey as string, signature: r.signature as string, body: dec(r.body as string), verdict: dec(r.verdict as string), createdAt: r.created_at as number })); }
+  putVaultSnapshot(event: string, body: unknown) { this.db.prepare('INSERT INTO vault_snapshots (session, event, body, at) VALUES (?, ?, ?, ?)').run(this.session, event, enc(body), Date.now()); }
+  listVaultSnapshots<T = unknown>(o: { session?: string; limit?: number } = {}) { return (this.db.prepare('SELECT * FROM vault_snapshots WHERE session = ? ORDER BY seq DESC LIMIT ?').all(o.session ?? this.session, o.limit ?? 500) as Array<Record<string, string | number>>).reverse().map((r) => ({ seq: r.seq as number, event: r.event as string, at: r.at as number, body: dec(r.body as string) as T })); }
   getRecipe(id: string) { return this.listRecipes().find((r) => r.id === id || r.hash === id); }
 }
