@@ -2,7 +2,7 @@
 
 Environment: Linux build box, Node v24.22.1, pnpm 9.15.4, cashc/cashscript 0.14.0, libauth 3.1.0-next.8,
 Next.js 15.5.29, Playwright 1.65.1 (Chrome). Run on 20 Nov 2026 (IST), branch `feat/phase-0-1-foundation`,
-base commit `781b54c`. Every number below comes from an actual run. Nothing is estimated.
+tested at commit `199570b` (docs commit follows). Every number below comes from an actual run. Nothing is estimated.
 
 | # | Command | Result |
 |---|---|---|
