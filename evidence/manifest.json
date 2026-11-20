@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-20",
+  "generatedAt": "2026-11-20T22:37:06.656267Z",
   "note": "sha256 over the committed file bytes. checkedAt is copied from each file where present. Only the evidence/mainnet/* items reflect broadcast mainnet transactions (owner-authorized, small value, swept back).",
   "items": [
     {
@@ -57,6 +57,76 @@
       "producedBy": "scripts/mainnet/fuse-mainnet.ts underpay",
       "mode": "LOCAL VM (not broadcast)",
       "description": "Preflight of a 1-sat-short flash repayment rejected by the local BCH 2026 VM; never broadcast (the txid shown was never sent)"
+    },
+    {
+      "path": "evidence/mainnet/live-run.json",
+      "sha256": "3548fb2171bdeee7cc2660e4593f44520bdb02437b7001367720e5224455ac95",
+      "description": "Round 4 live mainnet execution (hosted path)"
+    },
+    {
+      "path": "evidence/mainnet/live-vaults.json",
+      "sha256": "e0e273c792ff644558bcf1d5d63e219d50e3be29a69a68bfbee5c718d811bc90",
+      "description": "Round 4 live mainnet execution (hosted path)"
+    },
+    {
+      "path": "evidence/mainnet/certificates/1cb032299e5009c96195ecd3615d6a814c7670e9a437fc15b18d0912d03d5930.json",
+      "sha256": "5b73dfdba432aad2b02f11600f18a4faeb2827190e5ca918415867a089e51261",
+      "description": "Round 4 live mainnet execution (hosted path)"
+    },
+    {
+      "path": "evidence/mainnet/certificates/2f8503c88a3a65d2b6cc3e6dd71794a096acb67d78a7918d700696e6fd1c763e.json",
+      "sha256": "46d17f96acb68a363a9724541d69622f44ee881c645b3a057ef531e04c2ebe0c",
+      "description": "Round 4 live mainnet execution (hosted path)"
+    },
+    {
+      "path": "evidence/mainnet/certificates/7d5a261e800dd11f55f56e0756c5f82648d62e79cd4a01d248f222c8d59ebb79.json",
+      "sha256": "b35cbf1cc2d6dd004171665d2db05258d685fdb4c770f635850de26f91815503",
+      "description": "Round 4 live mainnet execution (hosted path)"
+    },
+    {
+      "path": "evidence/mainnet/certificates/994b63ba75533bb36506a406ac09737fb96812c45e9224ba089f0f3e66a3dd3f.json",
+      "sha256": "cdf40f035e47791eae9f0bce283e4b1085e1b98947f3d054e27c22b0c8c7c1f5",
+      "description": "Round 4 live mainnet execution (hosted path)"
+    },
+    {
+      "path": "evidence/screenshots/live-01-landing.png",
+      "sha256": "da78cd7c35e5a85b9a0a69cefe906bdb2bf5fe50f7bd80f911a6a6a63d3bf74d",
+      "description": "Round 4 live mainnet execution (hosted path)"
+    },
+    {
+      "path": "evidence/screenshots/live-02-overview.png",
+      "sha256": "4099a468caa1de2db5ed790662fe961966d1a973b2553520070efcf2bcdf8594",
+      "description": "Round 4 live mainnet execution (hosted path)"
+    },
+    {
+      "path": "evidence/screenshots/live-03-execute-flash-preflight.png",
+      "sha256": "f70c592cfd4b8ce800659f20e347d0af1ee80e802611dc0c64cedc33b4e2ed9f",
+      "description": "Round 4 live mainnet execution (hosted path)"
+    },
+    {
+      "path": "evidence/screenshots/live-04-execute-flash-cauldron-preflight.png",
+      "sha256": "c1bf209ebf4aa3ce5091b3ccc4607aac40608b58c79211d4e2ad44f586f514b8",
+      "description": "Round 4 live mainnet execution (hosted path)"
+    },
+    {
+      "path": "evidence/screenshots/live-05-flashvault.png",
+      "sha256": "34359f24cb707b0b9f2a5f87ab3a7a0bf3a62eb6466625a6ef026b259a3f6bc4",
+      "description": "Round 4 live mainnet execution (hosted path)"
+    },
+    {
+      "path": "evidence/screenshots/live-06-cauldron-pools.png",
+      "sha256": "f8011174bbe372b665a91105ffce279d3bf2fa99fea8522321843f1d769bb483",
+      "description": "Round 4 live mainnet execution (hosted path)"
+    },
+    {
+      "path": "evidence/screenshots/live-07-guardian.png",
+      "sha256": "24afaf42f453a6f12dd24833042d026749d8093032f39b69e94882af993dd0c4",
+      "description": "Round 4 live mainnet execution (hosted path)"
+    },
+    {
+      "path": "evidence/screenshots/live-08-certificate-verified.png",
+      "sha256": "89093d34d0381654dad259d9daf81afa8b6dc68be915c95b0b05bb04aa0122f6",
+      "description": "Round 4 live mainnet execution (hosted path)"
     }
   ],
   "notRecorded": [
