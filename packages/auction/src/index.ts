@@ -84,6 +84,7 @@ export function evaluateBid(a: AuctionRecord, bid: Bid, now: number): EvaluatedB
   t.inputs.forEach((inp, i) => {
     const exp = contractLockingBytecode(inp.unlock);
     if (exp && exp !== inp.lockingBytecode) reasons.push(`input ${i} contract identity mismatch`);
+    if (inp.unlock.kind === 'flashvault-bch-owner') reasons.push(`input ${i} uses the LP owner path; solvers may only use flash()`);
     if (inp.unlock.kind === 'p2pkh' && inp.unlock.signer === 'user' && inp.lockingBytecode !== a.intent.owner.lockingBytecode) reasons.push(`input ${i} assigned to user but not owned by user`);
   });
   // Inputs must exist in the current market/owner view (stale UTXO detection).

@@ -17,6 +17,9 @@ importers:
       '@fuse/auction':
         specifier: workspace:*
         version: link:packages/auction
+      '@fuse/compiler':
+        specifier: workspace:*
+        version: link:packages/compiler
       '@fuse/config':
         specifier: workspace:*
         version: link:packages/config
@@ -165,6 +168,8 @@ importers:
         version: 5.9.3
 
   packages/auction: {}
+
+  packages/compiler: {}
 
   packages/config: {}
 

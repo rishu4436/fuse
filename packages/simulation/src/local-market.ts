@@ -37,10 +37,13 @@ export function createLocalMarket() {
     A: { contract: poolA, ownerPkh: poolOwnerA.pkh, utxo: add(poolA.tokenAddress, 'pool-a', 1_000_000_000n, { category: TOKEN, amount: 1_000_000n }) },
     B: { contract: poolB, ownerPkh: poolOwnerB.pkh, utxo: add(poolB.tokenAddress, 'pool-b', 1_150_000_000n, { category: TOKEN, amount: 1_000_000n }) },
   };
+  // LP's minting baton for the vault identity category (needed to split shards). SIMULATED fixture.
+  const lpBaton = add(lp.address, 'lp-baton', 1_000n, { category: vaultParams.vaultCategory, amount: 0n, nft: { capability: 'minting', commitment: '' } });
+  const lpCoin = add(lp.address, 'lp-coin', 300_000_000n);
   const userCoin = add(user.address, 'user-coin', 1_000_000_000n);
   const solverCoins = Object.fromEntries(Object.entries(solvers).map(([k, s]) => [k, add(s.address, `solver-coin-${k}`, 5_000_000n)])) as Record<keyof typeof solvers, Utxo>;
   const directInventory = add(solvers.direct.address, 'direct-inventory', 1_000n, { category: TOKEN, amount: 200_000n });
-  return { provider, lp, user, solvers, vault, vaultParams, shards, pools, userCoin, solverCoins, directInventory, token: TOKEN };
+  return { provider, lp, lpBaton, lpCoin, user, solvers, vault, vaultParams, shards, pools, userCoin, solverCoins, directInventory, token: TOKEN };
 }
 
 export type LocalMarket = ReturnType<typeof createLocalMarket>;

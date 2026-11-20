@@ -18,6 +18,8 @@ export interface TokenSpec { category: string; amount: bigint; nft?: { capabilit
 export type UnlockSpec =
   | { kind: 'p2pkh'; signer: string }
   | { kind: 'flashvault-bch'; params: BchVaultParams; fn: 'flash' }
+  /** LP owner path (deposit top-up, withdraw, split, merge, pause). Needs the LP owner's 0x61 signature. */
+  | { kind: 'flashvault-bch-owner'; params: BchVaultParams; signer: string }
   | { kind: 'flashvault-token'; params: TokenVaultParams; fn: 'flash' }
   | { kind: 'cauldron-pool'; ownerPkh: string };
 
@@ -65,7 +67,7 @@ function contractUnlocker(spec: UnlockSpec): Unlocker {
 /** Expected locking bytecode for a contract input — lets the verifier detect a mislabeled input. */
 export function contractLockingBytecode(spec: UnlockSpec): string | null {
   switch (spec.kind) {
-    case 'flashvault-bch': return bchVaultContract(spec.params, offline).lockingBytecode;
+    case 'flashvault-bch': case 'flashvault-bch-owner': return bchVaultContract(spec.params, offline).lockingBytecode;
     case 'flashvault-token': return tokenVaultContract(spec.params, offline).lockingBytecode;
     case 'cauldron-pool': return cauldronPoolContract(spec.ownerPkh, offline).lockingBytecode;
     default: return null;
@@ -78,7 +80,7 @@ export function contractUnlocks(t: TxTemplate): Map<number, string> {
   const sourceOutputs = sourceOutputsOf(t);
   const out = new Map<number, string>();
   t.inputs.forEach((inp, inputIndex) => {
-    if (inp.unlock.kind === 'p2pkh') return;
+    if (inp.unlock.kind === 'p2pkh' || inp.unlock.kind === 'flashvault-bch-owner') return;
     out.set(inputIndex, binToHex(contractUnlocker(inp.unlock).generateUnlockingBytecode({ transaction: tx as never, sourceOutputs, inputIndex })));
   });
   return out;
@@ -97,6 +99,12 @@ export function signInputs(t: TxTemplate, signer: string, privateKey: Uint8Array
   const sourceOutputs = sourceOutputsOf(t);
   const out = new Map<number, string>();
   t.inputs.forEach((inp, inputIndex) => {
+    if (inp.unlock.kind === 'flashvault-bch-owner' && inp.unlock.signer === signer) {
+      if (binToHex(hash160(template.publicKey)) !== inp.unlock.params.ownerPkh) throw new FuseError('WRONG_KEY', `input ${inputIndex}: signer ${signer} is not the vault owner`);
+      const u = bchVaultContract(inp.unlock.params, offline).unlock.withdraw(template.publicKey, template);
+      out.set(inputIndex, binToHex(u.generateUnlockingBytecode({ transaction: tx as never, sourceOutputs, inputIndex })));
+      return;
+    }
     if (inp.unlock.kind !== 'p2pkh' || inp.unlock.signer !== signer) return;
     if (inp.lockingBytecode !== expectedLb) throw new FuseError('WRONG_KEY', `input ${inputIndex} is not locked to signer ${signer}`);
     const unlocking = unlocker.generateUnlockingBytecode({ transaction: tx as never, sourceOutputs, inputIndex });
