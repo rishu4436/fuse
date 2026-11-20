@@ -1,4 +1,5 @@
 'use client';
+import { useMode } from '@/lib/mode';
 import { Suspense, useState } from 'react';
 import { usePoll } from '@/lib/hooks';
 import { api, sats, short } from '@/lib/api';
@@ -70,6 +71,13 @@ function Explorer() {
 }
 
 export default function ExplorerPage() {
+  const { mode } = useMode();
+  if (mode === 'live') return (
+    <div className="mx-auto max-w-6xl">
+      <PageHeader eyebrow="Explorer · BCH mainnet" title="Mainnet transaction lookup" lede="Paste any mainnet txid to decode it; the raw transaction is re-hashed locally, so the indexer cannot alter it." right={<Badge mode="LIVE" />} />
+      <MainnetLookup />
+    </div>
+  );
   return (
     <div className="mx-auto max-w-6xl">
       <PageHeader eyebrow="Explorer" title="Transactions on the local chain" lede="Decoded inputs, outputs and CashTokens for every transaction the local mock chain accepted. Paste any mainnet txid to decode it READ-ONLY; the raw transaction is re-hashed locally, so the indexer cannot alter it." right={<Badge mode="SIMULATION" />} />

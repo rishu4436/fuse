@@ -1,0 +1,33 @@
+{
+ "note": "Public configuration of FUSE FlashVaultBCH instances on BCH mainnet (no keys). The live API tracks each vault from its genesis outpoint by its identity-NFT category.",
+ "vaults": [
+  {
+   "id": "fuse-live-1",
+   "label": "FUSE live FlashVault (mainnet)",
+   "status": "active",
+   "genesisTxid": "5463522e639a4c06cc6b03bb5891cf700a5041f91156074c0c3577925025ceef",
+   "category": "fa0c5163b8490a12d995f09ebc6c5cc32ebe3b3fc104951819b7cfee5d74549b",
+   "owner": "bitcoincash:qqtvuzkypa5y75jl05hatzh8jlfsly2d6v28mh8ge9",
+   "params": {
+    "feeBps": "9",
+    "minFee": "100",
+    "maxExposure": "100000",
+    "ownerPkh": "16ce0ac40f684f525f7d2fd58ae797d30f914dd3"
+   }
+  },
+  {
+   "id": "fuse-r4",
+   "label": "Round-4 test vault (swept)",
+   "status": "closed",
+   "genesisTxid": "481c0949a0908ed9c763e6544a7a18a76902687a0c36402fa7dc892f89fc6fc4",
+   "category": "9a7a2c67cd58129a33efcf47a91708f52991e0068e04f747133976d4ee17ec21",
+   "owner": "bitcoincash:qqtvuzkypa5y75jl05hatzh8jlfsly2d6v28mh8ge9",
+   "params": {
+    "feeBps": "9",
+    "minFee": "100",
+    "maxExposure": "100000",
+    "ownerPkh": "16ce0ac40f684f525f7d2fd58ae797d30f914dd3"
+   }
+  }
+ ]
+}

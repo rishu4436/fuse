@@ -3,18 +3,20 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, type ReactNode } from 'react';
 import clsx from 'clsx';
+import { useMode } from '@/lib/mode';
 import { AnimatePresence, motion } from 'motion/react';
 
-const NAV: Array<{ group: string; items: Array<{ href: string; label: string; tag?: 'SIM' | 'RO' }> }> = [
-  { group: 'Workspace', items: [{ href: '/app', label: 'Overview', tag: 'SIM' }, { href: '/app/portfolio', label: 'Portfolio', tag: 'SIM' }] },
-  { group: 'Execute', items: [{ href: '/app/execute/new', label: 'Intent Studio', tag: 'SIM' }, { href: '/app/execute', label: 'Executions', tag: 'SIM' }, { href: '/app/execute/staged', label: 'Staged recovery', tag: 'SIM' }, { href: '/app/parallel-worlds', label: 'Parallel Worlds', tag: 'SIM' }, { href: '/app/strategies', label: 'Strategies' }, { href: '/app/strategies/builder', label: 'Strategy builder', tag: 'SIM' }] },
-  { group: 'Guardian', items: [{ href: '/app/guardian', label: 'Risk radar', tag: 'RO' }, { href: '/app/guardian/rates', label: 'Rate optimizer', tag: 'RO' }, { href: '/app/guardian/policies', label: 'Policies', tag: 'RO' }, { href: '/app/guardian/alerts', label: 'Alerts' }] },
-  { group: 'Liquidity', items: [{ href: '/app/liquidity', label: 'Shards & LP', tag: 'SIM' }, { href: '/app/liquidity/vaults', label: 'Vaults', tag: 'SIM' }] },
-  { group: 'Solvers', items: [{ href: '/app/solvers', label: 'Solver network', tag: 'SIM' }, { href: '/app/solvers/auctions', label: 'Bids', tag: 'SIM' }, { href: '/app/opportunities', label: 'Opportunities', tag: 'RO' }] },
-  { group: 'Proof', items: [{ href: '/app/certificates', label: 'Certificates', tag: 'SIM' }, { href: '/verify', label: 'Verify' }, { href: '/app/replay', label: 'Replay', tag: 'SIM' }, { href: '/app/explorer', label: 'Explorer', tag: 'SIM' }, { href: '/app/contracts', label: 'Contracts' }] },
-  { group: 'Project', items: [{ href: '/app/activity', label: 'Activity' }, { href: '/status', label: 'Integration status' }, { href: '/developers', label: 'Developers' }, { href: '/developers/recipes', label: 'Recipe marketplace', tag: 'SIM' }, { href: '/app/settings', label: 'Settings' }] },
+type Tag = 'LIVE' | 'SIM' | 'RO';
+const LIVE_NAV: Array<{ group: string; items: Array<{ href: string; label: string; tag?: Tag }> }> = [
+  { group: 'Mainnet', items: [{ href: '/app', label: 'Overview', tag: 'LIVE' }, { href: '/app/execute/live', label: 'Execute', tag: 'LIVE' }, { href: '/app/liquidity', label: 'FlashVault', tag: 'LIVE' }, { href: '/app/opportunities', label: 'Cauldron pools', tag: 'LIVE' }] },
+  { group: 'Guardian', items: [{ href: '/app/guardian', label: 'Risk radar', tag: 'LIVE' }, { href: '/app/guardian/rates', label: 'Rate optimizer', tag: 'RO' }, { href: '/app/guardian/policies', label: 'Policies', tag: 'RO' }, { href: '/app/guardian/alerts', label: 'Alerts' }] },
+  { group: 'Proof', items: [{ href: '/app/certificates', label: 'Certificates', tag: 'LIVE' }, { href: '/verify', label: 'Verify' }, { href: '/app/explorer', label: 'Explorer', tag: 'LIVE' }, { href: '/app/contracts', label: 'Contracts' }] },
+  { group: 'Project', items: [{ href: '/app/activity', label: 'Activity' }, { href: '/status', label: 'Integration status' }, { href: '/developers', label: 'Developers' }, { href: '/app/settings', label: 'Settings' }] },
 ];
-const ALL_HREFS = NAV.flatMap((g) => g.items.map((i) => i.href));
+const SANDBOX_NAV: Array<{ group: string; items: Array<{ href: string; label: string; tag?: Tag }> }> = [
+  { group: 'Sandbox · local BCH VM', items: [{ href: '/app/execute/new', label: 'Intent Studio', tag: 'SIM' }, { href: '/app/execute', label: 'Executions', tag: 'SIM' }, { href: '/app/execute/staged', label: 'Staged recovery', tag: 'SIM' }, { href: '/app/parallel-worlds', label: 'Parallel Worlds', tag: 'SIM' }, { href: '/app/strategies', label: 'Strategies' }, { href: '/app/strategies/builder', label: 'Strategy builder', tag: 'SIM' }, { href: '/app/solvers', label: 'Solver network', tag: 'SIM' }, { href: '/app/solvers/auctions', label: 'Bids', tag: 'SIM' }, { href: '/app/liquidity/vaults', label: 'Sandbox vaults', tag: 'SIM' }, { href: '/app/replay', label: 'Replay', tag: 'SIM' }, { href: '/app/portfolio', label: 'Portfolio', tag: 'SIM' }, { href: '/developers/recipes', label: 'Recipe marketplace', tag: 'SIM' }] },
+];
+const ALL_HREFS = [...LIVE_NAV, ...SANDBOX_NAV].flatMap((g) => g.items.map((i) => i.href));
 
 export function Logo({ className }: { className?: string }) {
   return (
@@ -38,12 +40,23 @@ function HackathonBanner() {
         <span className="font-medium text-fog-100">BCH BLAZE 2026</span>
         {pres ? <a className="hover:text-volt-300" href={pres} target="_blank" rel="noreferrer">Presentation ↗</a> : <span className="text-fog-400">Presentation: link pending</span>}
         {live ? <a className="hover:text-volt-300" href={live} target="_blank" rel="noreferrer">Live demo: {live.replace('https://', '')} ↗</a> : null}
-        {hosted ? <span className="rounded border border-amber-400/30 px-1.5 text-amber-200" title="The FUSE API runs in-process in a serverless function: in-memory, per-instance state that resets on a cold start; reference solvers run one pass per request.">Hosted demo: LOCAL simulation, ephemeral state</span> : null}
+        {hosted ? <span className="rounded border border-emerald-400/30 px-1.5 text-emerald-200" title="Default mode: live BCH mainnet (public indexers, real FlashVault + Cauldron state, wallet signing, broadcast relay). The opt-in sandbox runs in-process with ephemeral per-instance state.">LIVE mainnet · sandbox opt-in</span> : null}
         <a className="hover:text-volt-300" href="https://github.com/rishu4436/fuse" target="_blank" rel="noreferrer">Source on GitHub ↗</a>
         <span className="min-w-0 truncate">EMBER2026 donations (CashTokens):{' '}
           {donation ? <code className="num text-fog-100">{donation}</code> : <span className="text-fog-400">address not published yet (set by owner)</span>}
         </span>
-        <span className="ml-auto hidden text-fog-400 md:inline">Nothing on this site broadcasts mainnet transactions.</span>
+        <span className="ml-auto hidden text-fog-400 md:inline">Live on BCH mainnet · the server holds no keys: you sign in your wallet, FUSE relays the signed tx.</span>
+      </div>
+    </div>
+  );
+}
+
+function ModeToggle({ mode, setMode }: { mode: 'live' | 'sandbox'; setMode: (m: 'live' | 'sandbox') => void }) {
+  return (
+    <div className="mx-1 rounded-xl border hairline p-1 text-[11.5px]" role="group" aria-label="Mode">
+      <div className="grid grid-cols-2 gap-1">
+        <button onClick={() => setMode('live')} aria-pressed={mode === 'live'} data-testid="mode-live" className={clsx('rounded-lg px-2 py-1.5 transition-colors', mode === 'live' ? 'bg-emerald-400/10 text-emerald-300' : 'text-fog-400 hover:text-fog-200')}>● Live mainnet</button>
+        <button onClick={() => setMode('sandbox')} aria-pressed={mode === 'sandbox'} data-testid="mode-sandbox" className={clsx('rounded-lg px-2 py-1.5 transition-colors', mode === 'sandbox' ? 'bg-amber-sim/10 text-amber-sim' : 'text-fog-400 hover:text-fog-200')}>Sandbox</button>
       </div>
     </div>
   );
@@ -53,8 +66,11 @@ export function AppShell({ children }: { children: ReactNode }) {
   const path = usePathname();
   const [open, setOpen] = useState(false);
   const activeHref = ALL_HREFS.filter((h) => path === h || path.startsWith(h + '/')).sort((a, b) => b.length - a.length)[0];
+  const { mode, setMode } = useMode();
+  const NAV = mode === 'sandbox' ? [...SANDBOX_NAV, ...LIVE_NAV] : LIVE_NAV;
   const nav = (
     <nav aria-label="Primary" className="flex flex-col gap-5">
+      <ModeToggle mode={mode} setMode={setMode} />
       {NAV.map((g) => (
         <div key={g.group}>
           <div className="mb-2 px-3 text-[10.5px] uppercase tracking-[0.16em] text-fog-400">{g.group}</div>
@@ -67,7 +83,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                     className={clsx('group relative flex items-center justify-between rounded-lg px-3 py-1.5 text-[13px] transition-colors', active ? 'text-fog-100' : 'text-fog-300 hover:bg-ink-800 hover:text-fog-100')}>
                     {active && <motion.span layoutId="nav-active" className="absolute inset-0 rounded-lg border border-volt-400/25 bg-volt-400/[0.06]" transition={{ type: 'spring', stiffness: 500, damping: 40 }} />}
                     <span className="relative">{it.label}</span>
-                    {it.tag && <span className={clsx('relative text-[9.5px] font-medium tracking-[0.1em]', it.tag === 'SIM' ? 'text-amber-sim/80' : 'text-sky-ro/80')}>{it.tag === 'SIM' ? 'SIM' : 'READ'}</span>}
+                    {it.tag && <span className={clsx('relative text-[9.5px] font-medium tracking-[0.1em]', it.tag === 'SIM' ? 'text-amber-sim/80' : it.tag === 'LIVE' ? 'text-emerald-300/90' : 'text-sky-ro/80')}>{it.tag === 'SIM' ? 'SANDBOX' : it.tag === 'LIVE' ? 'LIVE' : 'READ'}</span>}
                   </Link>
                 </li>
               );
@@ -86,8 +102,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           <Link href="/" className="mb-8 flex items-center gap-2.5 px-3"><Logo className="size-7" /><span className="text-[17px] font-semibold tracking-[-0.02em]">fuse</span></Link>
           <div className="scrollbar-thin -mx-1 min-h-0 flex-1 overflow-y-auto px-1 pb-4">{nav}</div>
           <div className="mt-3 px-3 text-[11px] leading-relaxed text-fog-400">
-            <div className="mb-1 flex items-center gap-1.5"><span className="size-1.5 rounded-full bg-amber-sim" />SIM: local BCH VM</div>
-            <div className="flex items-center gap-1.5"><span className="size-1.5 rounded-full bg-sky-ro" />READ: mainnet, read only</div>
+            <div className="mb-1 flex items-center gap-1.5"><span className="size-1.5 rounded-full bg-emerald-400" />LIVE: BCH mainnet</div>
+            <div className="mb-1 flex items-center gap-1.5"><span className="size-1.5 rounded-full bg-sky-ro" />READ: mainnet analysis, advice only</div>
+            <div className="flex items-center gap-1.5"><span className="size-1.5 rounded-full bg-amber-sim" />SANDBOX: local BCH VM (opt-in)</div>
           </div>
         </aside>
         <div className="min-w-0 flex-1">

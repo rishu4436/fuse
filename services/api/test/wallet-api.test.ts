@@ -11,7 +11,8 @@ const address = encodeCashAddress({ prefix: 'bitcoincash', type: 'p2pkh', payloa
 const coin = (n: number, sats: string) => ({ txid: binToHex(sha256.hash(utf8ToBin(`c${n}`))), vout: 0, satoshis: sats, path: 'receive', addressIndex: 0 });
 
 describe('wallet preflight API (no broadcast)', () => {
-  it('preflight → wallet signs → independent verification; tampered response rejected; no broadcast route exists', async () => {
+  it('preflight → wallet signs → independent verification; tampered response rejected; relay refuses unless FUSE_BROADCAST=1', async () => {
+    delete process.env.FUSE_BROADCAST;
     const app = await buildApp(new FuseState(process.cwd(), { auctionWindowSeconds: 4 }));
     const r = await app.inject({ method: 'POST', url: '/api/wallet/preflight', headers: { 'content-type': 'application/json' }, payload: toJson({ network: 'mainnet', address, coins: [coin(1, '50000'), coin(2, '20000')] }) });
     expect(r.statusCode).toBe(200);
@@ -24,7 +25,10 @@ describe('wallet preflight API (no broadcast)', () => {
     const tampered = signed.slice(0, -10) + 'ffffffffff';
     const bad = fromJson<{ ok: boolean }>((await app.inject({ method: 'POST', url: '/api/wallet/verify-signed', headers: { 'content-type': 'application/json' }, payload: JSON.stringify({ templateHash: body.preflight.templateHash, signedTransaction: tampered }) })).body);
     expect(bad.ok).toBe(false);
+    // the only broadcast path is the signed-hex relay; it is off unless the deployment sets FUSE_BROADCAST=1
     const routes = app.printRoutes();
-    expect(routes).not.toMatch(/broadcast/i);
+    expect((routes.match(/broadcast/gi) ?? []).length).toBe(1);
+    const relay = await app.inject({ method: 'POST', url: '/api/broadcast', headers: { 'content-type': 'application/json' }, payload: JSON.stringify({ rawHex: '0200' }) });
+    expect(relay.statusCode, relay.body).toBe(503);
   });
 });

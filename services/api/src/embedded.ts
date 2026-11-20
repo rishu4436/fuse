@@ -17,7 +17,7 @@ const KINDS = { direct: 'DIRECT_LIQUIDITY', routing: 'ROUTING', flash: 'FLASH_LI
 interface Solver { kind: keyof typeof KINDS; strategy: (typeof KINDS)[keyof typeof KINDS]; key: ReturnType<typeof fixtureKey>; pubkey: string; solverId: string; seen: Set<string> }
 let booted: Promise<{ app: App; state: FuseState; solvers: Solver[] }> | null = null;
 let pumping: Promise<void> | null = null; let lastPump = 0;
-export const HOSTED_INFO = { hosted: true, mode: 'HOSTED SIMULATION', persistence: 'in-memory, per serverless instance (ephemeral)', solvers: 'in-process reference solvers, one pass per request', mainnetBroadcast: false };
+export const HOSTED_INFO = { hosted: true, mode: 'HOSTED SIMULATION', persistence: 'in-memory, per serverless instance (ephemeral)', solvers: 'in-process reference solvers, one pass per request', mainnetBroadcast: process.env.FUSE_BROADCAST === '1' ? 'relay of already-signed hex only (no server keys)' : false };
 
 async function boot(root: string) {
   const state = new FuseState(root, { auctionWindowSeconds: Number(process.env.FUSE_AUCTION_WINDOW ?? 4), store: new FuseStore(':memory:') });
@@ -66,8 +66,9 @@ export interface EmbeddedResponse { status: number; headers: Record<string, stri
 export async function handle(root: string, req: EmbeddedRequest): Promise<EmbeddedResponse> {
   booted ??= boot(root);
   const b = await booted;
-  await pump(b);
   const path = req.url.split('?')[0];
+  const live = path.startsWith('/api/live') || path === '/api/broadcast';
+  if (!live) await pump(b);
   if (path === '/api/events') {
     // serverless functions cannot hold a stream open: send recent events, then close (the client falls back to polling)
     const after = Number(req.headers['last-event-id'] ?? 0);
@@ -77,7 +78,7 @@ export async function handle(root: string, req: EmbeddedRequest): Promise<Embedd
   const r = await b.app.inject({ method: req.method as 'GET', url: req.url, headers: req.headers, ...(req.body ? { payload: req.body } : {}) });
   let body = r.payload;
   if (r.statusCode === 200 && (path === '/api/health' || path === '/api/network/status')) body = toJson({ ...fromJson<object>(body), hostedMode: HOSTED_INFO });
-  if (req.method === 'POST') await pump(b);
+  if (req.method === 'POST' && !live) await pump(b);
   const headers: Record<string, string> = {};
   for (const [k, v] of Object.entries(r.headers)) if (v !== undefined && !['content-length', 'connection', 'transfer-encoding'].includes(k)) headers[k] = String(v);
   return { status: r.statusCode, headers, body };

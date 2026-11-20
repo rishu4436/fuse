@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const routes = ['/', '/app', '/app/portfolio', '/app/guardian', '/app/guardian/policies', '/app/guardian/alerts', '/app/execute', '/app/execute/new', '/app/parallel-worlds', '/app/strategies', '/app/strategies/builder',
+const routes = ['/', '/app', '/app/portfolio', '/app/guardian', '/app/guardian/policies', '/app/guardian/alerts', '/app/execute', '/app/execute/live', '/app/execute/new', '/app/parallel-worlds', '/app/strategies', '/app/strategies/builder',
   '/app/liquidity', '/app/liquidity/vaults', '/app/liquidity/flashvault-bch', '/app/solvers', '/app/solvers/auctions', '/app/opportunities', '/app/replay', '/app/explorer', '/app/contracts', '/app/certificates', '/app/activity', '/app/settings',
   '/developers', '/developers/sdk', '/developers/recipes', '/developers/api', '/developers/xo', '/app/guardian/rates', '/app/execute/staged', '/status', '/verify'];
 
@@ -20,15 +20,40 @@ for (const r of routes) {
   });
 }
 
-test('mainnet pages are labeled READ-ONLY and simulation pages SIMULATION', async ({ page }) => {
-  await page.goto('/app/opportunities'); await expect(page.getByText('READ-ONLY').first()).toBeVisible();
+const sandbox = (page: import('@playwright/test').Page) => page.addInitScript(() => localStorage.setItem('fuse-mode', 'sandbox'));
+
+test('LIVE is the default mode: mainnet pages are labeled LIVE; sandbox pages SANDBOX after the toggle', async ({ page }) => {
+  await page.goto('/app/opportunities'); await expect(page.getByText('LIVE', { exact: true }).filter({ visible: true }).first()).toBeVisible();
+  await expect(page.getByTestId('live-pools')).toBeVisible({ timeout: 45_000 });
+  await page.goto('/app/liquidity'); await expect(page.getByTestId('live-vaults')).toBeVisible();
   await page.goto('/app/guardian'); await expect(page.getByText('READ-ONLY').first()).toBeVisible();
-  await page.goto('/app/liquidity'); await expect(page.getByText('SIMULATION').first()).toBeVisible();
+  await sandbox(page);
+  await page.goto('/app/liquidity'); await expect(page.getByText('SANDBOX').first()).toBeVisible();
   const r = await page.goto('/app/execute/new'); expect(r?.url()).toMatch(/\/app\/execute\/new$/);
+});
+
+test('LIVE execute: compose a mainnet flash loan, VM simulation + Guardian pass, signing package exported (no key, no broadcast)', async ({ page }, info) => {
+  test.skip(info.project.name === 'mobile', 'desktop only');
+  test.setTimeout(120_000);
+  await page.goto('/app/execute/live');
+  await expect(page.getByTestId('live-vault')).toContainText('fuse-live-1', { timeout: 45_000 });
+  await page.getByTestId('live-action-flash').click();
+  await page.getByTestId('live-address').fill(process.env.FUSE_E2E_ADDRESS ?? 'bitcoincash:qqtvuzkypa5y75jl05hatzh8jlfsly2d6v28mh8ge9');
+  await page.getByTestId('live-compose').click();
+  await expect(page.getByTestId('live-guardian')).toContainText(/PASS|WARN/, { timeout: 60_000 });
+  await expect(page.getByTestId('live-sim')).toContainText('covenant accepts this transaction');
+  const dl = page.waitForEvent('download'); await page.getByTestId('live-export').click();
+  expect((await dl).suggestedFilename()).toMatch(/^fuse-flash-[0-9a-f]{8}\.json$/);
+  await page.getByTestId('live-action-flash-cauldron').click();
+  await page.getByTestId('live-compose').click();
+  await expect(page.getByTestId('live-guardian')).toContainText(/PASS|WARN/, { timeout: 60_000 });
+  await expect(page.getByTestId('live-sim')).toContainText('cauldron-pool');
+  if (process.env.SHOTS) await page.screenshot({ path: 'test-results/shots/desktop-live-execute.png', fullPage: true });
 });
 
 test('Demo: run an auction in the Studio, adversary rejected, settlement + certificate verifies, tamper fails', async ({ page }, info) => {
   test.skip(info.project.name === 'mobile', 'flow covered on desktop');
+  await sandbox(page);
   await page.goto('/app/execute/new');
   await page.getByTestId('reset-world').click();
   await page.waitForTimeout(300);
@@ -63,7 +88,7 @@ test('WizardConnect: pairing QR is generated in the browser (no wallet needed)',
 });
 
 test.describe('feature flows', () => {
-  test.beforeEach(async ({ page: _page }, info) => { test.skip(info.project.name === 'mobile', 'desktop only'); });
+  test.beforeEach(async ({ page }, info) => { test.skip(info.project.name === 'mobile', 'desktop only'); await sandbox(page); });
   test('compiler preview shows all 10 stages and an explanation', async ({ page }) => {
     await page.goto('/app/execute/new');
     await page.getByTestId('reset-world').click();

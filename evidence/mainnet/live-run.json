@@ -1,0 +1,78 @@
+{
+ "network": "mainnet",
+ "app": "https://fuse-rust-eight.vercel.app",
+ "note": "Hosted execute path: prepare (hosted) → box-only test signer → /api/broadcast (hosted) → certificate (hosted). Public data only.",
+ "txs": [
+  {
+   "action": "deploy-vault",
+   "txid": "5463522e639a4c06cc6b03bb5891cf700a5041f91156074c0c3577925025ceef",
+   "explorer": "https://bchexplorer.cash/tx/5463522e639a4c06cc6b03bb5891cf700a5041f91156074c0c3577925025ceef",
+   "minerFee": "566",
+   "netCost": "566",
+   "relayedBy": "https://fuse-rust-eight.vercel.app/api/broadcast",
+   "serverVmCheck": "all inputs valid in the BCH 2026 VM against chain-derived source outputs",
+   "guardian": "PASS",
+   "route": null,
+   "at": "2026-11-20T21:20:41.331Z"
+  },
+  {
+   "action": "flash",
+   "txid": "7d5a261e800dd11f55f56e0756c5f82648d62e79cd4a01d248f222c8d59ebb79",
+   "explorer": "https://bchexplorer.cash/tx/7d5a261e800dd11f55f56e0756c5f82648d62e79cd4a01d248f222c8d59ebb79",
+   "minerFee": "1086",
+   "netCost": "1186",
+   "relayedBy": "https://fuse-rust-eight.vercel.app/api/broadcast",
+   "serverVmCheck": "all inputs valid in the BCH 2026 VM against chain-derived source outputs",
+   "guardian": "WARN",
+   "route": null,
+   "at": "2026-11-20T21:24:20.505Z"
+  },
+  {
+   "action": "flash-cauldron",
+   "txid": "994b63ba75533bb36506a406ac09737fb96812c45e9224ba089f0f3e66a3dd3f",
+   "explorer": "https://bchexplorer.cash/tx/994b63ba75533bb36506a406ac09737fb96812c45e9224ba089f0f3e66a3dd3f",
+   "minerFee": "1858",
+   "netCost": "1991",
+   "relayedBy": "https://fuse-rust-eight.vercel.app/api/broadcast",
+   "serverVmCheck": "all inputs valid in the BCH 2026 VM against chain-derived source outputs",
+   "guardian": "WARN",
+   "route": {
+    "units": "1",
+    "buyPool": "fac5a4a69f7c7459f751f43495cbee3821cbc478165d83e78db66a82cc697b0c",
+    "sellPool": "a9a2d6220736536d621bb8d514f49904451fe55acf776bb15a0e7ec4c27cf9e5",
+    "buyOutpoint": "95043ca5ac4f459558be7fccf76a05655205204ea5926c57e881480314091d9a:46",
+    "sellOutpoint": "95043ca5ac4f459558be7fccf76a05655205204ea5926c57e881480314091d9a:38",
+    "satsIn": "5306",
+    "satsOut": "5273",
+    "roundTripLoss": "33",
+    "financedByFlash": true,
+    "note": "The borrowed principal pays the buy on pool A; the sell on pool B returns sats that repay the vault in the same transaction. The PUSD never leaves the two pools. This proves atomic routing; it is not a profitable arbitrage unless the pools diverge by more than 2×0.3% + fees."
+   },
+   "at": "2026-11-20T21:26:15.574Z"
+  },
+  {
+   "action": "deposit",
+   "txid": "2f8503c88a3a65d2b6cc3e6dd71794a096acb67d78a7918d700696e6fd1c763e",
+   "explorer": "https://bchexplorer.cash/tx/2f8503c88a3a65d2b6cc3e6dd71794a096acb67d78a7918d700696e6fd1c763e",
+   "minerFee": "1290",
+   "netCost": "1290",
+   "relayedBy": "https://fuse-rust-eight.vercel.app/api/broadcast",
+   "serverVmCheck": "all inputs valid in the BCH 2026 VM against chain-derived source outputs",
+   "guardian": "WARN",
+   "route": null,
+   "at": "2026-11-20T21:28:34.001Z"
+  },
+  {
+   "action": "withdraw",
+   "txid": "1cb032299e5009c96195ecd3615d6a814c7670e9a437fc15b18d0912d03d5930",
+   "explorer": "https://bchexplorer.cash/tx/1cb032299e5009c96195ecd3615d6a814c7670e9a437fc15b18d0912d03d5930",
+   "minerFee": "1008",
+   "netCost": "1008",
+   "relayedBy": "https://fuse-rust-eight.vercel.app/api/broadcast",
+   "serverVmCheck": "all inputs valid in the BCH 2026 VM against chain-derived source outputs",
+   "guardian": "PASS",
+   "route": null,
+   "at": "2026-11-20T21:29:53.515Z"
+  }
+ ]
+}

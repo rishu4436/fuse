@@ -1,11 +1,15 @@
 'use client';
+import { useMode } from '@/lib/mode';
+import { LiveCertificates } from '@/components/live';
 import Link from 'next/link';
 import { usePoll } from '@/lib/hooks';
 import { short, sats } from '@/lib/api';
 import { PageHeader, Panel, Empty, Badge, Button, ApiOffline, Mono } from '@/components/ui';
 
 interface Cert { certificateId: string; intentId: string; solverId: string; transactions: Array<{ txid: string }>; fees: { minerFeeSats: bigint; liquidityFee: bigint; solverFee: bigint }; outcome: { ownerReceives: Array<{ amount: bigint }> }; issuedAt: number; confirmation: string }
-export default function Certificates() {
+export default function Certificates() { const { mode } = useMode(); return mode === 'sandbox' ? <SandboxCertificates /> : <LiveCertificates />; }
+
+function SandboxCertificates() {
   const { data, error } = usePoll<Cert[]>('/api/certificates', 2500);
   return (
     <div className="mx-auto max-w-6xl">

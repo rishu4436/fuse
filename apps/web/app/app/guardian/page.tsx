@@ -1,4 +1,5 @@
 'use client';
+import { useMode } from '@/lib/mode';
 import { useMemo, useState } from 'react';
 import { motion } from 'motion/react';
 import clsx from 'clsx';
@@ -12,9 +13,10 @@ interface P { checkedAt: string; tipHeight: number; operations: Record<string, s
 const BUCKETS = [[11000, 12500], [12500, 15000], [15000, 20000], [20000, 30000], [30000, 1e9]] as const;
 
 export default function Guardian() {
-  const { data, error } = usePoll<P>('/api/mainnet/paryon', 0);
+  const { mode } = useMode();
+  const { data, error } = usePoll<P>(mode === 'live' ? '/api/live/paryon-view' : '/api/mainnet/paryon', 0);
   const [shock, setShock] = useState(0);
-  const sentinel = usePoll<{ overall: string; signals: Array<{ name: string; status: string; detail: string }> }>('/api/guardian/sentinel', 0);
+  const sentinel = usePoll<{ overall: string; signals: Array<{ name: string; status: string; detail: string }> }>(mode === 'live' ? '/api/live/guardian/sentinel' : '/api/guardian/sentinel', 0);
   const price = data ? Number(data.live.latestPrice.priceRaw) : 0;
   const active = useMemo(() => (data?.live.loans ?? []).filter((l) => Number(l.periodsBehind) <= 1 && l.debtCents !== '0' && l.collateralRatioBps), [data]);
   const shocked = price * (1 - shock / 100);

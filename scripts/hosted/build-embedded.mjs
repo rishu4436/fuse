@@ -13,4 +13,6 @@ await build({
   banner: { js: "import { createRequire as __cr } from 'node:module'; const require = __cr(import.meta.url);" }, logLevel: 'warning', legalComments: 'none',
 });
 for (const f of ['cauldron-pool-verification.json', 'paryon-deployment-verification.json', 'moria-historical-replay.json']) cpSync(resolve(root, 'evidence', f), resolve(out, 'evidence', f));
+mkdirSync(resolve(out, 'evidence/mainnet'), { recursive: true });
+cpSync(resolve(root, 'evidence/mainnet/live-vaults.json'), resolve(out, 'evidence/mainnet/live-vaults.json'));
 console.log('embedded API bundle →', out);

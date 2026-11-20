@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { toJson, fromJson, type Bid } from '@fuse/solver-sdk';
 import { FuseState, serializeAuction } from './state.js';
 import { registerExtra } from './extra.js';
+import { registerLive } from './live/routes.js';
 import { PARYON_OPERATION_STATUS } from '@fuse/protocol-adapters';
 import { buildSelfConsolidation, preflight, wcSignRequest, verifyWalletSigned, lockingBytecodeOf } from '@fuse/wallet';
 import { binToHex, encodeTransaction } from '@bitauth/libauth';
@@ -14,7 +15,7 @@ export async function buildApp(state: FuseState) {
   await app.register(cors, { origin: true });
   app.addContentTypeParser('application/json', { parseAs: 'string' }, (_req, body, done) => { try { done(null, body ? fromJson(body as string) : {}); } catch (e) { done(e as Error); } });
   app.setReplySerializer((p) => toJson(p));
-  app.setErrorHandler((err, _req, reply) => { const e = err as { statusCode?: number; code?: string; message: string }; reply.status(e.statusCode && e.statusCode < 500 ? e.statusCode : 400).send({ error: e.code ?? 'ERROR', message: e.message }); });
+  app.setErrorHandler((err, _req, reply) => { const e = err as { statusCode?: number; code?: string; message: string }; reply.status(e.statusCode && (e.statusCode < 500 || e.statusCode === 502 || e.statusCode === 503) ? e.statusCode : 400).send({ error: e.code ?? 'ERROR', message: e.message }); });
 
   app.get('/api/health', async () => ({ ok: true, uptimeMs: Date.now() - state.startedAt, network: 'local', simulated: true, mainnetBroadcast: false }));
   app.get('/api/network/status', async () => {
@@ -98,6 +99,7 @@ export async function buildApp(state: FuseState) {
   });
 
   registerExtra(app, state);
+  registerLive(app, { root: state.root, paryonSnapshot: () => state.evidence('paryon') });
 
   // ---- events (SSE) ----
   app.get('/api/events', async (req, reply) => {

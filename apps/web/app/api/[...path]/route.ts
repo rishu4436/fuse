@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-export const maxDuration = 30;
+export const maxDuration = 60;
 type Embedded = { handle: (root: string, r: { method: string; url: string; headers: Record<string, string>; body?: string }) => Promise<{ status: number; headers: Record<string, string>; body: string }> };
 let mod: Promise<Embedded> | null = null;
 const dir = () => join(process.cwd(), 'embedded');

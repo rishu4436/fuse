@@ -9,8 +9,8 @@ import { api } from '@/lib/api';
 import { listUnspent } from '@/lib/electrum';
 import { Button, Badge, Mono } from './ui';
 
-export interface WalletHandle { address: string; sign: (req: { transactionHex: string; sourceOutputs: Array<Record<string, string | number | bigint>>; userPrompt: string }, inputPaths: Array<[number, string, number]>) => Promise<string> }
-interface Pf { preflight: { ok: boolean; templateHash: string; items: Array<{ label: string; value: string }>; checks: Array<{ name: string; ok: boolean; detail: string }> }; inputPaths: Array<[number, string, number]>; wcRequest: { transactionHex: string; sourceOutputs: Array<Record<string, string | number | bigint>>; userPrompt: string } }
+export interface WalletHandle { address: string; sign: (req: { transactionHex: string; sourceOutputs: Array<Record<string, unknown>>; userPrompt: string }, inputPaths: Array<[number, string, number]>) => Promise<string> }
+interface Pf { preflight: { ok: boolean; templateHash: string; items: Array<{ label: string; value: string }>; checks: Array<{ name: string; ok: boolean; detail: string }> }; inputPaths: Array<[number, string, number]>; wcRequest: { transactionHex: string; sourceOutputs: Array<Record<string, unknown>>; userPrompt: string } }
 interface Vr { ok: boolean; txid: string; checks: Array<{ name: string; ok: boolean; detail?: string }>; note: string }
 
 export function MainnetPreflight({ wallet }: { wallet: WalletHandle }) {

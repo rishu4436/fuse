@@ -1,4 +1,6 @@
 'use client';
+import { useMode } from '@/lib/mode';
+import { LivePools } from '@/components/live';
 import { usePoll } from '@/lib/hooks';
 import { sats, short } from '@/lib/api';
 import { PageHeader, Panel, Stat, Badge, ApiOffline, Mono } from '@/components/ui';
@@ -28,7 +30,9 @@ function OppCard({ title, o, mode, note }: { title: string; o: Opp | null; mode:
 interface C { checkedAt: string; network: string; token: string; indexer: string; chainSource: string; poolsReturned: number; checked: Pool[] }
 const tick = (b: boolean) => <span className={b ? 'text-volt-300' : 'text-rose-bad'}>{b ? '✓' : '✕'}</span>;
 
-export default function Mainnet() {
+export default function Mainnet() { const { mode } = useMode(); return mode === 'sandbox' ? <SandboxMainnet /> : <LivePools />; }
+
+function SandboxMainnet() {
   const { data, error } = usePoll<C>('/api/mainnet/cauldron', 0);
   const opp = usePoll<O>('/api/opportunities', 5000);
   const ok = data?.checked.filter((p) => p.scriptMatchesPublishedCauldronArtifact && p.satsMatchIndexer && p.tokensMatchIndexer && p.categoryMatches).length ?? 0;

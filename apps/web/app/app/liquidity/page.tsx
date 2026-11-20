@@ -1,4 +1,6 @@
 'use client';
+import { useMode } from '@/lib/mode';
+import { LiveFlashVault } from '@/components/live';
 import Link from 'next/link';
 import { useState } from 'react';
 import { api, sats, bchTrim as bch, short } from '@/lib/api';
@@ -35,7 +37,9 @@ function RiskHistory() {
   );
 }
 
-export default function Liquidity() {
+export default function Liquidity() { const { mode } = useMode(); return mode === 'sandbox' ? <SandboxLiquidity /> : <LiveFlashVault />; }
+
+function SandboxLiquidity() {
   const l = usePoll<L>('/api/liquidity', 3000);
   const v = usePoll<V>('/api/vault', 3000);
   const [op, setOp] = useState('deposit');

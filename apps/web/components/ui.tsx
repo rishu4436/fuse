@@ -3,8 +3,9 @@ import clsx from 'clsx';
 import { motion } from 'motion/react';
 import type { ReactNode } from 'react';
 
-export type DataMode = 'SIMULATION' | 'READ-ONLY' | 'BLOCKED' | 'UNSUPPORTED' | 'TESTED' | 'VERIFIED' | 'IMPLEMENTED';
+export type DataMode = 'LIVE' | 'SIMULATION' | 'READ-ONLY' | 'BLOCKED' | 'UNSUPPORTED' | 'TESTED' | 'VERIFIED' | 'IMPLEMENTED';
 const modeStyle: Record<DataMode, string> = {
+  LIVE: 'text-emerald-300 border-emerald-400/40 bg-emerald-400/[0.08]',
   SIMULATION: 'text-amber-sim border-amber-sim/30 bg-amber-sim/[0.07]',
   'READ-ONLY': 'text-sky-ro border-sky-ro/30 bg-sky-ro/[0.07]',
   BLOCKED: 'text-rose-bad border-rose-bad/30 bg-rose-bad/[0.07]',
@@ -14,6 +15,7 @@ const modeStyle: Record<DataMode, string> = {
   IMPLEMENTED: 'text-fog-200 border-ink-500 bg-ink-700/60',
 };
 const modeHint: Record<DataMode, string> = {
+  LIVE: 'Live BCH mainnet: real chain state; executions are signed in your wallet and broadcast.',
   SIMULATION: 'Local mock chain running the real BCH VM. No real value.',
   'READ-ONLY': 'Real BCH mainnet data, read only. Nothing is broadcast.',
   BLOCKED: 'Not available: see the blocker note.',
@@ -24,8 +26,8 @@ const modeHint: Record<DataMode, string> = {
 export function Badge({ mode, className }: { mode: DataMode; className?: string }) {
   return (
     <span title={modeHint[mode]} className={clsx('inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10.5px] font-medium uppercase tracking-[0.08em]', modeStyle[mode], className)}>
-      <span className={clsx('size-1.5 rounded-full', mode === 'SIMULATION' ? 'bg-amber-sim' : mode === 'READ-ONLY' ? 'bg-sky-ro' : mode === 'BLOCKED' ? 'bg-rose-bad' : 'bg-current')} aria-hidden />
-      {mode}
+      <span className={clsx('size-1.5 rounded-full', mode === 'LIVE' ? 'animate-pulse bg-emerald-400' : mode === 'SIMULATION' ? 'bg-amber-sim' : mode === 'READ-ONLY' ? 'bg-sky-ro' : mode === 'BLOCKED' ? 'bg-rose-bad' : 'bg-current')} aria-hidden />
+      {mode === 'SIMULATION' ? 'SANDBOX' : mode}
     </span>
   );
 }

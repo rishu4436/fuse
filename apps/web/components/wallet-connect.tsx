@@ -1,6 +1,6 @@
 'use client';
-// WizardConnect (hdwalletv1) pairing for the Studio. Read-only use: FUSE derives the wallet's receive address
-// from the shared xpub and displays it. FUSE does NOT request mainnet signatures; that needs owner authorization.
+// WizardConnect (hdwalletv1) pairing. FUSE derives the wallet's receive address from the shared xpub. In the live
+// execute flow the wallet signs FUSE-composed transactions (broadcast:false); FUSE relays only the signed hex.
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import QRCode from 'qrcode';
@@ -9,7 +9,7 @@ import { MainnetPreflight, type WalletHandle } from './preflight';
 
 type State = { kind: 'idle' } | { kind: 'pairing'; uri: string; qr: string; relay: string } | { kind: 'connected'; wallet: string; address: string | null; protocol: string | null; handle: WalletHandle | null } | { kind: 'error'; message: string };
 
-export function WalletConnect() {
+export function WalletConnect({ onHandle }: { onHandle?: (h: WalletHandle | null) => void } = {}) {
   const [st, setSt] = useState<State>({ kind: 'idle' });
   const ref = useRef<{ cleanup?: () => void; disconnect?: () => Promise<void> }>({});
   useEffect(() => () => ref.current.cleanup?.(), []);
@@ -29,13 +29,16 @@ export function WalletConnect() {
           sign: async (req, inputPaths) => {
             const transaction = lib.decodeTransactionUnsafe(lib.hexToBin(req.transactionHex));
             const h = (v: unknown) => lib.hexToBin(String(v));
-            const sourceOutputs = req.sourceOutputs.map((s) => ({ outpointIndex: Number(s.outpointIndex), outpointTransactionHash: h(s.outpointTransactionHash), sequenceNumber: Number(s.sequenceNumber), unlockingBytecode: h(s.unlockingBytecode), lockingBytecode: h(s.lockingBytecode), valueSatoshis: BigInt(s.valueSatoshis) }));
+            type Tok = { category: string; amount: string | number; nft?: { capability: 'none' | 'mutable' | 'minting'; commitment: string } };
+            const token = (t: unknown) => { if (!t) return {}; const k = t as Tok; return { token: { category: h(k.category), amount: BigInt(k.amount), ...(k.nft ? { nft: { capability: k.nft.capability, commitment: h(k.nft.commitment) } } : {}) } }; };
+            const sourceOutputs = req.sourceOutputs.map((s) => ({ outpointIndex: Number(s.outpointIndex), outpointTransactionHash: h(s.outpointTransactionHash), sequenceNumber: Number(s.sequenceNumber), unlockingBytecode: h(s.unlockingBytecode), lockingBytecode: h(s.lockingBytecode), valueSatoshis: BigInt(String(s.valueSatoshis)), ...token(s.token) }));
             const res = await mgr.signTransaction({ transaction: { transaction, sourceOutputs, broadcast: false, userPrompt: req.userPrompt }, inputPaths });
             if (res.error) throw new Error(res.error);
             return res.signedTransaction;
           },
         } : null;
         setSt({ kind: 'connected', wallet: mgr.walletName ?? 'Wallet', address, protocol: mgr.protocol, handle });
+        onHandle?.(handle);
       });
       mgr.on('disconnect', (_r, m) => setSt({ kind: 'error', message: `Wallet disconnected${m ? `: ${m}` : ''}` }));
       ref.current = { cleanup: () => relay.cleanup(), disconnect: async () => { await mgr.sendDisconnect('FUSE Studio closed the session').catch(() => undefined); relay.cleanup(); } };
@@ -43,14 +46,14 @@ export function WalletConnect() {
       setSt({ kind: 'pairing', uri: relay.uri, qr, relay: relayState });
     } catch (e) { setSt({ kind: 'error', message: (e as Error).message }); }
   };
-  const disconnect = async () => { await ref.current.disconnect?.(); setSt({ kind: 'idle' }); };
+  const disconnect = async () => { await ref.current.disconnect?.(); setSt({ kind: 'idle' }); onHandle?.(null); };
 
   return (
     <div data-testid="wallet-connect">
       <AnimatePresence mode="wait">
         {st.kind === 'idle' && (
           <motion.div key="idle" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <p className="mb-3 text-[12px] leading-relaxed text-fog-400">Pair a BCH wallet over WizardConnect (hdwalletv1). FUSE only reads your receive address. It does not request mainnet signatures.</p>
+            <p className="mb-3 text-[12px] leading-relaxed text-fog-400">Pair a BCH wallet over WizardConnect (hdwalletv1). FUSE reads your receive address; in Execute it asks your wallet to sign the composed transaction. Keys never leave your wallet.</p>
             <Button variant="ghost" onClick={connect} data-testid="wc-connect">Connect with WizardConnect</Button>
           </motion.div>
         )}
@@ -67,11 +70,11 @@ export function WalletConnect() {
         )}
         {st.kind === 'connected' && (
           <motion.div key="conn" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-2 text-[12.5px]">
-            <div className="flex items-center justify-between"><span className="flex items-center gap-2"><span className="size-1.5 rounded-full bg-volt-400" />{st.wallet}</span><Badge mode="READ-ONLY" /></div>
+            <div className="flex items-center justify-between"><span className="flex items-center gap-2"><span className="size-1.5 rounded-full bg-volt-400" />{st.wallet}</span><Badge mode={onHandle ? 'LIVE' : 'READ-ONLY'} /></div>
             <Mono className="break-all text-fog-300">{st.address ?? 'receive path not shared'}</Mono>
             <div className="text-[11px] text-fog-400">protocol {st.protocol ?? '—'} · signing uses SIGHASH_ALL|FORKID|UTXOS</div>
             <Button variant="quiet" onClick={disconnect} className="self-start px-0">Disconnect</Button>
-            {st.handle && <MainnetPreflight wallet={st.handle} />}
+            {st.handle && !onHandle && <MainnetPreflight wallet={st.handle} />}
           </motion.div>
         )}
         {st.kind === 'error' && (
