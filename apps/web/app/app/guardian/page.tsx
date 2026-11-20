@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { PageHeader, Panel, Stat, Badge, ApiOffline, Mono, type DataMode } from '@/components/ui';
 
 interface Loan { outpoint: string; collateralSats: string; debtCents: string; status: string; collateralRatioBps: string | null; periodsBehind: string; liquidationPriceCents: string | null; currentRateRaw: string }
-interface P { checkedAt: string; tipHeight: number; operations: Record<string, string>; live: { latestPrice: { priceRaw: string; sequence: string; contract: string; outpoint: string }; loans: Loan[]; activeLoans: number; staleLoans: number; currentPeriod: string; collateralRatioBps: { min: number; median: number; max: number }; unspentMutableParyonNfts: number } }
+interface P { coverage?: { loanUtxosListed: number; reusedFromSnapshotUnchanged: number; decodedLiveNow: number; pendingDecode: number }; checkedAt: string; tipHeight: number; operations: Record<string, string>; live: { latestPrice: { priceRaw: string; sequence: string; contract: string; outpoint: string }; loans: Loan[]; activeLoans: number; staleLoans: number; currentPeriod: string; collateralRatioBps: { min: number; median: number; max: number }; unspentMutableParyonNfts: number } }
 const BUCKETS = [[11000, 12500], [12500, 15000], [15000, 20000], [20000, 30000], [30000, 1e9]] as const;
 
 export default function Guardian() {
@@ -17,7 +17,7 @@ export default function Guardian() {
   const { data, error } = usePoll<P>(mode === 'live' ? '/api/live/paryon-view' : '/api/mainnet/paryon', 0);
   const [shock, setShock] = useState(0);
   const sentinel = usePoll<{ overall: string; signals: Array<{ name: string; status: string; detail: string }> }>(mode === 'live' ? '/api/live/guardian/sentinel' : '/api/guardian/sentinel', 0);
-  const price = data ? Number(data.live.latestPrice.priceRaw) : 0;
+  const price = data?.live.latestPrice ? Number(data.live.latestPrice.priceRaw) : 0;
   const active = useMemo(() => (data?.live.loans ?? []).filter((l) => Number(l.periodsBehind) <= 1 && l.debtCents !== '0' && l.collateralRatioBps), [data]);
   const shocked = price * (1 - shock / 100);
   const atRisk = active.filter((l) => Number(l.liquidationPriceCents ?? 0) >= shocked);
@@ -30,6 +30,7 @@ export default function Guardian() {
         lede="FUSE rebuilt every Paryon V1 contract from @paryonusd/contracts and the published deployment config, and matched them to the mainnet genesis transactions. It decodes each loan NFT commitment and reads the oracle price from PriceContractGuarded. Collateral ratios are computed locally. Liquidation and loan management are not executed."
         right={<Badge mode="READ-ONLY" />} />
       <ApiOffline error={error} />
+      {data?.coverage && <div className="mb-4 text-[11.5px] text-fog-400" data-testid="paryon-coverage">LIVE read at block {data.tipHeight}: oracle price read now; {data.coverage.loanUtxosListed} loan UTXOs listed, {data.coverage.reusedFromSnapshotUnchanged} unchanged since the decoded snapshot, {data.coverage.decodedLiveNow} decoded now{data.coverage.pendingDecode ? `, ${data.coverage.pendingDecode} still decoding (refresh in a minute)` : ''}.</div>}
       {data && (
         <div className="flex flex-col gap-5">
           <Panel title="Protocol health sentinel" kicker={`Overall: ${sentinel.data?.overall ?? '—'}`} mode="READ-ONLY" actions={<span className="flex gap-3 text-[12px]"><Link href="/app/guardian/rates" className="text-volt-300">Rates →</Link><Link href="/app/guardian/policies" className="text-volt-300">Policies →</Link><Link href="/app/guardian/alerts" className="text-volt-300">Alerts →</Link></span>}>
@@ -43,7 +44,7 @@ export default function Guardian() {
             </div>
           </Panel>
           <div className="grid grid-cols-2 gap-5 md:grid-cols-4">
-            <Panel><Stat label="Oracle price" value={usd(data.live.latestPrice.priceRaw)} sub={`seq ${data.live.latestPrice.sequence}`} accent /></Panel>
+            <Panel><Stat label="Oracle price" value={data.live.latestPrice ? usd(data.live.latestPrice.priceRaw) : '—'} sub={data.live.latestPrice ? `seq ${data.live.latestPrice.sequence}` : 'no price state read'} accent /></Panel>
             <Panel><Stat label="Active loans" value={data.live.activeLoans} sub={`${data.live.staleLoans} stale (interest overdue)`} /></Panel>
             <Panel><Stat label="Lowest CR" value={`${(data.live.collateralRatioBps.min / 100).toFixed(1)}%`} sub="minimum 110%" /></Panel>
             <Panel><Stat label="Snapshot height" value={sats(data.tipHeight)} sub={new Date(data.checkedAt).toLocaleString()} /></Panel>

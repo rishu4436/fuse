@@ -36,7 +36,10 @@ export function registerLive(app: FastifyInstance, ctx: { root: string; paryonSn
   const liveView = async () => {
     const live = await liveParyon(ctx.paryonSnapshot() as never);
     const active = live.loans.filter((l) => BigInt(l.periodsBehind) <= 1n && l.debtCents !== '0');
-    return { checkedAt: live.readAt, tipHeight: live.tipHeight, mode: 'LIVE', coverage: live.coverage, live: { latestPrice: live.latestPrice, priceStates: live.priceStates, loans: live.loans, activeLoans: active.length, staleLoans: live.loans.length - active.length, currentPeriod: live.currentPeriod } };
+    const crs = active.map((l) => Number(l.collateralRatioBps)).filter((x) => Number.isFinite(x) && x > 0).sort((a, b) => a - b);
+    const collateralRatioBps = { min: crs[0] ?? 0, median: crs.length ? crs[Math.floor(crs.length / 2)] : 0, max: crs[crs.length - 1] ?? 0 };
+    const snap = ctx.paryonSnapshot() as { operations?: Record<string, string> } | null;
+    return { checkedAt: live.readAt, tipHeight: live.tipHeight, mode: 'LIVE', coverage: live.coverage, operations: snap?.operations ?? {}, live: { latestPrice: live.latestPrice, priceStates: live.priceStates, loans: live.loans, activeLoans: active.length, staleLoans: live.loans.length - active.length, currentPeriod: live.currentPeriod, collateralRatioBps, unspentMutableParyonNfts: live.loans.length } };
   };
   app.get('/api/live/paryon-view', async () => liveView());
   app.get('/api/live/guardian/sentinel', async () => { const v = await liveView(); return { checkedAt: v.checkedAt, ...sentinel({ priceStates: v.live.priceStates as never, latestPrice: v.live.latestPrice as never, activeLoans: v.live.activeLoans, staleLoans: v.live.staleLoans, checkedAt: v.checkedAt }) }; });

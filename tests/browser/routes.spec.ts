@@ -27,6 +27,8 @@ test('LIVE is the default mode: mainnet pages are labeled LIVE; sandbox pages SA
   await expect(page.getByTestId('live-pools')).toBeVisible({ timeout: 45_000 });
   await page.goto('/app/liquidity'); await expect(page.getByTestId('live-vaults')).toBeVisible();
   await page.goto('/app/guardian'); await expect(page.getByText('READ-ONLY').first()).toBeVisible();
+  await expect(page.getByTestId('paryon-coverage')).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByTestId('sentinel')).toBeVisible();
   await sandbox(page);
   await page.goto('/app/liquidity'); await expect(page.getByText('SANDBOX').first()).toBeVisible();
   const r = await page.goto('/app/execute/new'); expect(r?.url()).toMatch(/\/app\/execute\/new$/);
