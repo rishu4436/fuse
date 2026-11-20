@@ -10,7 +10,7 @@ Every number below comes from an actual run. Nothing is estimated.
 | 2 | `npx eslint .` | **0 problems** |
 | 3 | `npx vitest run` | **35 files, 149 tests passed, 0 failed** (new: `services/api/test/live.test.ts` (6): relay refuses when disabled / invalid hex / rate limit; Guardian passes a self-payment and blocks hidden transfers, fee-cap and cost overruns) |
 | 4 | `pnpm --filter @fuse/web build` and `FUSE_HOSTED=1 vercel build --prod` | **Compiled successfully** |
-| 5 | `FUSE_WEB=https://fuse-rust-eight.vercel.app npx playwright test --workers=1` (against the **deployed** app) | **PW_FINAL** (feature flows run on desktop only, by design). New: LIVE default-mode labels, live pools / vaults / Guardian coverage, and a live execute test that composes a real mainnet flash loan and a flash → Cauldron route from live state (VM simulation + Guardian PASS/WARN) and downloads the signing package (no key, no broadcast) |
+| 5 | `FUSE_WEB=https://fuse-rust-eight.vercel.app npx playwright test --workers=1` (against the **deployed** app) | **80 passed, 1 failed, 13 skipped (94). The failure is the SANDBOX LP-deposit → explorer flow: hosted sandbox state is per serverless instance and the explorer request landed on a fresh one; it passes when re-run alone. Every LIVE test passed** (feature flows run on desktop only, by design). New: LIVE default-mode labels, live pools / vaults / Guardian coverage, and a live execute test that composes a real mainnet flash loan and a flash → Cauldron route from live state (VM simulation + Guardian PASS/WARN) and downloads the signing package (no key, no broadcast) |
 | 6 | Hosted mainnet e2e (`scripts/mainnet/hosted-e2e.ts`, box-only signer, deployed `/api/broadcast`) | 6 txs accepted; 4 certificates VERIFIED against chain (see below and docs/STATUS.md) |
 
 ## Unit / integration tests (vitest) per file
@@ -134,7 +134,7 @@ source outputs from chain, full VM verify, relays) → `GET /api/live/tx/:txid` 
 | flash-cauldron | 994b63ba75533bb36506a406ac09737fb96812c45e9224ba089f0f3e66a3dd3f | 978214 | 1,858 | FLASH_VIA_CAULDRON VERIFIED (k-invariant holds on both pool legs) |
 | deposit 10,000 | 2f8503c88a3a65d2b6cc3e6dd71794a096acb67d78a7918d700696e6fd1c763e | 978214 | 1,290 | LP_DEPOSIT VERIFIED |
 | withdraw 10,000 | 1cb032299e5009c96195ecd3615d6a814c7670e9a437fc15b18d0912d03d5930 | 978214 | 1,008 | LP_WITHDRAW VERIFIED |
-| consolidate | 603bcd3abc2451587039ea88ddf1366e3e798ff9a5e3e9eaeef074f74472c494 | CONSOLIDATE_BLOCK | 656 | (wallet-only, no contract) |
+| consolidate | 603bcd3abc2451587039ea88ddf1366e3e798ff9a5e3e9eaeef074f74472c494 | 978215 | 656 | (wallet-only, no contract) |
 
 Negative result: a flash-cauldron composed from a stale vault view (Vercel fetch cache) was rejected by the node
 (`-26`, double-spend); nothing was spent. Fixed (`cache: 'no-store'` on chain reads) and re-run as the tx above.

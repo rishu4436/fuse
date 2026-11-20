@@ -25,7 +25,7 @@ const sandbox = (page: import('@playwright/test').Page) => page.addInitScript(()
 test('LIVE is the default mode: mainnet pages are labeled LIVE; sandbox pages SANDBOX after the toggle', async ({ page }) => {
   await page.goto('/app/opportunities'); await expect(page.getByText('LIVE', { exact: true }).filter({ visible: true }).first()).toBeVisible();
   await expect(page.getByTestId('live-pools')).toBeVisible({ timeout: 45_000 });
-  await page.goto('/app/liquidity'); await expect(page.getByTestId('live-vaults')).toBeVisible();
+  await page.goto('/app/liquidity'); await expect(page.getByTestId('live-vaults')).toContainText('fuse-live-1', { timeout: 60_000 });
   await page.goto('/app/guardian'); await expect(page.getByText('READ-ONLY').first()).toBeVisible();
   await expect(page.getByTestId('paryon-coverage')).toBeVisible({ timeout: 60_000 });
   await expect(page.getByTestId('sentinel')).toBeVisible();
@@ -119,9 +119,12 @@ test.describe('feature flows', () => {
     await page.getByTestId('lp-submit').click();
     await expect(page.getByTestId('lp-result')).toContainText('Accepted on the LOCAL chain');
     await expect(page.getByTestId('lp-history')).toContainText('Max drawdown');
-    await page.goto('/app/explorer');
-    await page.getByTestId('tx-row').first().click();
-    await expect(page.getByTestId('tx-detail')).toBeVisible();
+    // hosted sandbox state is per serverless instance: retry if the explorer request lands on a fresh instance
+    await expect(async () => {
+      await page.goto('/app/explorer');
+      await page.getByTestId('tx-row').first().click({ timeout: 5_000 });
+      await expect(page.getByTestId('tx-detail')).toBeVisible({ timeout: 5_000 });
+    }).toPass({ timeout: 45_000 });
   });
   test('strategy builder rejects an unrepaid borrow and compiles a valid recipe', async ({ page }) => {
     await page.goto('/app/strategies/builder?recipe=ROUTING');

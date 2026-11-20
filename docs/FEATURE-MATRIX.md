@@ -14,7 +14,7 @@ Every spec ID F01–F51 and X01–X04 is listed below. The status is the most co
 | NOT STARTED | No code yet |
 
 Tests are written as `file (n)`. Paths are relative to the repo root. UI routes are under the Studio (`apps/web`).
-Snapshot (2026-11-21 IST, round 4): 35 vitest files / 149 tests, Playwright 82 passed / 13 skipped by design against the hosted URL (desktop + mobile, `--workers=1`).
+Snapshot (2026-11-21 IST, round 4): 35 vitest files / 149 tests, Playwright against the hosted URL (desktop + mobile, `--workers=1`): 80 passed, 1 failed (sandbox per-instance state; passes alone), 13 skipped by design.
 
 **Counts (55 IDs):** VERIFIED 10 · TESTED 30 · IMPLEMENTED 3 · PARTIAL 7 · BLOCKED 5 · NOT STARTED 0.
 VERIFIED + TESTED = 40/55 (72.7%); VERIFIED alone 10/55 (18.2%, up from 3/55 = 5.5% in round 3); anything working at least partly (all but BLOCKED) 50/55 (90.9%).

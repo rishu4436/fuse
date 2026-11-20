@@ -34,7 +34,7 @@ Evidence: `evidence/mainnet/live-run.json`, `evidence/mainnet/certificates/*.jso
 | 3 | flash-cauldron | [`994b63ba…`](https://bchexplorer.cash/tx/994b63ba75533bb36506a406ac09737fb96812c45e9224ba089f0f3e66a3dd3f) | 978214 | 1,858 | Flash loan routed through live Cauldron pools fac5a4a6… (+5,306 sats, −1 PUSD unit) and a9a2d622… (+1 unit, −5,273 sats); vault repaid 30,200. Certificate FLASH_VIA_CAULDRON VERIFIED, k-invariant holds on both legs. Loss 33 sats = pool fees (routing proof, not arbitrage) |
 | 4 | deposit 10,000 | [`2f8503c8…`](https://bchexplorer.cash/tx/2f8503c88a3a65d2b6cc3e6dd71794a096acb67d78a7918d700696e6fd1c763e) | 978214 | 1,290 | LP deposit via the owner path. Certificate LP_DEPOSIT VERIFIED |
 | 5 | withdraw 10,000 | [`1cb03229…`](https://bchexplorer.cash/tx/1cb032299e5009c96195ecd3615d6a814c7670e9a437fc15b18d0912d03d5930) | 978214 | 1,008 | LP withdraw via the owner path (fee paid from the withdrawn amount). Certificate LP_WITHDRAW VERIFIED |
-| 6 | consolidate | [`603bcd3a…`](https://bchexplorer.cash/tx/603bcd3abc2451587039ea88ddf1366e3e798ff9a5e3e9eaeef074f74472c494) | CONSOLIDATE_BLOCK | 656 | Sweep: both remaining wallet coins → one coin (709,697 sats) back to the same box wallet |
+| 6 | consolidate | [`603bcd3a…`](https://bchexplorer.cash/tx/603bcd3abc2451587039ea88ddf1366e3e798ff9a5e3e9eaeef074f74472c494) | 978215 | 656 | Sweep: both remaining wallet coins → one coin (709,697 sats) back to the same box wallet |
 
 One more broadcast attempt (flash-cauldron `17847454…`) was **rejected by the node** (`-26`): it had been composed from
 a stale vault view (a Vercel fetch cache), so it double-spent the vault. Nothing was spent. Fixed with `cache: 'no-store'`
@@ -54,8 +54,7 @@ builder, recipe marketplace, staged recovery, shard leases, SQLite persistence, 
 
 ## Tests
 
-vitest 151/151 (35 files), tsc 0 errors (root + web), eslint 0 problems, next build OK, Playwright PLAYWRIGHT_RESULT against
-the hosted URL (`--workers=1`). Screenshots: `evidence/screenshots/live-*.png` (LIVE) and the round-3 sandbox set. See [TEST-REPORT.md](TEST-REPORT.md).
+vitest 149/149 (35 files), tsc 0 errors (root + web), eslint 0 problems, next build OK, Playwright against the hosted URL (`--workers=1`): 80 passed, 1 failed, 13 skipped (94). The failure is the SANDBOX LP-deposit → explorer flow: hosted sandbox state is per serverless instance and the explorer request landed on a fresh one; it passes when re-run alone. Every LIVE test passed. Screenshots: `evidence/screenshots/live-*.png` (LIVE) and the round-3 sandbox set. See [TEST-REPORT.md](TEST-REPORT.md).
 
 ## Open problems / blockers
 
