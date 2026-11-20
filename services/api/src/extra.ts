@@ -137,6 +137,7 @@ export function registerExtra(app: FastifyInstance, state: FuseState) {
   app.get('/api/explorer', async () => Object.entries(txMap()).reverse().slice(0, 100).map(([txid, raw]) => { const i = inspectRaw(raw); return { txid, sizeBytes: i.sizeBytes, inputs: i.inputs.length, outputs: i.outputs.length }; }));
   app.get('/api/explorer/:txid', async (req, reply) => { const raw = txMap()[(req.params as { txid: string }).txid]; if (!raw) return reply.status(404).send({ error: 'NOT_FOUND', message: 'not on the LOCAL chain' }); return { network: 'local', simulated: true, raw, ...inspectRaw(raw) }; });
   app.get('/api/contracts', async () => Object.entries(artifactManifest).map(([name, x]) => { const a = (artifacts as Record<string, { abi: unknown; constructorInputs: unknown; source: string; compiler: unknown }>)[name]; return { name, ...x, abi: a?.abi, constructorInputs: a?.constructorInputs, source: a?.source, local: name === 'FlashVaultBCH' ? { lockingBytecode: m().vault.lockingBytecode, address: m().vault.tokenAddress } : null }; }));
+  app.get('/api/replay/mainnet/moria', async () => state.evidence('moria-replay') ?? { results: [], note: 'run scripts/verification/replay-moria-history.ts' });
   app.get('/api/replay/:certId', async (req, reply) => {
     const c = state.certificates.get((req.params as { certId: string }).certId);
     if (!c) return reply.status(404).send({ error: 'NOT_FOUND' });

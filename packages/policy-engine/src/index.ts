@@ -127,3 +127,4 @@ export const POLICY_TEMPLATES = {
 
 export { canonicalize };
 export const sha256hex = (s: string) => binToHex(sha256.hash(utf8ToBin(s)));
+export * from './vectors.js';

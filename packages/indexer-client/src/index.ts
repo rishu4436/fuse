@@ -98,6 +98,17 @@ export class ChaingraphClient {
       }));
   }
 
+  /** Historical (spent or unspent) transactions that created outputs of a category, with block heights. */
+  async getTransactionsByCategory(categoryHex: string, limit = 25, offset = 0): Promise<Array<{ txid: string; blockHeight: number | null }>> {
+    if (!/^[0-9a-f]{64}$/.test(categoryHex)) throw new Error('invalid category');
+    const d = await this.query<{ output: Array<{ transaction_hash: string; transaction: { block_inclusions: Array<{ block: { height: string } }> } }> }>(
+      `query($c: bytea!, $limit: Int!, $offset: Int!){ output(where:{token_category:{_eq:$c}}, limit:$limit, offset:$offset){ transaction_hash transaction { block_inclusions { block { height } } } } }`,
+      { c: `\\x${categoryHex}`, limit, offset });
+    const seen = new Map<string, number | null>();
+    for (const o of d.output) { const h = strip(o.transaction_hash)!; if (!seen.has(h)) seen.set(h, o.transaction.block_inclusions[0] ? Number(o.transaction.block_inclusions[0].block.height) : null); }
+    return [...seen].map(([txid, blockHeight]) => ({ txid, blockHeight }));
+  }
+
   /** Unspent token outputs of a category (display-order hex), excluding OP_RETURN burns. Optionally filter NFT capability. */
   async getUnspentByCategory(categoryHex: string, opts: { capability?: 'none' | 'mutable' | 'minting'; limit?: number } = {}): Promise<ChainOutput[]> {
     if (!/^[0-9a-f]{64}$/.test(categoryHex)) throw new Error('invalid category');

@@ -96,3 +96,4 @@ export function sentinel(s: { priceStates: Array<{ sequence: string; priceRaw: s
   ];
   return { overall: signals.some((x) => x.status === 'ALERT') ? 'ALERT' : signals.some((x) => x.status === 'WARN') ? 'WARN' : 'OK', signals };
 }
+export * from './bounty.js';

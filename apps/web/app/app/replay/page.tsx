@@ -7,17 +7,19 @@ import { PageHeader, Panel, Badge, Button, ApiOffline, Empty, Mono } from '@/com
 import { Table, Tr, Td } from '@/components/kit';
 
 interface Cert { certificateId: string; intentId: string; transactions: Array<{ txid: string }>; issuedAt: number }
+interface M { checkedAt: string; protocol: string; category: string; source: string; note: string; results: Array<{ txid: string; blockHeight?: number; allValid?: boolean; inputs?: number; outputs?: number; error?: string }> }
 interface R { txid: string; allValid: boolean; steps: Array<{ input: number; role: string; unlock: string; ok: boolean; detail: string }>; note: string }
 
 export default function Replay() {
   const certs = usePoll<Cert[]>('/api/certificates', 4000);
+  const moria = usePoll<M>('/api/replay/mainnet/moria', 0);
   const [sel, setSel] = useState<string>();
   const [r, setR] = useState<R>();
   const [err, setErr] = useState<string>();
   const go = async (id: string) => { setSel(id); setErr(undefined); setR(undefined); try { setR(await api<R>(`/api/replay/${id}`)); } catch (e) { setErr((e as Error).message); } };
   return (
     <div className="mx-auto max-w-6xl">
-      <PageHeader eyebrow="Historical replay" title="Re-run a settled execution" lede="Takes the raw transaction FUSE settled and the source outputs it spent, and evaluates every input again in a fresh BCH 2026 VM. Moria V1 mainnet history is not replayed yet: see the feature matrix." right={<Badge mode="SIMULATION" />} />
+      <PageHeader eyebrow="Historical replay" title="Re-run a settled execution" lede="Takes the raw transaction FUSE settled and the source outputs it spent, and evaluates every input again in a fresh BCH 2026 VM. Moria V1 mainnet history is replayed the same way, read only." right={<Badge mode="SIMULATION" />} />
       <ApiOffline error={certs.error} />
       <div className="grid gap-5 lg:grid-cols-[340px_1fr]">
         <Panel title="Settled executions">
@@ -39,6 +41,12 @@ export default function Replay() {
           {r && <Button variant="quiet" className="mt-2 px-0" onClick={() => sel && go(sel)}>Replay again</Button>}
         </Panel>
       </div>
+      <Panel className="mt-5" title="Moria V1 history on mainnet" kicker={moria.data ? `${moria.data.results.filter((x) => x.allValid).length}/${moria.data.results.length} replayed valid · snapshot ${new Date(moria.data.checkedAt).toLocaleString()}` : 'loading'} mode="READ-ONLY">
+        <p className="mb-3 text-[12px] text-fog-400">Real MUSD-carrying mainnet transactions from the Moria V1 era, fetched from Chaingraph, re-hashed locally, and re-evaluated input by input in a fresh BCH 2026 VM. Moria V1 is disabled (April 2026) and is never offered as a venue. FUSE does not decode Moria contract semantics.</p>
+        <Table head={['Transaction', 'Block', 'Inputs → outputs', 'Replay']} min={600}>
+          {(moria.data?.results ?? []).map((x) => <Tr key={x.txid}><Td first><a className="hover:text-volt-300" href={`https://blockbook.pat.mn/tx/${x.txid}`} target="_blank" rel="noreferrer"><Mono>{short(x.txid, 10)}</Mono></a></Td><Td num>{x.blockHeight ?? '—'}</Td><Td num>{x.inputs !== undefined ? `${x.inputs} → ${x.outputs}` : '—'}</Td><Td>{x.error ? <span className="text-rose-bad">{x.error}</span> : x.allValid ? <span className="text-volt-300">all inputs valid</span> : <span className="text-rose-bad">invalid input</span>}</Td></Tr>)}
+        </Table>
+      </Panel>
     </div>
   );
 }

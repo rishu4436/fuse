@@ -1,0 +1,66 @@
+{
+  "standard": "FEP-1",
+  "ownerPrivateKeyDerivation": "sha256(utf8('FEP-1 test vector owner key: PUBLIC, NEVER FUND'))",
+  "ownerPubkey": "02f074d8d3f8e42750541bd3516f40789f120c1b4619985c5a85c7c4bb639718ce",
+  "policyJson": {
+    "standard": "FEP-1",
+    "version": 1,
+    "policyId": "vector-001",
+    "network": "mainnet",
+    "domain": "fuse.guardian",
+    "owner": {
+      "pubkey": "02f074d8d3f8e42750541bd3516f40789f120c1b4619985c5a85c7c4bb639718ce"
+    },
+    "assets": [
+      {
+        "asset": "BCH",
+        "maxPerAction": "5000000",
+        "maxPerPeriod": "20000000",
+        "periodSeconds": 86400
+      }
+    ],
+    "allowedActions": [
+      "COLLATERAL_TOP_UP",
+      "LOAN_REPAYMENT"
+    ],
+    "allowedProtocols": [
+      "paryon-v1"
+    ],
+    "approvedRecipients": [],
+    "approvedSourceVaults": [],
+    "minHealthImprovementBps": 500,
+    "maxFeeSats": "20000",
+    "minOutputs": [],
+    "validFrom": 1790000000,
+    "expiresAt": 1792592000,
+    "revocationNonce": 0,
+    "mode": "APPROVAL_REQUIRED"
+  },
+  "canonical": "{\"allowedActions\":[\"COLLATERAL_TOP_UP\",\"LOAN_REPAYMENT\"],\"allowedProtocols\":[\"paryon-v1\"],\"approvedRecipients\":[],\"approvedSourceVaults\":[],\"assets\":[{\"asset\":\"BCH\",\"maxPerAction\":\"5000000\",\"maxPerPeriod\":\"20000000\",\"periodSeconds\":86400}],\"domain\":\"fuse.guardian\",\"expiresAt\":1792592000,\"maxFeeSats\":\"20000\",\"minHealthImprovementBps\":500,\"minOutputs\":[],\"mode\":\"APPROVAL_REQUIRED\",\"network\":\"mainnet\",\"owner\":{\"pubkey\":\"02f074d8d3f8e42750541bd3516f40789f120c1b4619985c5a85c7c4bb639718ce\"},\"policyId\":\"vector-001\",\"revocationNonce\":0,\"standard\":\"FEP-1\",\"validFrom\":1790000000,\"version\":1}",
+  "preimage": "FUSE:policy/FEP-1\n{\"allowedActions\":[\"COLLATERAL_TOP_UP\",\"LOAN_REPAYMENT\"],\"allowedProtocols\":[\"paryon-v1\"],\"approvedRecipients\":[],\"approvedSourceVaults\":[],\"assets\":[{\"asset\":\"BCH\",\"maxPerAction\":\"5000000\",\"maxPerPeriod\":\"20000000\",\"periodSeconds\":86400}],\"domain\":\"fuse.guardian\",\"expiresAt\":1792592000,\"maxFeeSats\":\"20000\",\"minHealthImprovementBps\":500,\"minOutputs\":[],\"mode\":\"APPROVAL_REQUIRED\",\"network\":\"mainnet\",\"owner\":{\"pubkey\":\"02f074d8d3f8e42750541bd3516f40789f120c1b4619985c5a85c7c4bb639718ce\"},\"policyId\":\"vector-001\",\"revocationNonce\":0,\"standard\":\"FEP-1\",\"validFrom\":1790000000,\"version\":1}",
+  "hash": "da0266601d2af6ebb8876a397017e495fdeedf8e784461aad6cc3c29e15d2676",
+  "signature": "3b1d5bf495cbc2014fab89ee3028309f02ef9e2cad949530c34e833ab9cf8a6c7eb35ce80c010149c86c77c17e61b809a56ab7eb72450a4b5f5483bad23ac5bf",
+  "negative": [
+    {
+      "name": "amount changed after signing",
+      "mutate": {
+        "path": "assets.0.maxPerAction",
+        "value": "5000001"
+      },
+      "expect": "hash mismatch"
+    },
+    {
+      "name": "network swapped",
+      "mutate": {
+        "path": "network",
+        "value": "chipnet"
+      },
+      "expect": "hash mismatch + network mismatch"
+    },
+    {
+      "name": "signature bit flip",
+      "signature": "3b1d5bf495cbc2014fab89ee3028309f02ef9e2cad949530c34e833ab9cf8a6c7eb35ce80c010149c86c77c17e61b809a56ab7eb72450a4b5f5483bad23ac500",
+      "expect": "owner signature invalid"
+    }
+  ]
+}

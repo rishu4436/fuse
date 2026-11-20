@@ -148,3 +148,4 @@ export function certificateToHtml(c: Certificate, v?: CertificateVerification): 
 <h2>Transactions</h2><ul>${c.transactions.map((t) => `<li><code>${t.txid}</code> ${t.blockHeight ?? 'unconfirmed'}</li>`).join('')}</ul>
 <h2>Checks</h2><ul>${(v?.checks ?? c.checks).map((k) => `<li>${k.ok ? '✔' : '✘'} ${esc(k.name)} ${esc(k.detail ?? '')}</li>`).join('')}</ul></body>`;
 }
+export * from './replay.js';
