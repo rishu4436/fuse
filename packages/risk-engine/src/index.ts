@@ -3,14 +3,14 @@
 // exact integer math. Nothing here signs or executes.
 import { collateralRatioBps, liquidationPriceCents, PARYON_MAINNET_V1, PARYON_OPERATION_STATUS } from '@fuse/protocol-adapters';
 
-export interface LoanSnapshot { outpoint: string; collateralSats: bigint; debtCents: bigint; beingRedeemed: bigint; status: string; currentRateRaw: bigint; periodsBehind: bigint }
+export interface LoanSnapshot { outpoint: string; collateralSats: bigint; debtCents: bigint; beingRedeemed: bigint; status: string; currentRateRaw: bigint; periodsBehind: bigint; lastPeriodInterestPaid?: bigint; nextRateRaw?: bigint }
 export type RiskTier = 'LIQUIDATABLE' | 'CRITICAL' | 'HIGH' | 'WATCH' | 'HEALTHY' | 'INACTIVE';
 export interface LoanRisk { outpoint: string; tier: RiskTier; crBps: bigint | null; liquidationPriceCents: bigint | null; dropToLiquidationBps: bigint | null; redemption: { active: boolean; amountCents: bigint; exposureRank?: number } ; reasons: string[] }
 export const TIERS_BPS = { CRITICAL: 12_000n, HIGH: 13_000n, WATCH: 15_000n } as const;
 const MIN = BigInt(PARYON_MAINNET_V1.minCollateralRatioBps);
 
 export function parseLoan(l: Record<string, string>): LoanSnapshot {
-  return { outpoint: l.outpoint, collateralSats: BigInt(l.collateralSats), debtCents: BigInt(l.debtCents), beingRedeemed: BigInt(l.beingRedeemed ?? '0'), status: l.status, currentRateRaw: BigInt(l.currentRateRaw ?? '0'), periodsBehind: BigInt(l.periodsBehind ?? '0') };
+  return { outpoint: l.outpoint, collateralSats: BigInt(l.collateralSats), debtCents: BigInt(l.debtCents), beingRedeemed: BigInt(l.beingRedeemed ?? '0'), status: l.status, currentRateRaw: BigInt(l.currentRateRaw ?? '0'), periodsBehind: BigInt(l.periodsBehind ?? '0'), lastPeriodInterestPaid: l.lastPeriodInterestPaid !== undefined ? BigInt(l.lastPeriodInterestPaid) : undefined, nextRateRaw: l.nextRateRaw !== undefined ? BigInt(l.nextRateRaw) : undefined };
 }
 
 export function assessLoan(l: LoanSnapshot, priceCents: bigint): LoanRisk {
@@ -26,8 +26,11 @@ export function assessLoan(l: LoanSnapshot, priceCents: bigint): LoanRisk {
 }
 
 /** F14 + F15 over a whole snapshot. Redemption exposure ranking orders active loans by interest rate
- *  ascending. ASSUMPTION (labelled in UI): lower-rate loans are redeemed first, as in rate-ordered
- *  redemption designs. Not verified against Paryon's Redeemer contract logic; treat as a heuristic. */
+ *  ascending. Grounded in @paryonusd/contracts 1.1.0 source: `Redemption.swapTargetLoan` lets anyone move a
+ *  pending redemption to a loan with a strictly LOWER currentInterestRate and the same lastPeriodInterestPaid,
+ *  and `swapInRedemption` only accepts MATURE (status 0x02) loans; `swapOutRedemption` needs ≥ 100.00 PUSD debt.
+ *  So the lowest-rate mature loans in a period are the most exposed. Which loan a redeemer targets first and
+ *  whether keepers actually swap is behaviour, not code; see `rateAdvice` for the per-period ordering. */
 export function radar(loans: LoanSnapshot[], priceCents: bigint, shockBps = 0n) {
   const p = priceCents - (priceCents * shockBps) / 10_000n;
   const risks = loans.map((l) => assessLoan(l, p));
@@ -97,3 +100,5 @@ export function sentinel(s: { priceStates: Array<{ sequence: string; priceRaw: s
   return { overall: signals.some((x) => x.status === 'ALERT') ? 'ALERT' : signals.some((x) => x.status === 'WARN') ? 'WARN' : 'OK', signals };
 }
 export * from './bounty.js';
+export * from './rates.js';
+export * from './redemption.js';

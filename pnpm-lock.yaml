@@ -53,9 +53,15 @@ importers:
       '@fuse/protocol-adapters':
         specifier: workspace:*
         version: link:packages/protocol-adapters
+      '@fuse/recipes':
+        specifier: workspace:*
+        version: link:packages/recipes
       '@fuse/risk-engine':
         specifier: workspace:*
         version: link:packages/risk-engine
+      '@fuse/sdk':
+        specifier: workspace:*
+        version: link:packages/sdk
       '@fuse/simulation':
         specifier: workspace:*
         version: link:packages/simulation
@@ -170,6 +176,16 @@ importers:
         specifier: '5.9'
         version: 5.9.3
 
+  examples/sdk-quickstart:
+    dependencies:
+      '@fuse/sdk':
+        specifier: workspace:*
+        version: link:../../packages/sdk
+    devDependencies:
+      tsx:
+        specifier: ^4.19.0
+        version: 4.23.15
+
   packages/auction: {}
 
   packages/compiler: {}
@@ -196,7 +212,11 @@ importers:
 
   packages/protocol-adapters: {}
 
+  packages/recipes: {}
+
   packages/risk-engine: {}
+
+  packages/sdk: {}
 
   packages/simulation: {}
 

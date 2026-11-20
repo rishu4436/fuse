@@ -5,15 +5,17 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { randomUtxo } from 'cashscript';
 import { binToHex, hexToBin, decodeTransactionUnsafe, createVirtualMachineBch2026 } from '@bitauth/libauth';
-import { compileIntent, parallelWorlds, netSwapIntents, DEFAULT_WORLDS, type CompileContext } from '@fuse/compiler';
+import { compileIntent, parallelWorlds, netSwapIntents, executeStaged, DEFAULT_WORLDS, COMPILED_TYPES, PARYON_BLOCKED, type CompileContext, type StageDef, type ChainPort } from '@fuse/compiler';
 import { liveMarketView, utxosOf, solverIdentity, fixtureKey } from '@fuse/simulation';
-import { radar, parseLoan, readiness, evaluateRules, sentinel, assessLoan, type GuardianPolicy } from '@fuse/risk-engine';
+import { radar, parseLoan, readiness, evaluateRules, sentinel, assessLoan, rateAdvice, redemptionArbitrage, type GuardianPolicy } from '@fuse/risk-engine';
+import { signRecipe, verifyRecipe, PRESETS, LEGS, type Recipe, type Leg } from '@fuse/recipes';
+import { recomputeOutcome } from '@fuse/auction';
 import { NotificationCenter, adaptersFromEnv, channelStatus, dispatch, type ChannelId, type Notification } from '@fuse/notifications';
 import { vaultHealth, buildDeposit, buildWithdraw, buildMerge, buildSplit, buildPause, type ShardRef } from '@fuse/flash-liquidity';
 import { artifactManifest, artifacts } from '@fuse/contracts';
 import { contractUnlocks, signInputs, finalize, verifyTemplateAndRaw, inspectRaw, txidOfRaw, sourceOutputsOf, type TxTemplate } from '@fuse/transaction-composer';
 import { PARYON_OPERATION_STATUS } from '@fuse/protocol-adapters';
-import { scanArbitrage } from '@fuse/solver-sdk';
+import { scanArbitrage, routingStrategy, type SwapIntentView } from '@fuse/solver-sdk';
 import type { FuseState } from './state.js';
 
 export function draftIntent(state: FuseState, over: { minOut?: bigint; maxIn?: bigint; maxFee?: bigint } = {}) {
@@ -168,5 +170,119 @@ export function registerExtra(app: FastifyInstance, state: FuseState) {
     const sourceOutputs = sourceOutputsOf(t);
     const steps = tx.inputs.map((_, i) => { const st = vm.evaluate({ inputIndex: i, sourceOutputs, transaction: tx }); const r = vm.stateSuccess(st); return { input: i, role: t.inputs[i].role, unlock: t.inputs[i].unlock.kind, ok: r === true, detail: r === true ? 'valid' : String(r) }; });
     return { certificateId: c.certificateId, txid: ctxid, network: 'local', simulated: true, replayed: true, allValid: steps.every((x) => x.ok), steps, template: t, note: 'Replayed in a fresh BCH 2026 VM from the recorded source outputs.' };
+  });
+
+  // ---- compiler: more intent types ----
+  app.get('/api/compile/types', async () => ({ compiled: COMPILED_TYPES, blocked: PARYON_BLOCKED.map((t) => ({ type: t, reason: 'Paryon V1 builders (@paryonusd/library) not published' })) }));
+  app.post('/api/compile/typed', async (req) => {
+    const b = z.object({ type: z.enum(['TOKEN_SWAP', 'ATOMIC_ARBITRAGE', 'LIQUIDITY_DEPOSIT', 'LIQUIDITY_WITHDRAWAL', 'LOAN_REPAYMENT', 'COLLATERAL_TOP_UP']), amount: z.coerce.bigint().positive().optional(), minProfit: z.coerce.bigint().min(0n).optional(), atomicity: z.enum(['ATOMIC_SINGLE_TX', 'STAGED_RECOVERABLE']).default('ATOMIC_SINGLE_TX') }).parse(req.body ?? {});
+    const d = draftIntent(state, {}) as Record<string, unknown>;
+    const lp = b.type.startsWith('LIQUIDITY');
+    const intent = { ...d, type: b.type, operation: { kind: b.type, params: {} }, atomicity: b.atomicity,
+      ...(b.type === 'TOKEN_SWAP' ? {} : { minOutput: b.type === 'ATOMIC_ARBITRAGE' ? { asset: 'BCH', amount: String(b.minProfit ?? 1_000n) } : undefined, maxInput: undefined }),
+      ...(lp ? { owner: { lockingBytecode: m().lp.lockingBytecode, authorization: 'WALLET_SIGNATURE' }, inputs: [{ asset: 'BCH', amount: String(b.amount ?? 5_000_000n) }] } : {}),
+      ...(b.type.startsWith('LOAN') || b.type.startsWith('COLLATERAL') ? { protocols: ['paryon-v1'] } : {}) };
+    const c = await ctx();
+    c.liquidity = { lpLockingBytecode: m().lp.lockingBytecode, lpCoins: (await lpCoins()) as never, shards: await state.shardRefs() };
+    return { intent, plan: strip(compileIntent(intent, c)) };
+  });
+
+  // ---- F11 staged recoverable execution on the LOCAL chain ----
+  app.post('/api/staged/run', async (req) => {
+    const b = z.object({ minOut: z.coerce.bigint().positive().default(20_000n), competitor: z.boolean().default(false), timeoutAfterAccept: z.boolean().default(false) }).parse(req.body ?? {});
+    const mk = m(); let calls = 0; let injected = false;
+    const chain: ChainPort = {
+      async broadcast(raw) {
+        calls++;
+        if (b.competitor && calls === 2 && !injected) { injected = true; await competitor(); }
+        const id = await mk.provider.sendRawTransaction(raw);
+        if (b.timeoutAfterAccept && calls === 1) throw new Error('request timed out after 30000 ms (simulated)');
+        return id;
+      },
+      async hasTx(txid) { return !!(await mk.provider.getRawTransaction(txid)); },
+      async isUnspent(op) { const [t, v] = op.split(':'); return (await mk.provider.getUtxosForLockingBytecode(mk.user.lockingBytecode)).some((u) => u.txid === t && u.vout === Number(v)); },
+    };
+    async function competitor() {
+      const comp = solverIdentity(mk, 'direct'); const view = await liveMarketView(mk);
+      const coins = (await utxosOf(mk, mk.solvers.direct.address)).filter((c) => !c.token);
+      const it: SwapIntentView = { auctionId: 'x', intentId: 'competitor', intentCommitment: '00'.repeat(32), type: 'TOKEN_SWAP', owner: { lockingBytecode: comp.lockingBytecode, coins }, buyToken: mk.token, minOut: 1_500n, maxIn: 1_000_000_000n, maxFee: 20_000n, deadline: 2e9 };
+      const p = routingStrategy(view, it, solverIdentity(mk, 'flash'));
+      await mk.provider.sendRawTransaction(finalize(p.template, contractUnlocks(p.template), signInputs(p.template, 'user', comp.priv)));
+      state.emit('COMPETITOR_TX', 'SIMULATION: a competing trader moved the pool between stages');
+    }
+    const stages: StageDef[] = [
+      { id: 'prepare', description: 'owner → owner: one exact funding output', owner: mk.user.lockingBytecode, signers: { user: mk.user.priv }, async build() {
+        const c = (await utxosOf(mk, mk.user.address)).filter((x) => !x.token).sort((a, b2) => (b2.satoshis > a.satoshis ? 1 : -1))[0];
+        return { version: 2, locktime: 0, inputs: [{ ...c, lockingBytecode: mk.user.lockingBytecode, role: 'wallet', unlock: { kind: 'p2pkh', signer: 'user' } }], outputs: [{ lockingBytecode: mk.user.lockingBytecode, satoshis: c.satoshis - 1_000n, role: 'change', label: 'funding output' }] } as TxTemplate;
+      } },
+      { id: 'swap', description: 'best Cauldron route from the funding output (rebuilt from fresh state on conflict)', owner: mk.user.lockingBytecode, signers: { user: mk.user.priv }, async build(c) {
+        const [txid, vout] = c.completed[0].ownerOutputs[0].split(':');
+        const coin = (await utxosOf(mk, mk.user.address)).find((u) => u.txid === txid && u.vout === Number(vout));
+        if (!coin) throw new Error('funding output not found (spent?)');
+        const it: SwapIntentView = { auctionId: 'staged', intentId: 'staged', intentCommitment: '00'.repeat(32), type: 'TOKEN_SWAP', owner: { lockingBytecode: mk.user.lockingBytecode, coins: [coin] }, buyToken: mk.token, minOut: b.minOut, maxIn: 1_000_000_000n, maxFee: 20_000n, deadline: 2e9 };
+        const p = routingStrategy(await liveMarketView(mk), it, solverIdentity(mk, 'routing'));
+        const o = recomputeOutcome(p.template, mk.user.lockingBytecode, mk.token);
+        if (o.userReceivesTokens < b.minOut) throw new Error(`delivers ${o.userReceivesTokens} < minOut ${b.minOut}`);
+        return p.template;
+      } },
+    ];
+    const r = await executeStaged(stages, chain);
+    await state.syncShards();
+    state.emit(r.status === 'COMPLETED' ? 'STAGED_COMPLETED' : 'STAGED_RECOVERABLE', r.status === 'COMPLETED' ? `${r.stages.length} stages accepted on the LOCAL chain` : `stopped at ${r.recovery?.failedStage}: ${r.recovery?.reason}`);
+    return { network: 'local', simulated: true, ...r, stages: r.stages.map(({ raw: _raw, ...x }) => x) };
+  });
+
+  // ---- F16 rate advice + F27 redemption arbitrage search (READ-ONLY, real snapshots) ----
+  app.get('/api/guardian/rates', async (req) => {
+    const q = z.object({ loan: z.string().optional(), multiple: z.coerce.number().min(0.5).max(20).default(2), demandCents: z.coerce.bigint().min(0n).optional() }).parse(req.query);
+    const ls = loans();
+    const loan = q.loan ?? ls.filter((l) => l.status === 'mature' && l.debtCents > 0n && l.periodsBehind <= 1n).sort((a, b) => (b.debtCents > a.debtCents ? 1 : -1))[0]?.outpoint;
+    if (!loan) return { status: 'READ-ONLY', error: 'no active mature loans in snapshot' };
+    return { status: 'READ-ONLY', checkedAt: snap()?.checkedAt, priceCents: price(), ...rateAdvice(ls, loan, price(), { targetMultiple: q.multiple, demandCents: q.demandCents }) };
+  });
+  app.get('/api/opportunities/redemption', async () => {
+    const c = state.evidence('cauldron');
+    const pools = ((c?.checked ?? []) as Array<{ pool_id: string; sats: string; tokens: string }>).map((p) => ({ id: p.pool_id.slice(0, 10), sats: BigInt(p.sats), tokens: BigInt(p.tokens) }));
+    const r = redemptionArbitrage(pools, price(), loans());
+    return { status: 'READ-ONLY', poolsCheckedAt: c?.checkedAt, oracleCheckedAt: snap()?.checkedAt, pools: pools.length, oraclePriceCents: price(), ...r, curve: r.curve.filter((_, i) => i % 3 === 0).slice(0, 80) };
+  });
+
+  // ---- F47 recipe marketplace (LOCAL; listing never executes anything) ----
+  const probe = (strategy: string, r: Recipe) => {
+    try {
+      const intent = draftIntent(state, { minOut: BigInt(r.bounds.minOutTokens), maxIn: BigInt(r.bounds.maxInSats) });
+      const cc = compileCtxSync(strategy);
+      const p = compileIntent(intent, cc);
+      const mine = p.candidates.find((c) => c.strategy === strategy);
+      return { ok: !!mine?.ok, strategy, selected: p.selected?.strategy, userNetSpendSats: mine?.outcome?.userNetSpendSats, reasons: mine ? mine.reasons : [p.error?.reason ?? 'not compiled'] };
+    } catch (e) { return { ok: false, strategy, reasons: [(e as Error).message] }; }
+  };
+  let marketCache: CompileContext | null = null;
+  const compileCtxSync = (strategy: string): CompileContext => ({ ...marketCache!, solvers: marketCache!.solvers.filter((s) => s.strategy === strategy) });
+  const listRecipe = async (signed: unknown) => {
+    marketCache = await ctx();
+    const v = verifyRecipe(signed, probe);
+    if (v.recipe && v.hash && !store.getRecipe(v.hash)) store.putRecipe({ id: 'rcp_' + v.hash.slice(0, 12), hash: v.hash, authorPubkey: v.recipe.author.pubkey, signature: (signed as { signature: string }).signature, body: v.recipe, verdict: { listed: v.listed, checks: v.checks, strategy: v.strategy, probe: v.probe, autoExecute: false } });
+    if (v.recipe) state.emit(v.listed ? 'RECIPE_LISTED' : 'RECIPE_REJECTED', `${v.recipe.name}: ${v.checks.filter((c) => !c.ok).map((c) => c.name).join(', ') || 'all checks passed'}`);
+    return v;
+  };
+  const fixtureAuthor = (label: string) => { const k = fixtureKey(`recipe-author:${label}`); return { priv: k.priv, pubkey: binToHex(k.pub) }; };
+  const seed = async () => {
+    if (store.listRecipes().length) return;
+    const mk = (name: string, legs: Leg[], author: string, description: string, minOut = '30000', tags: string[] = []) => { const a = fixtureAuthor(author); return signRecipe({ schema: 'fuse.recipe/v1', name, description, legs, bounds: { minOutTokens: minOut, maxInSats: '40000000' }, author: { pubkey: a.pubkey, label: author }, createdAt: 1_795_000_000, tags }, a.priv); };
+    for (const r of [
+      mk('Flash back-run rebate', PRESETS.FLASH_LIQUIDITY, 'volt-labs', 'Buy for the user, back-run the pool gap with a FlashVault shard, rebate half the profit.', '30000', ['flash', 'rebate']),
+      mk('Plain best-pool route', PRESETS.ROUTING, 'route-co', 'Route the whole order through the cheapest single pool. 10 bps solver fee.', '30000', ['routing']),
+      mk('Inventory fill', PRESETS.DIRECT_LIQUIDITY, 'mm-desk', 'Fill from a market maker inventory at the pool reference price + 150 bps.', '30000', ['inventory']),
+      mk('Free money (unrepaid borrow)', ['BORROW', 'BUY_CHEAP', 'PAY_USER'], 'anon', 'Borrows a shard and never repays it. The marketplace must reject this.', '30000', ['adversarial']),
+    ]) await listRecipe(r);
+  };
+  app.get('/api/marketplace/recipes', async () => { await seed(); return { mode: 'LOCAL', autoExecute: false, legs: LEGS, recipes: store.listRecipes() }; });
+  app.post('/api/marketplace/recipes', async (req) => listRecipe(req.body));
+  app.post('/api/marketplace/publish-local', async (req) => {
+    const b = z.object({ name: z.string().min(3).max(60), description: z.string().max(400).default(''), legs: z.array(z.string()).min(1).max(8), minOutTokens: z.string().default('30000') }).parse(req.body);
+    const a = fixtureAuthor('studio-user');
+    const signed = signRecipe({ schema: 'fuse.recipe/v1', name: b.name, description: b.description, legs: b.legs as Leg[], bounds: { minOutTokens: b.minOutTokens, maxInSats: '40000000' }, author: { pubkey: a.pubkey, label: 'studio (fixture key)' }, createdAt: Math.floor(Date.now() / 1000), tags: ['studio'] }, a.priv);
+    return { ...(await listRecipe(signed)), signedWith: 'LOCAL fixture author key (SIMULATION; holds nothing)' };
   });
 }

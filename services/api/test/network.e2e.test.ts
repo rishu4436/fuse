@@ -3,6 +3,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { spawn, type ChildProcess } from 'node:child_process';
 import { fromJson, toJson } from '@fuse/solver-sdk';
+import { quickstart } from '../../../examples/sdk-quickstart/index.js';
 
 const PORT = 18787 + Math.floor(Math.random() * 1000);
 const API = `http://127.0.0.1:${PORT}`;
@@ -39,4 +40,13 @@ describe('solver network over HTTP (separate processes)', () => {
     const vault = await get<{ cumulativeFees: bigint; flashCount: bigint }>('/api/vault');
     expect(vault.flashCount).toBeGreaterThanOrEqual(1n);
   }, 120_000);
+  it('F45: the standalone SDK quickstart app runs end-to-end and verifies its certificate client-side', async () => {
+    const lines: string[] = [];
+    const r = await quickstart(API, { log: (l) => lines.push(l) });
+    expect(r.plan.ok).toBe(true);
+    expect(r.recipes.autoExecute).toBe(false);
+    expect(r.rates.executable).toBe(false);
+    expect(r.verification).toBe('VERIFIED');
+    expect(lines.some((l) => l.includes('verified client-side'))).toBe(true);
+  }, 60_000);
 });

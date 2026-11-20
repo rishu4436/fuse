@@ -1,0 +1,10 @@
+{
+  "name": "fuse-sdk-quickstart",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Standalone app using @fuse/sdk: compile an intent, run a LOCAL auction, verify the certificate client-side, read Guardian data and the recipe marketplace.",
+  "scripts": { "start": "tsx index.ts" },
+  "dependencies": { "@fuse/sdk": "workspace:*" },
+  "devDependencies": { "tsx": "^4.19.0" }
+}
