@@ -1,4 +1,20 @@
-# Demo runbook (LOCAL, no real funds)
+# Demo runbook
+
+## LIVE mainnet demo (default)
+
+1. Open https://fuse-rust-eight.vercel.app. The sidebar switch shows **Live mainnet** (sandbox is opt-in).
+2. **Overview** (`/app`): chain tip, the live vault `fuse-live-1`, flash count and fees, Cauldron pools, sentinel, and broadcast ON.
+3. **Execute** (`/app/execute/live`): pick *Flash loan* or *Flash → Cauldron route*, connect WizardConnect or paste
+   your BCH address, then press **Compose + preflight**. The tx is built from live UTXOs, every covenant is simulated in the BCH
+   2026 VM and Guardian checks it. Sign with WizardConnect, or export the signing package, sign it offline and paste the hex.
+   **Broadcast** relays it, the page tracks confirmations, and **Verify certificate** checks it against mainnet.
+   A flash costs ≈ 1,200 sats (miner fee + 100-sat flash fee); a Cauldron route ≈ 2,000 sats.
+4. **FlashVault** (`/app/liquidity`): the vault's full on-chain history. **Cauldron pools** (`/app/opportunities`):
+   verified live pools. **Guardian** (`/app/guardian`): live Paryon oracle and loans (coverage shown).
+   **Certificates** (`/app/certificates`): verify any vault txid.
+5. Operator e2e from the build box (owner-authorized only): `npx tsx scripts/mainnet/hosted-e2e.ts <flash|flash-cauldron|deposit|withdraw|deploy-vault|consolidate> [--broadcast]`, then `… certificate <txid>`.
+
+# Sandbox demo (LOCAL, no real funds)
 
 ```bash
 pnpm install

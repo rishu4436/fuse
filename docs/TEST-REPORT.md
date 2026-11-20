@@ -1,18 +1,17 @@
 # Test report
 
 Environment: Linux build box, Node v24.22.1, pnpm 9.15.4, cashc/cashscript 0.14.0, libauth 3.1.0-next.8,
-Next.js 15.5.29, Playwright 1.65.1 (Chrome). Run on 20 Nov 2026 (IST), branch `feat/phase-0-1-foundation`,
-round 3 re-run at commit `3df3bcf` (plus this docs commit). Every number below comes from an actual run.
-Nothing is estimated.
+Next.js 15.5.29, Playwright 1.65.1 (Chrome). Latest run: 21 Nov 2026 (IST), round 4, branch `feat/phase-0-1-foundation`.
+Every number below comes from an actual run. Nothing is estimated.
 
 | # | Command | Result |
 |---|---|---|
-| 1 | `pnpm compile:contracts` | FlashVaultBCH 145 ops, FlashVaultToken 96 ops. Artifacts byte-identical to the committed ones |
-| 2 | `npx tsc --noEmit -p .` | **0 errors** (packages, services, tests) |
-| 3 | `npx eslint .` | **0 problems** (all workspaces, including apps/web) |
-| 4 | `npx vitest run` | **32 files, 140 tests passed, 0 failed** |
-| 5 | `pnpm --filter @fuse/web build` (`next build`) | **Compiled successfully** (34 Studio routes) |
-| 6 | `npx playwright test` (API + 4 solver processes + `next start` running) | **78 passed, 0 failed, 12 skipped** (feature flows run on desktop only, by design) |
+| 1 | `npx tsc --noEmit -p .` and `apps/web: npx tsc --noEmit -p .` | **0 errors** |
+| 2 | `npx eslint .` | **0 problems** |
+| 3 | `npx vitest run` | **35 files, 149 tests passed, 0 failed** (new: `services/api/test/live.test.ts` (6): relay refuses when disabled / invalid hex / rate limit; Guardian passes a self-payment and blocks hidden transfers, fee-cap and cost overruns) |
+| 4 | `pnpm --filter @fuse/web build` and `FUSE_HOSTED=1 vercel build --prod` | **Compiled successfully** |
+| 5 | `FUSE_WEB=https://fuse-rust-eight.vercel.app npx playwright test --workers=1` (against the **deployed** app) | **PW_FINAL** (feature flows run on desktop only, by design). New: LIVE default-mode labels, live pools / vaults / Guardian coverage, and a live execute test that composes a real mainnet flash loan and a flash → Cauldron route from live state (VM simulation + Guardian PASS/WARN) and downloads the signing package (no key, no broadcast) |
+| 6 | Hosted mainnet e2e (`scripts/mainnet/hosted-e2e.ts`, box-only signer, deployed `/api/broadcast`) | 6 txs accepted; 4 certificates VERIFIED against chain (see below and docs/STATUS.md) |
 
 ## Unit / integration tests (vitest) per file
 
@@ -120,3 +119,24 @@ npx playwright test
 * Five txs were sent and confirmed in block 978191; see `evidence/mainnet/run.json`.
 * The flash certificate is VERIFIED against chain data.
 * The underpay case was rejected locally and never sent.
+
+## Round 4 (21 Nov 2026 IST): live mainnet execution through the hosted app
+
+Path: `POST https://fuse-rust-eight.vercel.app/api/live/prepare` (compose from live UTXOs, VM simulation, Guardian) →
+`scripts/mainnet/test-signer.ts` on the build box (checks template hash, Guardian, byte-for-byte unsigned hex, own
+inputs, cost caps; signs; VM-verifies locally) → `POST https://fuse-rust-eight.vercel.app/api/broadcast` (re-derives
+source outputs from chain, full VM verify, relays) → `GET /api/live/tx/:txid` → `POST /api/live/certificate`.
+
+| Action | txid | Block | Fee | Certificate |
+|---|---|---|---|---|
+| deploy-vault | 5463522e639a4c06cc6b03bb5891cf700a5041f91156074c0c3577925025ceef | 978214 | 566 | (genesis: tracked by /api/live/vaults) |
+| flash | 7d5a261e800dd11f55f56e0756c5f82648d62e79cd4a01d248f222c8d59ebb79 | 978214 | 1,086 | FLASH_USE VERIFIED |
+| flash-cauldron | 994b63ba75533bb36506a406ac09737fb96812c45e9224ba089f0f3e66a3dd3f | 978214 | 1,858 | FLASH_VIA_CAULDRON VERIFIED (k-invariant holds on both pool legs) |
+| deposit 10,000 | 2f8503c88a3a65d2b6cc3e6dd71794a096acb67d78a7918d700696e6fd1c763e | 978214 | 1,290 | LP_DEPOSIT VERIFIED |
+| withdraw 10,000 | 1cb032299e5009c96195ecd3615d6a814c7670e9a437fc15b18d0912d03d5930 | 978214 | 1,008 | LP_WITHDRAW VERIFIED |
+| consolidate | 603bcd3abc2451587039ea88ddf1366e3e798ff9a5e3e9eaeef074f74472c494 | CONSOLIDATE_BLOCK | 656 | (wallet-only, no contract) |
+
+Negative result: a flash-cauldron composed from a stale vault view (Vercel fetch cache) was rejected by the node
+(`-26`, double-spend); nothing was spent. Fixed (`cache: 'no-store'` on chain reads) and re-run as the tx above.
+Bugs found by the live screenshots and fixed: a bigint `JSON.stringify` crash on the flash → Cauldron route panel, and a
+Guardian crash on the live Paryon shape (collateral-ratio stats missing). Both now have Playwright coverage.
