@@ -2,7 +2,7 @@
   "name": "fuse",
   "private": true,
   "version": "0.1.0",
-  "description": "FUSE — the execution layer for Bitcoin Cash DeFi",
+  "description": "FUSE \u2014 the execution layer for Bitcoin Cash DeFi",
   "license": "MIT",
   "packageManager": "pnpm@9.15.4",
   "type": "module",
@@ -14,10 +14,12 @@
     "build": "pnpm --filter @fuse/web build",
     "dev:api": "tsx services/api/src/server.ts",
     "dev:web": "pnpm --filter @fuse/web dev",
-    "solvers": "tsx services/solver-reference/src/launch.ts"
+    "solvers": "tsx scripts/demo/run-network.ts",
+    "test:e2e": "playwright test"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
+    "@playwright/test": "^1.65.1",
     "@types/node": "^26.6.6",
     "eslint": "9",
     "fast-check": "^4.10.3",

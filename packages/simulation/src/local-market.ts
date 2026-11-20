@@ -37,7 +37,7 @@ export function createLocalMarket() {
     A: { contract: poolA, ownerPkh: poolOwnerA.pkh, utxo: add(poolA.tokenAddress, 'pool-a', 1_000_000_000n, { category: TOKEN, amount: 1_000_000n }) },
     B: { contract: poolB, ownerPkh: poolOwnerB.pkh, utxo: add(poolB.tokenAddress, 'pool-b', 1_150_000_000n, { category: TOKEN, amount: 1_000_000n }) },
   };
-  const userCoin = add(user.address, 'user-coin', 120_000_000n);
+  const userCoin = add(user.address, 'user-coin', 1_000_000_000n);
   const solverCoins = Object.fromEntries(Object.entries(solvers).map(([k, s]) => [k, add(s.address, `solver-coin-${k}`, 5_000_000n)])) as Record<keyof typeof solvers, Utxo>;
   const directInventory = add(solvers.direct.address, 'direct-inventory', 1_000n, { category: TOKEN, amount: 200_000n });
   return { provider, lp, user, solvers, vault, vaultParams, shards, pools, userCoin, solverCoins, directInventory, token: TOKEN };

@@ -13,3 +13,10 @@ test-results/
 playwright-report/
 .turbo
 *.tsbuildinfo
+
+# build / test output
+apps/web/.next/
+apps/web/next-env.d.ts
+test-results/
+playwright-report/
+*.tsbuildinfo

@@ -29,7 +29,7 @@ export class FuseState {
     for (const l of this.listeners) l(e);
   }
 
-  reset() { this.market = createLocalMarket(); this.engine = new AuctionEngine({ bidRateLimiter: slidingWindowLimiter(20, 60_000) }); this.certificates.clear(); this.emit('WORLD_RESET', 'local world reset to genesis fixture'); }
+  reset() { const solvers = [...this.engine.solvers.values()]; this.market = createLocalMarket(); this.engine = new AuctionEngine({ bidRateLimiter: slidingWindowLimiter(20, 60_000) }); for (const s of solvers) this.engine.registerSolver(s.pubkey, s.strategy, s.name); this.certificates.clear(); this.emit('WORLD_RESET', 'local world reset to genesis fixture'); }
 
   evidence(name: 'cauldron' | 'paryon') {
     const f = resolve(this.root, 'evidence', name === 'cauldron' ? 'cauldron-pool-verification.json' : 'paryon-deployment-verification.json');
