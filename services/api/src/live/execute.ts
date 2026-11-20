@@ -10,7 +10,7 @@ import { trackVault, paramsOfConfig, vaultLb, type VaultConfig } from './vault.j
 import { livePools, bestRoundTrip, assertPoolsUnspent, PUSD } from './cauldron.js';
 
 export const LIVE_CAPS = { maxMinerFee: 5_000n, feeRate: 2n, minPrincipal: 10_000n, maxPrincipal: 50_000n, dust: 546n };
-export type Action = 'flash' | 'flash-cauldron' | 'deposit' | 'withdraw' | 'deploy-vault';
+export type Action = 'flash' | 'flash-cauldron' | 'deposit' | 'withdraw' | 'deploy-vault' | 'consolidate';
 const ZERO = encodeVaultState({ flashCount: 0n, cumulativeFees: 0n, paused: false });
 const fail = (msg: string, code = 400): never => { throw Object.assign(new Error(msg), { statusCode: code }); };
 export const flashFee = (p: BchVaultParams, v: bigint) => { const f = (v * p.feeBps + 9_999n) / 10_000n; return f > p.minFee ? f : p.minFee; };
@@ -69,7 +69,14 @@ export async function prepare(configs: VaultConfig[], req: PrepareInput) {
   const notes: string[] = [];
   let built: ReturnType<typeof sized>; let vaultInfo: Awaited<ReturnType<typeof trackVault>> | null = null; let route: Record<string, unknown> | null = null;
   let p: BchVaultParams | null = null; let requiredReturn: bigint | null = null; let expectedUserCost = 0n; let capital = 0n;
-  if (req.action === 'deploy-vault') {
+  if (req.action === 'consolidate') {
+    // sweep every plain coin of the wallet into ONE coin at output 0 of the same wallet (no contract involved)
+    const plain = coins.filter((c) => !c.token).slice(0, 20);
+    if (plain.length < 2) fail('nothing to consolidate: the wallet has fewer than 2 plain coins', 422);
+    const total = plain.reduce((a, c) => a + c.satoshis, 0n);
+    built = sized((fee) => ({ version: 2, locktime: 0, inputs: plain.map((c) => userIn(c, user.lb)), outputs: [{ lockingBytecode: user.lb, satoshis: total - fee, role: 'change', label: `all ${plain.length} coins → one coin back to your wallet` }] }));
+    expectedUserCost = built.fee; notes.push('Self-consolidation: every output pays your own address.');
+  } else if (req.action === 'deploy-vault') {
     const principal = req.principal ?? 20_000n;
     if (principal < LIVE_CAPS.minPrincipal || principal > LIVE_CAPS.maxPrincipal) fail(`principal must be ${LIVE_CAPS.minPrincipal}–${LIVE_CAPS.maxPrincipal} sats`);
     const c0 = coins.find((c) => !c.token && c.vout === 0 && c.satoshis >= principal + 3_000n) ?? fail('a plain coin at output index 0 with principal + 3,000 sats is needed for the vault identity genesis (send yourself one payment first)', 422);

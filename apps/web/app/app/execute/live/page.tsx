@@ -10,13 +10,14 @@ import { PageHeader, Panel, Badge, Button, Mono } from '@/components/ui';
 import { WalletConnect } from '@/components/wallet-connect';
 import type { WalletHandle } from '@/components/preflight';
 
-type Action = 'flash' | 'flash-cauldron' | 'deposit' | 'withdraw' | 'deploy-vault';
+type Action = 'flash' | 'flash-cauldron' | 'deposit' | 'withdraw' | 'deploy-vault' | 'consolidate';
 const ACTIONS: Array<{ id: Action; t: string; d: string }> = [
   { id: 'flash', t: 'Flash loan', d: 'Borrow the vault principal and repay it + fee in the same transaction. Permissionless.' },
   { id: 'flash-cauldron', t: 'Flash → Cauldron route', d: 'Borrowed sats buy PUSD on one live Cauldron pool and sell it on another; the proceeds repay the vault atomically.' },
   { id: 'deposit', t: 'LP deposit', d: 'Add sats to a vault you own (FlashVault v1 owner path).' },
   { id: 'withdraw', t: 'LP withdraw', d: 'Take sats out of a vault you own (owner signature).' },
   { id: 'deploy-vault', t: 'Deploy a vault', d: 'Mint a new FlashVault identity NFT funded from your coins; you become its owner.' },
+  { id: 'consolidate', t: 'Consolidate coins', d: 'Sweep all your plain coins into one coin back to your own address. No contract involved.' },
 ];
 interface Check { name: string; ok: boolean; level: string; detail: string }
 interface Prepared {
@@ -62,7 +63,7 @@ export default function LiveExecute() {
   const compose = () => run('Composing from live chain state, simulating in the BCH 2026 VM, running Guardian…', async () => {
     reset();
     const body: Record<string, unknown> = { action, address };
-    if (action !== 'deploy-vault') body.vaultId = vaultId;
+    if (action !== 'deploy-vault' && action !== 'consolidate') body.vaultId = vaultId;
     if (action === 'deposit' || action === 'withdraw') body.amount = amount;
     if (action === 'deploy-vault') body.principal = principal;
     if (action === 'flash-cauldron') body.units = '1';
@@ -109,7 +110,7 @@ export default function LiveExecute() {
               ))}
             </div>
             <div className="mt-4 flex flex-wrap items-end gap-3 text-[12px]">
-              {action !== 'deploy-vault' && (
+              {action !== 'deploy-vault' && action !== 'consolidate' && (
                 <label className="text-fog-400">Vault
                   <select data-testid="live-vault" value={vaultId} onChange={(e) => setVaultId(e.target.value)} className="ml-2 rounded-md border hairline bg-ink-900 px-2 py-1 text-fog-100">
                     {open.map((v) => <option key={v.id} value={v.id}>{v.id} · {v.current ? sats(v.current.satoshis) : '—'} sats</option>)}
