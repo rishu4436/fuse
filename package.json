@@ -47,12 +47,13 @@
     "@fuse/risk-engine": "workspace:*",
     "@fuse/simulation": "workspace:*",
     "@fuse/solver-sdk": "workspace:*",
+    "@fuse/store": "workspace:*",
     "@fuse/transaction-composer": "workspace:*",
+    "@fuse/wallet": "workspace:*",
     "@paryonusd/contracts": "1.1.0",
     "cashc": "0.14.0",
     "cashscript": "0.14.0",
     "fastify": "5",
-    "zod": "3",
-    "@fuse/wallet": "workspace:*"
+    "zod": "3"
   }
 }

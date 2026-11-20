@@ -42,6 +42,20 @@ export class ShardManager {
     this.leases.set(lease.outpoint, lease);
     return lease;
   }
+  /** Exclusive lease of a SPECIFIC shard (used by the auction coordinator for a winning template).
+   *  A lease held by `transferFrom` (e.g. the solver that pre-reserved it) is handed over atomically. */
+  reserveExact(outpoint: string, holder: string, opts: { transferFrom?: string; ttlMs?: number } = {}): Lease {
+    this.sweep();
+    const s = this.shards.get(outpoint);
+    if (!s) throw new FuseError('UNKNOWN_SHARD', `shard ${outpoint.slice(0, 12)}… is not in the current chain view`, true);
+    if (decodeVaultState(s.commitment).paused) throw new FuseError('SHARD_PAUSED', `shard ${outpoint.slice(0, 12)}… is paused`, false);
+    const cur = this.leases.get(outpoint);
+    if (cur && cur.holder !== holder && cur.holder !== opts.transferFrom) throw new FuseError('SHARD_LEASED', `shard ${outpoint.slice(0, 12)}… is leased by ${cur.holder}`, true);
+    const lease: Lease = { id: `lease_${++this.seq}`, outpoint, satoshis: s.satoshis, holder, expiresAt: this.now + (opts.ttlMs ?? this.o.leaseTtlMs ?? 30_000), fee: flashFee(s.satoshis, this.params.feeBps, this.params.minFee) };
+    this.leases.set(outpoint, lease);
+    return lease;
+  }
+  leaseOf(outpoint: string) { this.sweep(); return this.leases.get(outpoint); }
   release(lease: Lease) { const l = this.leases.get(lease.outpoint); if (l?.id === lease.id) this.leases.delete(lease.outpoint); }
   /** Settlement observed: the leased shard was replaced by its continuation output. */
   commit(lease: Lease, continuation: ShardRef) {

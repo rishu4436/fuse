@@ -145,3 +145,50 @@ export function adversarialStrategy(m: MarketView, intent: SwapIntentView, s: So
 }
 
 export const STRATEGIES = { DIRECT_LIQUIDITY: directLiquidityStrategy, ROUTING: routingStrategy, FLASH_LIQUIDITY: flashLiquidityStrategy, ADVERSARIAL_FIXTURE: adversarialStrategy } as const;
+
+/** Pure flash arbitrage for an OWNER (no swap intent): borrow a FlashVault shard, buy on the cheaper pool,
+ *  sell into the richer pool, repay principal + fee in the same transaction; profit goes to the owner.
+ *  `feeCoin` only has to cover the miner fee. Throws if no size is profitable after vault + miner fees. */
+export function flashArbitrageTemplate(m: MarketView, owner: { lockingBytecode: string; feeCoin: UtxoView }, opts: { minProfit?: bigint; maxTokens?: bigint } = {}): Proposal & { profit: bigint; tokens: bigint } {
+  if (m.pools.length < 2) throw new Error('need two pools');
+  const [cheap, rich] = [...m.pools].sort((a, b) => (a.utxo.satoshis * b.utxo.token!.amount < b.utxo.satoshis * a.utxo.token!.amount ? -1 : 1));
+  let best: { x: bigint; profit: bigint; buy: ReturnType<typeof cauldronBuyQuote>; sell: ReturnType<typeof cauldronSellQuote>; shard: MarketView['vault']['shards'][number]; fee: bigint } | null = null;
+  const cap = opts.maxTokens ?? 200_000n;
+  for (const shard of m.vault.shards) {
+    const st = decodeVaultState(shard.token!.nft!.commitment);
+    if (st.paused || shard.satoshis > m.vault.params.maxExposure) continue;
+    const fee = flashFee(shard.satoshis, m.vault.params.feeBps, m.vault.params.minFee);
+    for (let x = 1_000n; x <= cap; x += 1_000n) {
+      let buy, sell;
+      try { buy = cauldronBuyQuote(cheap.utxo.satoshis, cheap.utxo.token!.amount, x); sell = cauldronSellQuote(rich.utxo.satoshis, rich.utxo.token!.amount, x); } catch { break; }
+      if (buy.satsIn > shard.satoshis) break;
+      const profit = sell.satsOut - buy.satsIn - fee - MINER_FEE;
+      if (!best || profit > best.profit) best = { x, profit, buy, sell, shard, fee };
+    }
+  }
+  if (!best || best.profit <= (opts.minProfit ?? 0n)) throw new Error(best ? `best flash arbitrage nets ${best.profit} sats after vault fee and miner fee (need > ${opts.minProfit ?? 0n})` : 'no usable vault shard');
+  const { x, buy, sell, shard, fee, profit } = best;
+  const st = decodeVaultState(shard.token!.nft!.commitment);
+  const c = owner.feeCoin;
+  if (c.token) throw new Error('fee coin must be a plain BCH coin');
+  return {
+    profit, tokens: x,
+    template: {
+      version: 2, locktime: 0,
+      inputs: [
+        { txid: shard.txid, vout: shard.vout, satoshis: shard.satoshis, token: shard.token, lockingBytecode: m.vault.lockingBytecode, role: 'vault', unlock: { kind: 'flashvault-bch', params: m.vault.params, fn: 'flash' } },
+        { ...cheap.utxo, lockingBytecode: cheap.lockingBytecode, role: 'pool', unlock: { kind: 'cauldron-pool', ownerPkh: cheap.ownerPkh } },
+        { ...rich.utxo, lockingBytecode: rich.lockingBytecode, role: 'pool', unlock: { kind: 'cauldron-pool', ownerPkh: rich.ownerPkh } },
+        { ...c, lockingBytecode: owner.lockingBytecode, role: 'wallet', unlock: { kind: 'p2pkh', signer: 'user' } },
+      ],
+      outputs: [
+        { lockingBytecode: m.vault.lockingBytecode, satoshis: shard.satoshis + fee, token: { category: m.vault.params.vaultCategory, amount: 0n, nft: { capability: 'mutable', commitment: encodeVaultState(nextVaultState(st, fee)) } }, role: 'vault-continuation' },
+        { lockingBytecode: cheap.lockingBytecode, satoshis: buy.newSats, token: { category: m.token, amount: buy.newTokens }, role: 'pool' },
+        { lockingBytecode: rich.lockingBytecode, satoshis: sell.newSats, token: { category: m.token, amount: sell.newTokens }, role: 'pool' },
+        { lockingBytecode: owner.lockingBytecode, satoshis: c.satoshis + profit, role: 'user', label: 'fee coin + arbitrage profit' },
+      ],
+    },
+    claims: { userReceivesTokens: 0n, userPaysSats: -profit, solverFeeSats: 0n, liquidityFeeSats: fee, minerFeeSats: MINER_FEE },
+    explanation: `Borrows a ${shard.satoshis}-sat FlashVault shard, buys ${x} tokens on ${cheap.id}, sells them into ${rich.id}, repays principal + ${fee} sats fee; owner nets ${profit} sats.`,
+  };
+}

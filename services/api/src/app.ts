@@ -36,10 +36,18 @@ export async function buildApp(state: FuseState) {
   app.get('/api/auctions/:id', async (req, reply) => { const a = state.engine.auctions.get((req.params as { id: string }).id); return a ? serializeAuction(a) : reply.status(404).send({ error: 'NOT_FOUND' }); });
 
   // ---- solver network ----
-  app.post('/api/solvers/register', async (req) => { const b = z.object({ pubkey: z.string(), strategy: z.string(), name: z.string().max(40) }).parse(req.body); const r = state.engine.registerSolver(b.pubkey, b.strategy, b.name); state.emit('SOLVER_REGISTERED', `${b.name} (${b.strategy})`); return r; });
+  app.post('/api/solvers/register', async (req) => { const b = z.object({ pubkey: z.string(), strategy: z.string(), name: z.string().max(40) }).parse(req.body); const r = state.engine.registerSolver(b.pubkey, b.strategy, b.name); const sv = state.engine.solvers.get(r.solverId)!; state.store.putSolver({ solverId: sv.solverId, pubkey: sv.pubkey, strategy: sv.strategy, name: sv.name, registeredAt: sv.registeredAt }); state.emit('SOLVER_REGISTERED', `${b.name} (${b.strategy})`); return r; });
   app.get('/api/solvers', async () => [...state.engine.solvers.values()]);
-  app.get('/api/auctions/open', async () => state.engine.openAuctions().map((a) => ({ auctionId: a.auctionId, intent: a.intent, market: a.market, closesAt: a.closesAt })));
-  app.post('/api/solver/bids', async (req) => { const r = state.engine.submitBid(req.body as Bid); const b = req.body as Bid; state.emit(r.accepted ? 'BID_RECEIVED' : 'BID_REFUSED', `${b.strategy ?? '?'}${r.reason ? ': ' + r.reason : ''}`, b.auctionId); return r; });
+  // F30: solvers only see shards that are not leased by another auction or solver.
+  app.get('/api/auctions/open', async () => { const sm = await state.syncShards(); return state.engine.openAuctions().map((a) => ({ auctionId: a.auctionId, intent: a.intent, market: { ...a.market, vault: { ...a.market.vault, shards: a.market.vault.shards.filter((x) => { const l = sm.leaseOf(`${x.txid}:${x.vout}`); return !l || l.holder === a.auctionId; }) } }, closesAt: a.closesAt })); });
+  app.post('/api/solver/lease', async (req, reply) => {
+    const b = z.object({ solverId: z.string(), need: z.coerce.bigint().positive() }).parse(req.body);
+    if (!state.engine.solvers.has(b.solverId)) return reply.status(403).send({ error: 'NOT_REGISTERED' });
+    const sm = await state.syncShards();
+    try { const l = sm.reserve(b.need, b.solverId); state.emit('SHARD_LEASED', `${b.solverId} pre-reserved ${l.outpoint.slice(0, 10)}… (${l.satoshis} sats, ttl)`); return l; }
+    catch (e) { return reply.status(409).send({ error: (e as { code?: string }).code ?? 'LEASE_FAILED', message: (e as Error).message }); }
+  });
+  app.post('/api/solver/bids', async (req) => { const r = state.engine.submitBid(req.body as Bid); const b = req.body as Bid; if (r.accepted) state.bidReceivedAt.set(`${b.auctionId}:${b.solverId}`, Date.now()); state.emit(r.accepted ? 'BID_RECEIVED' : 'BID_REFUSED', `${b.strategy ?? '?'}${r.reason ? ': ' + r.reason : ''}`, b.auctionId); return r; });
   app.get('/api/solver/sign-requests', async (req) => {
     const { solverId } = z.object({ solverId: z.string() }).parse(req.query);
     return [...state.engine.auctions.values()].filter((a) => a.status === 'AWAITING_SIGNATURES' && a.winner?.bid.solverId === solverId && !a.signatures.has('solver') && state.engine.requiredSigners(a.auctionId).includes('solver')).map((a) => ({ auctionId: a.auctionId, bid: a.winner!.bid }));
@@ -56,7 +64,8 @@ export async function buildApp(state: FuseState) {
 
   // ---- certificates ----
   app.get('/api/certificates', async () => [...state.certificates.values()].reverse());
-  app.get('/api/certificates/:id', async (req, reply) => { const c = state.certificates.get((req.params as { id: string }).id); return c ?? reply.status(404).send({ error: 'NOT_FOUND' }); });
+  app.get('/api/certificates/history', async () => [...state.restoredCertificates.values()].map((c) => ({ ...c, restored: true, note: 'Issued in a previous API session. The LOCAL mock chain resets on restart, so this certificate cannot be re-verified against the current local chain.' })));
+  app.get('/api/certificates/:id', async (req, reply) => { const id = (req.params as { id: string }).id; const c = state.certificates.get(id) ?? state.restoredCertificates.get(id); return c ?? reply.status(404).send({ error: 'NOT_FOUND' }); });
   app.get('/api/certificates/:id/html', async (req, reply) => { const c = state.certificates.get((req.params as { id: string }).id); if (!c) return reply.status(404).send({ error: 'NOT_FOUND' }); const v = await state.verify(c); return reply.type('text/html').send(state.html(c, v)); });
   app.post('/api/certificates/verify', async (req) => state.verify(req.body));
 

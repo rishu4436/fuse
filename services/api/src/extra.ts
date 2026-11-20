@@ -8,8 +8,8 @@ import { binToHex, hexToBin, decodeTransactionUnsafe, createVirtualMachineBch202
 import { compileIntent, parallelWorlds, netSwapIntents, DEFAULT_WORLDS, type CompileContext } from '@fuse/compiler';
 import { liveMarketView, utxosOf, solverIdentity, fixtureKey } from '@fuse/simulation';
 import { radar, parseLoan, readiness, evaluateRules, sentinel, assessLoan, type GuardianPolicy } from '@fuse/risk-engine';
-import { NotificationCenter, CHANNELS } from '@fuse/notifications';
-import { ShardManager, vaultHealth, buildDeposit, buildWithdraw, buildMerge, buildSplit, buildPause, type ShardRef } from '@fuse/flash-liquidity';
+import { NotificationCenter, adaptersFromEnv, channelStatus, dispatch, type ChannelId, type Notification } from '@fuse/notifications';
+import { vaultHealth, buildDeposit, buildWithdraw, buildMerge, buildSplit, buildPause, type ShardRef } from '@fuse/flash-liquidity';
 import { artifactManifest, artifacts } from '@fuse/contracts';
 import { contractUnlocks, signInputs, finalize, verifyTemplateAndRaw, inspectRaw, txidOfRaw, sourceOutputsOf, type TxTemplate } from '@fuse/transaction-composer';
 import { PARYON_OPERATION_STATUS } from '@fuse/protocol-adapters';
@@ -22,9 +22,20 @@ export function draftIntent(state: FuseState, over: { minOut?: bigint; maxIn?: b
 }
 
 export function registerExtra(app: FastifyInstance, state: FuseState) {
-  const notes = new NotificationCenter({ cooldownMs: 10 * 60_000 });
-  const policies = new Map<string, GuardianPolicy>();
-  const leases = new Map<string, ShardManager>();
+  const store = state.store;
+  const adapters = adaptersFromEnv(process.env);
+  const policies = new Map<string, GuardianPolicy>(store.listPolicies<GuardianPolicy>().map((p) => [p.id, p]));
+  const channelsFor = (n: Notification): ChannelId[] => { const p = policies.get(n.key.split(':')[0]); return (p?.channels ?? ['in-app']) as ChannelId[]; };
+  const notes = new NotificationCenter({
+    cooldownMs: 10 * 60_000,
+    onPush: (n) => {
+      store.putAlert(n);
+      // External delivery only when configured AND FUSE_NOTIFY_EXTERNAL=1 (see packages/notifications). Async, recorded.
+      void dispatch(n, adapters, channelsFor(n)).then((ds) => { for (const d of ds) store.putDelivery({ alertId: n.id, channel: d.channel, status: d.status, detail: d.detail }); });
+    },
+    onRead: (id) => store.markAlertsRead(id),
+  });
+  notes.restore(store.listAlerts<Notification>());
   const m = () => state.market;
   const ctx = async (): Promise<CompileContext> => ({
     market: await liveMarketView(m()),
@@ -80,18 +91,24 @@ export function registerExtra(app: FastifyInstance, state: FuseState) {
   app.post('/api/guardian/policies', async (req) => {
     const b = z.object({ name: z.string().min(1).max(60), loan: z.string().regex(/^[0-9a-f]{64}:\d+$/), rules: z.array(RuleZ).min(1).max(10), channels: z.array(z.enum(['in-app', 'webhook', 'email', 'telegram'])).min(1) }).parse(req.body);
     const p: GuardianPolicy = { ...b, id: `gp_${Date.now().toString(36)}${policies.size}`, createdAt: Date.now() };
-    policies.set(p.id, p); state.emit('GUARDIAN_POLICY', `${p.name} watches ${p.loan.slice(0, 12)}…`);
+    policies.set(p.id, p); store.putPolicy(p); state.emit('GUARDIAN_POLICY', `${p.name} watches ${p.loan.slice(0, 12)}…`);
     return { policy: p, proposals: evaluate() };
   });
-  app.delete('/api/guardian/policies/:id', async (req) => ({ deleted: policies.delete((req.params as { id: string }).id) }));
+  app.delete('/api/guardian/policies/:id', async (req) => { const id = (req.params as { id: string }).id; store.deletePolicy(id); return { deleted: policies.delete(id) }; });
   app.get('/api/guardian/readiness', async (req) => { const { loan } = z.object({ loan: z.string() }).parse(req.query); const p = [...policies.values()].find((x) => x.loan === loan); return readiness(p, loans().find((x) => x.outpoint === loan), { snapshotAgeSec: ageSec() }); });
   app.get('/api/guardian/proposals', async () => evaluate());
-  app.get('/api/notifications', async () => ({ unread: notes.unread, channels: CHANNELS, items: notes.list() }));
+  app.get('/api/notifications', async () => ({ unread: notes.unread, channels: channelStatus(process.env), externalOptIn: process.env.FUSE_NOTIFY_EXTERNAL === '1', items: notes.list() }));
+  app.get('/api/notifications/deliveries', async () => store.listDeliveries());
+  // ---- persistence + solver performance ledger (F32) ----
+  app.get('/api/store', async () => ({ engine: 'sqlite (node:sqlite)', path: store.path === ':memory:' ? ':memory:' : store.path.replace(state.root, '.'), session: store.session, migrations: store.migrations(), counts: { intents: store.listIntents(10_000).length, auctions: store.listAuctions(10_000).length, certificates: store.listCertificates().length, policies: policies.size, alerts: store.listAlerts(10_000).length, ledger: store.ledger(undefined, 100_000).length, recipes: store.listRecipes().length } }));
+  app.get('/api/solvers/performance', async () => { const known = new Map(store.listSolvers().map((s) => [s.solverId, s])); return store.performance().map((p) => ({ ...p, name: known.get(p.solverId)?.name ?? state.engine.solvers.get(p.solverId)?.name ?? p.solverId, strategy: known.get(p.solverId)?.strategy ?? state.engine.solvers.get(p.solverId)?.strategy })).sort((a, b) => b.wins - a.wins); });
+  app.get('/api/solvers/ledger', async (req) => { const q = z.object({ solverId: z.string().optional(), limit: z.coerce.number().int().min(1).max(1000).default(100) }).parse(req.query); return store.ledger(q.solverId, q.limit); });
+  app.get('/api/intents/history', async () => ({ intents: store.listIntents(50), auctions: store.listAuctions(50) }));
   app.post('/api/notifications/read', async (req) => { notes.markRead(z.object({ id: z.string().optional() }).parse(req.body ?? {}).id); return { unread: notes.unread }; });
 
   // ---- liquidity (LOCAL, fixture LP key signs; SIMULATED) ----
   const shardRefs = async (): Promise<ShardRef[]> => (await m().provider.getUtxos(m().vault.tokenAddress)).filter((u) => u.token?.nft && u.token.category === m().vaultParams.vaultCategory).map((u) => ({ txid: u.txid, vout: u.vout, satoshis: u.satoshis, commitment: u.token!.nft!.commitment }));
-  const mgr = async () => { const k = m().vault.lockingBytecode; let s = leases.get(k); if (!s) { s = new ShardManager(m().vaultParams, await shardRefs()); leases.set(k, s); } else s.sync(await shardRefs()); return s; };
+  const mgr = async () => state.syncShards();
   app.get('/api/liquidity', async () => { const s = await mgr(); return { network: 'local', simulated: true, params: m().vaultParams, health: vaultHealth(s.all(), s.leased().map((l) => l.outpoint), m().vaultParams.maxExposure), leases: s.leased(), plan: s.plan(), lp: { address: m().lp.address } }; });
   const lpCoins = async () => (await m().provider.getUtxos(m().lp.address)).map((u) => ({ txid: u.txid, vout: u.vout, satoshis: u.satoshis, token: u.token as never }));
   const LpOp = z.discriminatedUnion('op', [

@@ -62,6 +62,9 @@ importers:
       '@fuse/solver-sdk':
         specifier: workspace:*
         version: link:packages/solver-sdk
+      '@fuse/store':
+        specifier: workspace:*
+        version: link:packages/store
       '@fuse/transaction-composer':
         specifier: workspace:*
         version: link:packages/transaction-composer
@@ -198,6 +201,8 @@ importers:
   packages/simulation: {}
 
   packages/solver-sdk: {}
+
+  packages/store: {}
 
   packages/transaction-composer: {}
 

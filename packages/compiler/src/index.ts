@@ -3,11 +3,12 @@
 // stops the pipeline with a precise reason. Supports TOKEN_SWAP today; other intent types stop at RESOLVE
 // with UNSUPPORTED (truthful), never with a fabricated plan.
 import { parseIntent, intentCommitment, type Intent } from '@fuse/intent';
-import { STRATEGIES, type MarketView, type SolverIdentity, type SwapIntentView, type UtxoView, type Bid } from '@fuse/solver-sdk';
+import { STRATEGIES, flashArbitrageTemplate, type MarketView, type SolverIdentity, type SwapIntentView, type UtxoView, type Bid } from '@fuse/solver-sdk';
 import { dryRunCovenants, recomputeOutcome } from '@fuse/auction';
 import { evaluatePolicy, type Policy, type SpendRecord } from '@fuse/policy-engine';
 import { templateHash, type TxTemplate } from '@fuse/transaction-composer';
 import { accountFees, type FeeAccounting } from './fees.js';
+import { buildDeposit, buildWithdraw, type ShardRef, type Coin } from '@fuse/flash-liquidity';
 import { explain, type Explanation } from './explain.js';
 export * from './fees.js';
 export * from './explain.js';
@@ -16,7 +17,7 @@ export const STAGES = ['PARSE', 'AUTHORIZE', 'POLICY', 'RESOLVE', 'PLAN', 'COMPO
 export type Stage = (typeof STAGES)[number];
 export interface StageResult { stage: Stage; ok: boolean; ms: number; detail: string }
 export interface Candidate { strategy: Bid['strategy']; solverId: string; ok: boolean; reasons: string[]; templateHash?: string; template?: TxTemplate; outcome?: { userReceivesTokens: bigint; userNetSpendSats: bigint; minerFeeSats: bigint }; fees?: FeeAccounting }
-export interface CompiledPlan { ok: boolean; intentCommitment?: string; stages: StageResult[]; candidates: Candidate[]; selected?: Candidate; explanation?: Explanation; error?: { stage: Stage; reason: string } }
+export interface CompiledPlan { executionClass?: string; staged?: Array<{ id: string; description: string }>; ok: boolean; intentCommitment?: string; stages: StageResult[]; candidates: Candidate[]; selected?: Candidate; explanation?: Explanation; error?: { stage: Stage; reason: string } }
 
 export interface CompileContext {
   market: MarketView;
@@ -25,7 +26,14 @@ export interface CompileContext {
   policy?: { policy: Policy; history?: SpendRecord[] };
   tokenLabel?: string;
   now?: number;
+  /** LP context for LIQUIDITY_DEPOSIT / LIQUIDITY_WITHDRAWAL (owner path of the FlashVault). */
+  liquidity?: { lpLockingBytecode: string; lpCoins: Coin[]; shards: ShardRef[] };
 }
+
+/** Intent types whose execution needs Paryon V1 transaction builders that are not published. */
+export const PARYON_BLOCKED = ['LOAN_REPAYMENT', 'COLLATERAL_TOP_UP', 'INTEREST_RATE_ADJUSTMENT', 'LOAN_REFINANCE', 'POSITION_DELEVERAGE', 'POSITION_EXIT', 'LIQUIDATION', 'REDEMPTION_ARBITRAGE'] as const;
+export const COMPILED_TYPES = ['TOKEN_SWAP', 'ATOMIC_ARBITRAGE', 'LIQUIDITY_DEPOSIT', 'LIQUIDITY_WITHDRAWAL'] as const;
+const POLICY_ACTION: Record<string, string> = { TOKEN_SWAP: 'TOKEN_SWAP', ATOMIC_ARBITRAGE: 'FLASH_LIQUIDITY', LIQUIDITY_DEPOSIT: 'LIQUIDITY_DEPOSIT', LIQUIDITY_WITHDRAWAL: 'LIQUIDITY_WITHDRAWAL' };
 
 export function compileIntent(input: unknown, ctx: CompileContext): CompiledPlan {
   const stages: StageResult[] = [];
@@ -43,20 +51,21 @@ export function compileIntent(input: unknown, ctx: CompileContext): CompiledPlan
   run('AUTHORIZE', () => {
     const i = intent!;
     if (i.authorizationMode === 'MONITOR_ONLY') throw new Error('MONITOR_ONLY intent: FUSE can watch and alert but has no execution authority');
-    if (i.atomicity !== 'ATOMIC_SINGLE_TX') throw new Error(`atomicity ${i.atomicity} not compiled yet (only ATOMIC_SINGLE_TX)`);
+    if (i.atomicity === 'STAGED_RECOVERABLE' && i.type !== 'TOKEN_SWAP') throw new Error(`STAGED_RECOVERABLE is compiled for TOKEN_SWAP only (got ${i.type})`);
+    if (i.atomicity === 'MONITOR_ONLY') throw new Error('MONITOR_ONLY atomicity has no execution plan');
     commit = intentCommitment(i);
     return { value: null, detail: `${i.authorizationMode} via ${i.owner.authorization}; commitment ${commit.slice(0, 16)}…` };
   });
   run('POLICY', () => {
     if (!ctx.policy) return { value: null, detail: 'no delegated policy: every transaction needs the owner signature' };
     const i = intent!;
-    const d = evaluatePolicy(ctx.policy.policy, { action: 'TOKEN_SWAP', protocol: 'cauldron', asset: 'BCH', amount: i.maxInput?.amount ?? 0n, feeSats: i.maxFee.amount, outputs: [], recipient: i.owner.lockingBytecode, now, signer: 'delegate' }, ctx.policy.history ?? []);
+    const d = evaluatePolicy(ctx.policy.policy, { action: (POLICY_ACTION[i.type] ?? i.type) as never, protocol: i.type.startsWith('LIQUIDITY') ? 'fuse-flashvault' : 'cauldron', asset: 'BCH', amount: i.maxInput?.amount ?? 0n, feeSats: i.maxFee.amount, outputs: [], recipient: i.owner.lockingBytecode, now, signer: 'delegate' }, ctx.policy.history ?? []);
     if (!d.allowed) throw new Error(`policy denies: ${d.reasons.join('; ')}`);
     return { value: null, detail: d.requiresApproval ? 'allowed, owner approval required' : 'allowed within policy limits' };
   });
+  if (!failed && intent && intent.type !== 'TOKEN_SWAP') return compileSpecial(intent, ctx, run, stages, candidates, commit, () => failed);
   const view = run('RESOLVE', () => {
     const i = intent!;
-    if (i.type !== 'TOKEN_SWAP') throw new Error(`UNSUPPORTED: compiler handles TOKEN_SWAP today; ${i.type} is not compiled`);
     if (i.protocols.includes('moria-v1-historical')) throw new Error('Moria V1 is disabled (Apr 2026) and is historical-only; it cannot be an execution venue');
     if (i.network !== ctx.market.network) throw new Error(`intent network ${i.network} ≠ market ${ctx.market.network}`);
     if (!i.minOutput || i.minOutput.asset === 'BCH') throw new Error('TOKEN_SWAP needs minOutput in a CashToken category');
@@ -116,7 +125,97 @@ export function compileIntent(input: unknown, ctx: CompileContext): CompiledPlan
     const e = explain(selected!.template!, selected!.fees!, { token: view!.buyToken, tokenLabel: ctx.tokenLabel ?? 'tokens', simulated: ctx.market.simulated, executionClass: (intent as Intent).atomicity });
     return { value: e, detail: e.headline };
   });
-  return { ok: !failed, intentCommitment: commit, stages, candidates, selected, explanation, error: failed };
+  const staged = intent?.atomicity === 'STAGED_RECOVERABLE' ? [{ id: 'prepare', description: 'owner → owner: consolidate into one exact funding output' }, { id: 'swap', description: `${selected?.strategy ?? 'best route'} from the funding output; rebuilt from fresh state on conflict; stops RECOVERABLE with owner outputs listed` }] : undefined;
+  return { ok: !failed, executionClass: intent?.atomicity, staged, intentCommitment: commit, stages, candidates, selected, explanation, error: failed };
+}
+
+type Run = <T>(stage: Stage, f: () => { value: T; detail: string }) => T | undefined;
+/** ATOMIC_ARBITRAGE (owner flash arbitrage), LIQUIDITY_DEPOSIT / LIQUIDITY_WITHDRAWAL (FlashVault owner path),
+ *  precise BLOCKED stops for Paryon write intents and UNSUPPORTED for the rest. */
+function compileSpecial(i: Intent, ctx: CompileContext, run: Run, stages: StageResult[], candidates: Candidate[], commit: string | undefined, failedNow: () => CompiledPlan['error']): CompiledPlan {
+  const done = (extra: Partial<CompiledPlan> = {}): CompiledPlan => ({ ok: !failedNow(), executionClass: i.atomicity, intentCommitment: commit, stages, candidates, error: failedNow(), ...extra });
+  const resolved = run('RESOLVE', () => {
+    if ((PARYON_BLOCKED as readonly string[]).includes(i.type)) throw new Error(`BLOCKED: ${i.type} needs Paryon V1 transaction builders (@paryonusd/library) that are not published; FUSE only reads Paryon state (see docs/INTEGRATION-FEASIBILITY.md)`);
+    if (!(COMPILED_TYPES as readonly string[]).includes(i.type)) throw new Error(`UNSUPPORTED: ${i.type} is not compiled (compiled types: ${COMPILED_TYPES.join(', ')})`);
+    if (i.protocols.includes('moria-v1-historical')) throw new Error('Moria V1 is disabled (Apr 2026) and is historical-only; it cannot be an execution venue');
+    if (i.network !== ctx.market.network) throw new Error(`intent network ${i.network} ≠ market ${ctx.market.network}`);
+    if (i.type === 'ATOMIC_ARBITRAGE') {
+      if (!ctx.ownerCoins.some((c) => !c.token)) throw new Error('owner needs one plain BCH coin for the miner fee');
+      return { value: i.type, detail: `${ctx.market.pools.length} pools, ${ctx.market.vault.shards.length} vault shards; profit asset BCH` };
+    }
+    if (!ctx.liquidity) throw new Error('no LP context: liquidity intents need the vault owner (LP) key context');
+    if (ctx.liquidity.lpLockingBytecode !== i.owner.lockingBytecode) throw new Error('intent owner is not the vault LP: only the LP key can use the owner path');
+    return { value: i.type, detail: `${ctx.liquidity.shards.length} shards, ${ctx.liquidity.lpCoins.length} LP coins` };
+  });
+  if (!resolved) return done();
+  let template: TxTemplate | undefined; let strategy: Candidate['strategy'] = 'ROUTING';
+  run('PLAN', () => {
+    if (i.type === 'ATOMIC_ARBITRAGE') return { value: null, detail: 'flash arbitrage across the two most mispriced pools, owner keeps the profit' };
+    return { value: null, detail: i.type === 'LIQUIDITY_DEPOSIT' ? 'owner-path deposit into the smallest shard with headroom' : 'owner-path withdrawal from the named (or largest) shard' };
+  });
+  run('COMPOSE', () => {
+    if (i.type === 'ATOMIC_ARBITRAGE') {
+      const fee = [...ctx.ownerCoins].filter((c) => !c.token).sort((a, b) => (a.satoshis < b.satoshis ? -1 : 1)).find((c) => c.satoshis >= 10_000n);
+      if (!fee) throw new Error('no owner coin ≥ 10,000 sats for the miner fee');
+      const minProfit = i.minOutput?.asset === 'BCH' ? i.minOutput.amount : 0n;
+      const p = flashArbitrageTemplate(ctx.market, { lockingBytecode: i.owner.lockingBytecode, feeCoin: fee }, { minProfit });
+      template = p.template; strategy = 'FLASH_LIQUIDITY';
+      return { value: null, detail: `${p.tokens} tokens round-trip, expected profit ${p.profit} sats` };
+    }
+    const L = ctx.liquidity!;
+    const amount = i.inputs.find((x) => x.asset === 'BCH')?.amount ?? 0n;
+    if (amount <= 0n) throw new Error('inputs must contain a positive BCH amount');
+    const named = typeof i.operation.params.shard === 'string' ? L.shards.find((s) => `${s.txid}:${s.vout}` === i.operation.params.shard) : undefined;
+    if (i.operation.params.shard && !named) throw new Error(`shard ${String(i.operation.params.shard).slice(0, 12)}… not found`);
+    const lp = { params: ctx.market.vault.params, vaultLockingBytecode: ctx.market.vault.lockingBytecode, lpLockingBytecode: L.lpLockingBytecode };
+    if (i.type === 'LIQUIDITY_DEPOSIT') {
+      const shard = named ?? [...L.shards].filter((s) => s.satoshis + amount <= ctx.market.vault.params.maxExposure).sort((a, b) => (a.satoshis < b.satoshis ? -1 : 1))[0];
+      if (!shard) throw new Error(`no shard has headroom for ${amount} sats under maxExposure ${ctx.market.vault.params.maxExposure}`);
+      const fund = [...L.lpCoins].filter((c) => !c.token).sort((a, b) => (b.satoshis > a.satoshis ? 1 : -1))[0];
+      if (!fund) throw new Error('LP has no plain BCH coin');
+      template = buildDeposit(lp, shard, fund, amount);
+    } else {
+      const shard = named ?? [...L.shards].sort((a, b) => (b.satoshis > a.satoshis ? 1 : -1))[0];
+      if (!shard) throw new Error('vault has no shards');
+      template = buildWithdraw(lp, shard, amount);
+    }
+    return { value: null, detail: `${template.inputs.length} inputs → ${template.outputs.length} outputs (LP owner path, 0x61 signature required)` };
+  });
+  const c: Candidate = { strategy, solverId: 'owner', ok: !!template, reasons: [], template, templateHash: template ? templateHash(template) : undefined };
+  if (template) candidates.push(c);
+  run('SIMULATE', () => {
+    const d = dryRunCovenants(template!);
+    if (!d.ok) throw new Error(`BCH VM: ${d.detail}`);
+    const pools = Object.fromEntries(ctx.market.pools.map((p) => [p.id, p.lockingBytecode]));
+    c.fees = accountFees(template!, { owner: i.owner.lockingBytecode, vault: ctx.market.vault.lockingBytecode, pools, solvers: {} });
+    if (!c.fees.conservation.sats || !c.fees.conservation.tokens) throw new Error('value conservation failed');
+    const ownerPath = template!.inputs.some((x) => x.unlock.kind === 'flashvault-bch-owner');
+    return { value: null, detail: ownerPath ? 'owner-path inputs are signature-dependent: verified in the VM after the LP signs (0x61); value conservation checked' : `${d.detail}; value conservation checked` };
+  });
+  run('CONSTRAIN', () => {
+    const t = template!;
+    const inSats = t.inputs.reduce((s, x) => s + x.satoshis, 0n), outSats = t.outputs.reduce((s, x) => s + x.satoshis, 0n);
+    const miner = inSats - outSats;
+    if (miner > i.maxFee.amount) throw new Error(`miner fee ${miner} > maxFee ${i.maxFee.amount}`);
+    if (i.type === 'ATOMIC_ARBITRAGE') {
+      const ownerIn = t.inputs.filter((x) => x.lockingBytecode === i.owner.lockingBytecode).reduce((s, x) => s + x.satoshis, 0n);
+      const ownerOut = t.outputs.filter((x) => x.lockingBytecode === i.owner.lockingBytecode).reduce((s, x) => s + x.satoshis, 0n);
+      const min = i.minOutput?.asset === 'BCH' ? i.minOutput.amount : 1n;
+      if (ownerOut - ownerIn < min) throw new Error(`owner profit ${ownerOut - ownerIn} < required ${min}`);
+      c.outcome = { userReceivesTokens: 0n, userNetSpendSats: ownerIn - ownerOut, minerFeeSats: miner };
+      return { value: null, detail: `owner nets ${ownerOut - ownerIn} sats; miner fee ${miner}` };
+    }
+    c.outcome = { userReceivesTokens: 0n, userNetSpendSats: 0n, minerFeeSats: miner };
+    return { value: null, detail: `miner fee ${miner} ≤ ${i.maxFee.amount}; exposure cap enforced by the builder` };
+  });
+  const selected = run('RANK', () => ({ value: c, detail: 'single owner-built candidate (no solver competition for owner-only actions)' }));
+  const explanation = run('EXPLAIN', () => {
+    const e = explain(template!, c.fees!, { token: ctx.market.token, tokenLabel: ctx.tokenLabel ?? 'tokens', simulated: ctx.market.simulated, executionClass: i.atomicity });
+    if (i.type !== 'ATOMIC_ARBITRAGE') e.headline = i.type === 'LIQUIDITY_DEPOSIT' ? `Deposit ${i.inputs[0]?.amount ?? 0n} sats into a FlashVault shard (LP owner path)` : `Withdraw ${i.inputs[0]?.amount ?? 0n} sats from a FlashVault shard (LP owner path)`;
+    return { value: e, detail: e.headline };
+  });
+  return done({ selected, explanation });
 }
 export * from './netting.js';
 export * from './worlds.js';
+export * from './staged.js';

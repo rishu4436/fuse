@@ -37,7 +37,18 @@ export interface AuctionRecord {
   certificate?: Certificate;
   events: Array<{ at: number; type: string; detail: string }>;
   error?: string;
+  /** F30 leases held by this auction for the winner's vault shards. */
+  leases?: Array<{ id: string; outpoint: string; holder: string }>;
 }
+
+/** F30: exclusive shard leases. The coordinator leases every vault shard a winning template spends, so two
+ *  concurrent auctions can never select templates that spend the same shard. */
+export interface ShardLeaseCoordinator {
+  reserveExact(outpoint: string, holder: string, opts?: { transferFrom?: string; ttlMs?: number }): { id: string; outpoint: string; holder: string };
+  release(lease: { id: string; outpoint: string }): void;
+  leaseOf(outpoint: string): { holder: string } | undefined;
+}
+export const vaultShardsOf = (t: TxTemplate) => t.inputs.filter((i) => i.unlock.kind === 'flashvault-bch' || i.unlock.kind === 'flashvault-token').map((i) => `${i.txid}:${i.vout}`);
 
 export interface RateLimiter { allow(key: string): boolean }
 export function slidingWindowLimiter(max: number, windowMs: number, now = () => Date.now()): RateLimiter {
@@ -117,7 +128,31 @@ export class AuctionEngine {
   readonly auctions = new Map<string, AuctionRecord>();
   readonly solvers = new Map<string, { solverId: string; pubkey: string; strategy: string; name: string; bids: number; wins: number; rejected: number; revenueSats: bigint; registeredAt: number }>();
   private seenNonces = new Set<string>();
-  constructor(private readonly opts: { bidRateLimiter?: RateLimiter; now?: () => number } = {}) {}
+  constructor(private readonly opts: { bidRateLimiter?: RateLimiter; now?: () => number; leases?: ShardLeaseCoordinator; leaseTtlMs?: number } = {}) {}
+
+  /** Try to lease every shard the candidate spends (all or nothing). Returns a reason on conflict. */
+  private acquire(a: AuctionRecord, e: EvaluatedBid): string | null {
+    const lc = this.opts.leases; if (!lc) return null;
+    const got: Array<{ id: string; outpoint: string; holder: string }> = [];
+    for (const op of vaultShardsOf(e.bid.template)) {
+      try { got.push(lc.reserveExact(op, a.auctionId, { transferFrom: e.bid.solverId, ttlMs: this.opts.leaseTtlMs ?? 60_000 })); }
+      catch (err) { for (const l of got) lc.release(l); return `F30 shard lease conflict: ${(err as Error).message}`; }
+    }
+    a.leases = got;
+    if (got.length) a.events.push({ at: this.now(), type: 'SHARD_LEASED', detail: got.map((l) => `${l.outpoint.slice(0, 10)}…:${l.outpoint.split(':')[1]} → ${l.id}`).join(', ') });
+    return null;
+  }
+  releaseLeases(a: AuctionRecord) { const lc = this.opts.leases; if (lc && a.leases) for (const l of a.leases) lc.release(l); a.leases = []; }
+  /** Select the best ranked bid whose shards can be leased; conflicting bids are marked invalid with the reason. */
+  private selectWithLeases(a: AuctionRecord, ranked: EvaluatedBid[]): EvaluatedBid | undefined {
+    for (const e of ranked) {
+      const why = this.acquire(a, e);
+      if (!why) return e;
+      e.valid = false; e.reasons.push(why);
+      a.events.push({ at: this.now(), type: 'BID_LEASE_CONFLICT', detail: `${e.bid.solverId}: ${why}` });
+    }
+    return undefined;
+  }
   private now() { return this.opts.now?.() ?? Math.floor(Date.now() / 1000); }
 
   registerSolver(pubkey: string, strategy: string, name: string) {
@@ -165,8 +200,10 @@ export class AuctionEngine {
     a.evaluated = a.bids.map((b) => evaluateBid(a, b, this.now()));
     for (const e of a.evaluated) if (!e.valid) { this.solvers.get(e.bid.solverId)!.rejected++; a.events.push({ at: this.now(), type: 'BID_REJECTED', detail: `${e.bid.solverId}: ${e.reasons.join('; ')}` }); }
     const ranked = rank(a.evaluated);
-    if (!ranked.length) { a.status = 'FAILED'; a.error = 'no valid bids'; a.events.push({ at: this.now(), type: 'AUCTION_FAILED', detail: 'no valid bids' }); return a; }
-    a.winner = ranked[0];
+    const chosen = this.selectWithLeases(a, ranked);
+    if (!chosen) { a.status = 'FAILED'; a.error = ranked.length ? 'every valid bid conflicts with a leased shard' : 'no valid bids'; a.events.push({ at: this.now(), type: 'AUCTION_FAILED', detail: a.error }); return a; }
+    rank(a.evaluated);
+    a.winner = chosen;
     a.status = 'AWAITING_SIGNATURES';
     a.events.push({ at: this.now(), type: 'WINNER_SELECTED', detail: `${a.winner.bid.solverId} net spend ${a.winner.actual!.userNetSpendSats}` });
     return a;
@@ -178,7 +215,8 @@ export class AuctionEngine {
     const ranked = rank(a.evaluated).filter((e) => e.bid.solverId !== a.winner?.bid.solverId);
     a.events.push({ at: this.now(), type: 'FALLBACK', detail: reason });
     if (a.winner) a.evaluated = a.evaluated.map((e) => (e === a.winner ? { ...e, valid: false, reasons: [...e.reasons, `fallback: ${reason}`] } : e));
-    a.winner = ranked[0];
+    this.releaseLeases(a);
+    a.winner = this.selectWithLeases(a, ranked);
     a.signatures = new Map();
     if (!a.winner) { a.status = 'FAILED'; a.error = `fallback exhausted: ${reason}`; }
     return a;
@@ -209,19 +247,20 @@ export class AuctionEngine {
     const vaultInputs = t.inputs.map((inp, i) => [i, inp] as const).filter(([, inp]) => inp.unlock.kind === 'flashvault-bch').map(([i, inp]) => ({ inputIndex: i, minReturn: inp.satoshis + 1n, asset: 'BCH' as const }));
     const report = verifyTemplateAndRaw(t, raw, { ownerLockingBytecode: a.intent.owner.lockingBytecode, minOwnerReceive: { asset: a.intent.buyToken, amount: a.intent.minOut }, maxOwnerSpend: { asset: 'BCH', amount: a.intent.maxIn }, maxMinerFee: a.intent.maxFee, vaultInputs, requireStrongSighash: true });
     a.winner.verification = report;
-    if (!report.ok) { a.status = 'FAILED'; a.error = 'final verification failed: ' + report.checks.filter((c) => !c.ok).map((c) => c.name).join(','); a.events.push({ at: this.now(), type: 'VERIFICATION_FAILED', detail: a.error }); return a; }
+    if (!report.ok) { a.status = 'FAILED'; a.error = 'final verification failed: ' + report.checks.filter((c) => !c.ok).map((c) => c.name).join(','); a.events.push({ at: this.now(), type: 'VERIFICATION_FAILED', detail: a.error }); this.releaseLeases(a); return a; }
     a.rawTx = raw;
     a.status = 'BROADCAST';
     a.events.push({ at: this.now(), type: 'BROADCAST_ATTEMPTED', detail: report.txid });
     try {
       a.txid = await broadcast(raw);
     } catch (e) {
-      a.status = 'FAILED'; a.error = `broadcast rejected: ${(e as Error).message}`;
+      a.status = 'FAILED'; a.error = `broadcast rejected: ${(e as Error).message}`; this.releaseLeases(a);
       a.events.push({ at: this.now(), type: 'TX_CONFLICTED', detail: a.error });
       return a;
     }
     if (a.txid !== report.txid) throw new FuseError('TXID_MISMATCH', 'broadcast returned a different txid');
     a.status = 'SETTLED';
+    this.releaseLeases(a); // the shard outpoints are spent; the continuation is a fresh, unleased shard
     const s = this.solvers.get(a.winner.bid.solverId)!;
     s.wins++; s.revenueSats += a.winner.bid.claims.solverFeeSats;
     a.events.push({ at: this.now(), type: 'TX_ACCEPTED', detail: `${a.txid} (${meta.simulated ? 'LOCAL mock network' : meta.network})` });

@@ -10,18 +10,34 @@ import { decodeVaultState } from '@fuse/contracts';
 import { signInputs } from '@fuse/transaction-composer';
 import { verifyCertificate, mockChainReader, certificateToHtml, type Certificate } from '@fuse/proof-verifier';
 import { commitment } from '@fuse/core';
+import { ShardManager, type ShardRef } from '@fuse/flash-liquidity';
+import { FuseStore } from '@fuse/store';
 
 export type FuseEvent = { id: number; at: number; type: string; detail: string; auctionId?: string };
 
 export class FuseState {
   market: LocalMarket = createLocalMarket();
-  engine = new AuctionEngine({ bidRateLimiter: slidingWindowLimiter(20, 60_000) });
+  /** F30: one shard lease coordinator per vault, shared by the auction engine and the liquidity API. */
+  shards = new ShardManager(this.market.vaultParams, [], { leaseTtlMs: 60_000, maxLeasesPerHolder: 4 });
+  engine = this.newEngine();
+  private newEngine() { return new AuctionEngine({ bidRateLimiter: slidingWindowLimiter(20, 60_000), leases: this.shards, leaseTtlMs: 60_000 }); }
+  async shardRefs(): Promise<ShardRef[]> { const m = this.market; return (await m.provider.getUtxos(m.vault.tokenAddress)).filter((u) => u.token?.nft && u.token.category === m.vaultParams.vaultCategory).map((u) => ({ txid: u.txid, vout: u.vout, satoshis: u.satoshis, commitment: u.token!.nft!.commitment })); }
+  async syncShards() { this.shards.sync(await this.shardRefs()); return this.shards; }
   certificates = new Map<string, Certificate>();
+  /** Certificates persisted by a PREVIOUS API session. The LOCAL mock chain is in-memory and resets on restart,
+   *  so these are shown as history and cannot be re-verified against the current local chain. */
+  restoredCertificates = new Map<string, Certificate>();
+  readonly store: FuseStore;
+  /** bid receive times (ms) for solver latency in the F32 ledger */
+  bidReceivedAt = new Map<string, number>();
   events: FuseEvent[] = [];
   listeners = new Set<(e: FuseEvent) => void>();
   private seq = 0;
   readonly startedAt = Date.now();
-  constructor(readonly root: string, readonly opts: { auctionWindowSeconds: number }) {}
+  constructor(readonly root: string, readonly opts: { auctionWindowSeconds: number; store?: FuseStore }) {
+    this.store = opts.store ?? new FuseStore(':memory:');
+    for (const r of this.store.listCertificates<Certificate>()) if (r.restored) this.restoredCertificates.set(r.certificate.certificateId, r.certificate);
+  }
 
   emit(type: string, detail: string, auctionId?: string) {
     const e = { id: ++this.seq, at: Date.now(), type, detail, auctionId };
@@ -29,7 +45,7 @@ export class FuseState {
     for (const l of this.listeners) l(e);
   }
 
-  reset() { const solvers = [...this.engine.solvers.values()]; this.market = createLocalMarket(); this.engine = new AuctionEngine({ bidRateLimiter: slidingWindowLimiter(20, 60_000) }); for (const s of solvers) this.engine.registerSolver(s.pubkey, s.strategy, s.name); this.certificates.clear(); this.emit('WORLD_RESET', 'local world reset to genesis fixture'); }
+  reset() { const solvers = [...this.engine.solvers.values()]; this.market = createLocalMarket(); this.shards = new ShardManager(this.market.vaultParams, [], { leaseTtlMs: 60_000, maxLeasesPerHolder: 4 }); this.engine = this.newEngine(); for (const s of solvers) this.engine.registerSolver(s.pubkey, s.strategy, s.name); this.certificates.clear(); this.emit('WORLD_RESET', 'local world reset to genesis fixture'); }
 
   evidence(name: 'cauldron' | 'paryon' | 'moria-replay') {
     const f = resolve(this.root, 'evidence', name === 'cauldron' ? 'cauldron-pool-verification.json' : name === 'paryon' ? 'paryon-deployment-verification.json' : 'moria-historical-replay.json');
@@ -57,6 +73,8 @@ export class FuseState {
     const intentCommitment = commitment('intent/v1', { ...body, owner: { lockingBytecode: body.owner.lockingBytecode } });
     const intent = { ...body, intentId: 'intent_' + intentCommitment.slice(0, 16), intentCommitment };
     const a = this.engine.open(intent, await liveMarketView(m), this.opts.auctionWindowSeconds);
+    this.store.putIntent({ id: intent.intentId, commitment: intentCommitment, type: 'TOKEN_SWAP', network: 'local', body: { minOut, maxIn, maxFee, deadline: body.deadline, owner: body.owner.lockingBytecode } });
+    this.persistAuction(a);
     this.emit('AUCTION_OPENED', `buy ${minOut} FUSD for ≤ ${maxIn} sats`, a.auctionId);
     return a;
   }
@@ -66,16 +84,39 @@ export class FuseState {
     const now = Math.floor(Date.now() / 1000);
     for (const a of this.engine.auctions.values()) {
       if (a.status === 'OPEN' && a.closesAt <= now) {
+        await this.syncShards();
         this.engine.close(a.auctionId);
+        if (a.leases?.length) this.emit('SHARD_LEASED', `F30: ${a.leases.length} shard lease(s) held for the winner`, a.auctionId);
+        for (const e of a.evaluated) if (e.reasons.some((r) => r.startsWith('F30'))) this.emit('BID_LEASE_CONFLICT', `${e.bid.strategy}: ${e.reasons.find((r) => r.startsWith('F30'))}`, a.auctionId);
         for (const e of a.evaluated) this.emit(e.valid ? 'BID_VERIFIED' : 'BID_REJECTED', `${e.bid.strategy}: ${e.valid ? `user net ${e.actual!.userNetSpendSats} sats` : e.reasons.join('; ')}`, a.auctionId);
+        this.ledgerAfterClose(a);
+        this.persistAuction(a);
         if (a.winner) { this.emit('WINNER_SELECTED', `${a.winner.bid.strategy} (${a.winner.bid.solverId})`, a.auctionId); this.userSign(a); }
         else this.emit('AUCTION_FAILED', a.error ?? 'no valid bids', a.auctionId);
       }
       if (a.status === 'AWAITING_SIGNATURES') {
         const missing = this.engine.requiredSigners(a.auctionId).filter((s) => !a.signatures.has(s));
         if (!missing.length) await this.settle(a);
-        else if (a.closesAt + 20 < now) { this.engine.fallback(a.auctionId, `signers ${missing.join(',')} timed out`); this.emit('FALLBACK', `promoted ${a.winner?.bid.strategy ?? 'none'}`, a.auctionId); if (a.winner) this.userSign(a); }
+        else if (a.closesAt + 20 < now) { const old = a.winner; this.engine.fallback(a.auctionId, `signers ${missing.join(',')} timed out`); if (old) this.store.appendLedger({ solverId: old.bid.solverId, auctionId: a.auctionId, outcome: 'FALLBACK', reason: `signers ${missing.join(',')} timed out`, at: Date.now() }); this.persistAuction(a); this.emit('FALLBACK', `promoted ${a.winner?.bid.strategy ?? 'none'}`, a.auctionId); if (a.winner) this.userSign(a); }
       }
+    }
+  }
+
+  persistAuction(a: AuctionRecord) {
+    this.store.putAuction({ id: a.auctionId, intentId: a.intent.intentId, status: a.status, winnerSolver: a.winner?.bid.solverId, txid: a.txid, summary: { status: a.status, error: a.error, minOut: a.intent.minOut, maxIn: a.intent.maxIn, bids: a.evaluated.length || a.bids.length, winner: a.winner?.bid.strategy, certificateId: a.certificate?.certificateId, openedAt: a.openedAt } });
+  }
+  private latency(a: AuctionRecord, solverId: string) { const t = this.bidReceivedAt.get(`${a.auctionId}:${solverId}`); return t ? Math.max(0, t - a.openedAt * 1000) : undefined; }
+  /** Verified saving vs the next best valid bid (0 when the winner was the only valid bid). */
+  private improvement(a: AuctionRecord) {
+    const others = a.evaluated.filter((e) => e.valid && e !== a.winner && e.actual).map((e) => e.actual!.userNetSpendSats).sort((x, y) => (x < y ? -1 : 1));
+    return others.length && a.winner?.actual ? others[0] - a.winner.actual.userNetSpendSats : 0n;
+  }
+  /** F32: one ledger row per evaluated bid, computed from the coordinator's own verification. */
+  private ledgerAfterClose(a: AuctionRecord) {
+    for (const e of a.evaluated) {
+      if (e === a.winner) continue; // recorded at settlement (WIN / SETTLE_FAILED)
+      const lease = e.reasons.find((r) => r.startsWith('F30'));
+      this.store.appendLedger({ solverId: e.bid.solverId, auctionId: a.auctionId, outcome: lease ? 'LEASE_CONFLICT' : e.valid ? 'LOSS' : 'REJECTED', reason: lease ?? (e.valid ? `rank ${e.rank}` : e.reasons.join('; ')), userNetSpendSats: e.actual?.userNetSpendSats, latencyMs: this.latency(a, e.bid.solverId), at: Date.now() });
     }
   }
 
@@ -90,8 +131,14 @@ export class FuseState {
 
   private async settle(a: AuctionRecord) {
     const r = await this.engine.settle(a.auctionId, (raw) => this.market.provider.sendRawTransaction(raw), { network: 'local', simulated: true, intentCommitment: a.intent.intentCommitment, policyCommitment: null });
+    await this.syncShards();
+    this.persistAuction(r);
+    if (r.winner) this.store.appendLedger(r.status === 'SETTLED'
+      ? { solverId: r.winner.bid.solverId, auctionId: r.auctionId, outcome: 'WIN', userNetSpendSats: r.winner.actual?.userNetSpendSats, improvementSats: this.improvement(r), revenueSats: r.winner.bid.claims.solverFeeSats, latencyMs: this.latency(r, r.winner.bid.solverId), at: Date.now() }
+      : { solverId: r.winner.bid.solverId, auctionId: r.auctionId, outcome: 'SETTLE_FAILED', reason: r.error, at: Date.now() });
     if (r.status === 'SETTLED' && r.certificate) {
       this.certificates.set(r.certificate.certificateId, r.certificate);
+      this.store.putCertificate(r.certificate);
       this.emit('TX_ACCEPTED', `LOCAL mock chain accepted ${r.txid}`, a.auctionId);
       this.emit('CERTIFICATE_ISSUED', r.certificate.certificateId, a.auctionId);
     } else this.emit('SETTLEMENT_FAILED', r.error ?? 'unknown', a.auctionId);
