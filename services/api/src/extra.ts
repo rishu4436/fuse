@@ -16,6 +16,7 @@ import { artifactManifest, artifacts } from '@fuse/contracts';
 import { contractUnlocks, signInputs, finalize, verifyTemplateAndRaw, inspectRaw, txidOfRaw, sourceOutputsOf, type TxTemplate } from '@fuse/transaction-composer';
 import { PARYON_OPERATION_STATUS } from '@fuse/protocol-adapters';
 import { scanArbitrage, routingStrategy, type SwapIntentView } from '@fuse/solver-sdk';
+import { officialTemplates, inspectTemplate, xoP2pkhPayout, XO_ENGINE_STATUS } from '@fuse/xo';
 import type { FuseState } from './state.js';
 
 export function draftIntent(state: FuseState, over: { minOut?: bigint; maxIn?: bigint; maxFee?: bigint } = {}) {
@@ -284,5 +285,12 @@ export function registerExtra(app: FastifyInstance, state: FuseState) {
     const a = fixtureAuthor('studio-user');
     const signed = signRecipe({ schema: 'fuse.recipe/v1', name: b.name, description: b.description, legs: b.legs as Leg[], bounds: { minOutTokens: b.minOutTokens, maxInSats: '40000000' }, author: { pubkey: a.pubkey, label: 'studio (fixture key)' }, createdAt: Math.floor(Date.now() / 1000), tags: ['studio'] }, a.priv);
     return { ...(await listRecipe(signed)), signedWith: 'LOCAL fixture author key (SIMULATION; holds nothing)' };
+  });
+  // ---- F48 XO Stack: template validation + payout script compiled by the XO compiler (public keys only) ----
+  app.get('/api/xo/templates', async () => ({ engine: XO_ENGINE_STATUS, templates: officialTemplates() }));
+  app.post('/api/xo/templates/inspect', async (req, reply) => { try { return { ok: true, template: inspectTemplate(req.body) }; } catch (e) { return reply.status(400).send({ ok: false, error: 'TEMPLATE_INVALID', message: (e as Error).message }); } });
+  app.post('/api/xo/payout', async (req, reply) => {
+    const b = z.object({ publicKey: z.string(), network: z.enum(['mainnet', 'chipnet']).default('chipnet') }).parse(req.body ?? {});
+    try { return { ...xoP2pkhPayout(b.publicKey, b.network), note: 'Use as the intent owner/payout locking bytecode. FUSE never needs the XO mnemonic.' }; } catch (e) { return reply.status(400).send({ error: 'BAD_KEY', message: (e as Error).message }); }
   });
 }

@@ -50,3 +50,15 @@ describe('round 3 API', () => {
     expect((await get<{ counts: { recipes: number } }>('/api/store')).counts.recipes).toBe(6);
   });
 });
+
+describe('F48 XO API', () => {
+  it('lists pinned XO templates, rejects invalid ones, compiles a payout from a public key', async () => {
+    const t = await get<{ engine: { status: string }; templates: Array<{ key: string; templateIdentifier: string }> }>('/api/xo/templates');
+    expect(t.engine.status).toBe('BLOCKED'); expect(t.templates.length).toBe(5);
+    const bad = await app.inject({ method: 'POST', url: '/api/xo/templates/inspect', headers: { 'content-type': 'application/json' }, payload: JSON.stringify({ name: 'x' }) });
+    expect(bad.statusCode).toBe(400);
+    const k = fixtureKey('xo-user');
+    const p = await post<{ lockingBytecode: string; address: string }>('/api/xo/payout', { publicKey: binToHex(k.pub) });
+    expect(p.lockingBytecode).toMatch(/^76a914[0-9a-f]{40}88ac$/); expect(p.address).toMatch(/^bchtest:/);
+  });
+});

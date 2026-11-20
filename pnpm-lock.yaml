@@ -77,6 +77,9 @@ importers:
       '@fuse/wallet':
         specifier: workspace:*
         version: link:packages/wallet
+      '@fuse/xo':
+        specifier: workspace:*
+        version: link:packages/xo
       '@paryonusd/contracts':
         specifier: 1.1.0
         version: 1.1.0
@@ -227,6 +230,18 @@ importers:
   packages/transaction-composer: {}
 
   packages/wallet: {}
+
+  packages/xo:
+    dependencies:
+      '@bitauth/libauth':
+        specifier: 3.1.0-next.8
+        version: 3.1.0-next.8
+      '@xo-cash/templates':
+        specifier: 0.0.12
+        version: 0.0.12
+      '@xo-cash/utils':
+        specifier: 0.0.11
+        version: 0.0.11
 
   services/api: {}
 
@@ -1102,6 +1117,18 @@ packages:
 
   '@wizardconnect/dapp@0.2.8':
     resolution: {integrity: sha512-37LiltiPlDlBHyN+lJpxKIxtCy7BtJxGU/87/h/eWWdA3aElUctZDerzCrQPWNxDFRyHuQ3FXto8SGhLGlmDhQ==}
+
+  '@xo-cash/primitives@0.0.2':
+    resolution: {integrity: sha512-lr+3cN0HlomXe/A41ptBRtLCjjDd/4+tSHcKQCk9ElNhCmEDGdVfWoapSllHj5OAlenJ7kXnxEfYrw0ya6uUSw==}
+
+  '@xo-cash/templates@0.0.12':
+    resolution: {integrity: sha512-pz1uYWLt/7c8vB1IGtuuhPVvBv5cFZvd/JBHfFSSfH4Sori+e6dZ+kyj++yxhBKjsJfRY4IsW55Lmq1GYDzECg==}
+
+  '@xo-cash/types@0.0.8':
+    resolution: {integrity: sha512-7L9xARP0foT60aLz2pTzRMnbluF9F2lMqEgiq7GZ09DHPWOu4Rjt2r7OcTrjUxMDMCerh/iqX1PxcUkfGnBsfg==}
+
+  '@xo-cash/utils@0.0.11':
+    resolution: {integrity: sha512-9cipDCRqMjHQxTzXqeTg+j9DvDp+d6nhaLzsefBMMR7F9Z1dJFejAIrHY/bFAQy90VyxAd9hAgApHza2yNBJxQ==}
 
   abstract-logging@2.0.1:
     resolution: {integrity: sha512-2BjRTZxTPvheOvGbBslFSYOUkr+SjPtOnrLP33f+VIWLzezQpZcqVg7ja3L4dBXmzzgwT+a029jRx5PCi3JuiA==}
@@ -2145,6 +2172,9 @@ packages:
   zod@3.25.76:
     resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
 
+  zod@4.6.7:
+    resolution: {integrity: sha512-g8W2D2kU6a8untc053fX1uVBKzM7yqAxW/3zwk83+6RyF2+SKOuV+c0wBDhUwzV1PaGapmZH+rmcUzPf+3CGwg==}
+
 snapshots:
 
   '@alloc/quick-lru@5.3.0': {}
@@ -2901,6 +2931,23 @@ snapshots:
       - nostr-wasm
       - typescript
       - utf-8-validate
+
+  '@xo-cash/primitives@0.0.2':
+    dependencies:
+      '@bitauth/libauth': 3.1.0-next.8
+
+  '@xo-cash/templates@0.0.12': {}
+
+  '@xo-cash/types@0.0.8':
+    dependencies:
+      '@bitauth/libauth': 3.1.0-next.8
+
+  '@xo-cash/utils@0.0.11':
+    dependencies:
+      '@bitauth/libauth': 3.1.0-next.8
+      '@xo-cash/primitives': 0.0.2
+      '@xo-cash/types': 0.0.8
+      zod: 4.6.7
 
   abstract-logging@2.0.1: {}
 
@@ -3918,3 +3965,5 @@ snapshots:
   yocto-queue@0.1.0: {}
 
   zod@3.25.76: {}
+
+  zod@4.6.7: {}

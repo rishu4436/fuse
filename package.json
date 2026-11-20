@@ -52,6 +52,7 @@
     "@fuse/store": "workspace:*",
     "@fuse/transaction-composer": "workspace:*",
     "@fuse/wallet": "workspace:*",
+    "@fuse/xo": "workspace:*",
     "@paryonusd/contracts": "1.1.0",
     "cashc": "0.14.0",
     "cashscript": "0.14.0",
