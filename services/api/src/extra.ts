@@ -17,6 +17,7 @@ import { contractUnlocks, signInputs, finalize, verifyTemplateAndRaw, inspectRaw
 import { PARYON_OPERATION_STATUS } from '@fuse/protocol-adapters';
 import { scanArbitrage, routingStrategy, type SwapIntentView } from '@fuse/solver-sdk';
 import { officialTemplates, inspectTemplate, xoP2pkhPayout, XO_ENGINE_STATUS } from '@fuse/xo';
+import { fetchMainnetTx } from './mainnet-explorer.js';
 import type { FuseState } from './state.js';
 
 export function draftIntent(state: FuseState, over: { minOut?: bigint; maxIn?: bigint; maxFee?: bigint } = {}) {
@@ -292,5 +293,9 @@ export function registerExtra(app: FastifyInstance, state: FuseState) {
   app.post('/api/xo/payout', async (req, reply) => {
     const b = z.object({ publicKey: z.string(), network: z.enum(['mainnet', 'chipnet']).default('chipnet') }).parse(req.body ?? {});
     try { return { ...xoP2pkhPayout(b.publicKey, b.network), note: 'Use as the intent owner/payout locking bytecode. FUSE never needs the XO mnemonic.' }; } catch (e) { return reply.status(400).send({ error: 'BAD_KEY', message: (e as Error).message }); }
+  });
+  // ---- F50 READ-ONLY mainnet explorer (raw re-hashed locally) ----
+  app.get('/api/explorer/mainnet/:txid', async (req, reply) => {
+    try { return await fetchMainnetTx((req.params as { txid: string }).txid); } catch (e) { const code = (e as { code?: string }).code ?? 'ERROR'; return reply.status(code === 'BAD_TXID' ? 400 : code === 'HASH_MISMATCH' ? 502 : 404).send({ error: code, message: (e as Error).message }); }
   });
 }
