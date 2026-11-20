@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { SignatureTemplate, SighashType, randomUtxo, type Output } from 'cashscript';
-import { setupBchVault, builder, testKey, randomHex32 } from './helpers.js';
+import { setupBchVault, builder, testKey, randomHex32, addSpendable, spendableUtxos } from './helpers.js';
 import { encodeVaultState, bchVaultContract, flashFee, decodeVaultState } from '../src/index.js';
 
 type F = ReturnType<typeof setupBchVault>;
@@ -35,7 +35,7 @@ describe('FlashVaultBCH — BCH VM (MockNetworkProvider, real cashc 0.14 bytecod
     const f = setupBchVault();
     const res = await flashTx(f, continuation(f)).send();
     expect(res.txid).toMatch(/^[0-9a-f]{64}$/);
-    const utxos = await f.provider.getUtxos(f.vault.tokenAddress);
+    const utxos = await spendableUtxos(f.provider, f.vault.tokenAddress);
     expect(utxos).toHaveLength(1);
     expect(utxos[0].satoshis).toBe(1_000_000n + f.fee);
     expect(decodeVaultState(utxos[0].token!.nft!.commitment)).toEqual({ flashCount: 1n, cumulativeFees: f.fee, paused: false });
@@ -107,7 +107,7 @@ describe('FlashVaultBCH — BCH VM (MockNetworkProvider, real cashc 0.14 bytecod
 
   it('rejects flash on a paused shard', async () => {
     const f = setupBchVault();
-    const paused = f.provider.addUtxo(f.vault.tokenAddress, randomUtxo({ satoshis: 500_000n, token: { category: f.params.vaultCategory, amount: 0n, nft: { capability: 'mutable', commitment: encodeVaultState({ flashCount: 3n, cumulativeFees: 10n, paused: true }) } } }));
+    const paused = addSpendable(f.provider, f.vault.tokenAddress, randomUtxo({ satoshis: 500_000n, token: { category: f.params.vaultCategory, amount: 0n, nft: { capability: 'mutable', commitment: encodeVaultState({ flashCount: 3n, cumulativeFees: 10n, paused: true }) } } }));
     const fee = flashFee(500_000n, f.params.feeBps, f.params.minFee);
     const tx = builder(f.provider)
       .addInput(paused, f.vault.unlock.flash())
@@ -124,7 +124,7 @@ describe('FlashVaultBCH — BCH VM (MockNetworkProvider, real cashc 0.14 bytecod
 
   it('rejects spending a UTXO at the vault address that lacks the identity NFT (fake vault)', async () => {
     const f = setupBchVault();
-    const fake = f.provider.addUtxo(f.vault.tokenAddress, randomUtxo({ satoshis: 300_000n }));
+    const fake = addSpendable(f.provider, f.vault.tokenAddress, randomUtxo({ satoshis: 300_000n }));
     const tx = builder(f.provider)
       .addInput(fake, f.vault.unlock.flash())
       .addInput(f.funding, f.borrower.sig.unlockP2PKH())
@@ -137,7 +137,7 @@ describe('FlashVaultBCH — BCH VM (MockNetworkProvider, real cashc 0.14 bytecod
     const f = setupBchVault();
     // Attacker strips the vault NFT to their own output and recreates a look-alike with a fresh category they control.
     const attacker = testKey();
-    const genesisInput = f.provider.addUtxo(f.borrower.address, randomUtxo({ satoshis: 50_000n, vout: 0 }));
+    const genesisInput = addSpendable(f.provider, f.borrower.address, randomUtxo({ satoshis: 50_000n, vout: 0 }));
     const tx = builder(f.provider)
       .addInput(f.shard, f.vault.unlock.flash())
       .addInput(genesisInput, f.borrower.sig.unlockP2PKH())
@@ -156,7 +156,7 @@ describe('FlashVaultBCH — BCH VM (MockNetworkProvider, real cashc 0.14 bytecod
   it('prevents double spending the same shard', async () => {
     const f = setupBchVault();
     await flashTx(f, continuation(f)).send();
-    const f2funding = f.provider.addUtxo(f.borrower.address, randomUtxo({ satoshis: 200_000n }));
+    const f2funding = addSpendable(f.provider, f.borrower.address, randomUtxo({ satoshis: 200_000n }));
     const replay = builder(f.provider)
       .addInput(f.shard, f.vault.unlock.flash())
       .addInput(f2funding, f.borrower.sig.unlockP2PKH())
@@ -167,7 +167,7 @@ describe('FlashVaultBCH — BCH VM (MockNetworkProvider, real cashc 0.14 bytecod
 
   it('funds one operation from two shards atomically (multiple covenant inputs)', async () => {
     const f = setupBchVault();
-    const shard2 = f.provider.addUtxo(f.vault.tokenAddress, randomUtxo({ satoshis: 2_000_000n, token: { category: f.params.vaultCategory, amount: 0n, nft: { capability: 'mutable', commitment: encodeVaultState({ flashCount: 5n, cumulativeFees: 9_000n, paused: false }) } } }));
+    const shard2 = addSpendable(f.provider, f.vault.tokenAddress, randomUtxo({ satoshis: 2_000_000n, token: { category: f.params.vaultCategory, amount: 0n, nft: { capability: 'mutable', commitment: encodeVaultState({ flashCount: 5n, cumulativeFees: 9_000n, paused: false }) } } }));
     const fee2 = flashFee(2_000_000n, f.params.feeBps, f.params.minFee);
     const tx = builder(f.provider)
       .addInput(f.shard, f.vault.unlock.flash())

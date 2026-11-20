@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { randomUtxo } from 'cashscript';
-import { setupBchVault, builder, randomHex32, testKey } from './helpers.js';
+import { setupBchVault, builder, randomHex32, testKey, addSpendable, spendableUtxos } from './helpers.js';
 import { cauldronPoolContract, cauldronBuyQuote, cauldronSellQuote, encodeVaultState } from '../src/index.js';
 
 // Demo 1: transaction-scoped liquidity composed with the *unmodified production Cauldron pool script*.
@@ -11,8 +11,8 @@ function setupArb() {
   const ownerA = testKey().pkh, ownerB = testKey().pkh;
   const poolA = cauldronPoolContract(ownerA, f.provider);
   const poolB = cauldronPoolContract(ownerB, f.provider);
-  const a = f.provider.addUtxo(poolA.tokenAddress, randomUtxo({ satoshis: 1_000_000_000n, token: { category: token, amount: 1_000_000n } }));
-  const b = f.provider.addUtxo(poolB.tokenAddress, randomUtxo({ satoshis: 1_200_000_000n, token: { category: token, amount: 1_000_000n } }));
+  const a = addSpendable(f.provider, poolA.tokenAddress, randomUtxo({ satoshis: 1_000_000_000n, token: { category: token, amount: 1_000_000n } }));
+  const b = addSpendable(f.provider, poolB.tokenAddress, randomUtxo({ satoshis: 1_200_000_000n, token: { category: token, amount: 1_000_000n } }));
   return { ...f, token, poolA, poolB, a, b };
 }
 

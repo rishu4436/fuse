@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
-import { setupBchVault, setupTokenVault, builder } from './helpers.js';
+import { setupBchVault, setupTokenVault, builder, addSpendable, spendableUtxos } from './helpers.js';
 import { encodeVaultState, decodeVaultState, flashFee, nextVaultState } from '../src/index.js';
 
 describe('FlashVault property tests (fast-check, BCH VM in the loop)', () => {

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { randomUtxo, type Output } from 'cashscript';
-import { setupTokenVault, builder, testKey, randomHex32 } from './helpers.js';
+import { setupTokenVault, builder, testKey, randomHex32, addSpendable, spendableUtxos } from './helpers.js';
 import { tokenVaultContract } from '../src/index.js';
 
 type F = ReturnType<typeof setupTokenVault>;
@@ -32,7 +32,7 @@ describe('FlashVaultToken — BCH VM (real cashc 0.14 bytecode)', () => {
   it('accepts valid flash: tokens + fee returned, sats preserved', async () => {
     const f = setupTokenVault();
     await expect(flashTx(f, cont(f)).send()).resolves.toBeTruthy();
-    const [u] = await f.provider.getUtxos(f.vault.tokenAddress);
+    const [u] = await spendableUtxos(f.provider, f.vault.tokenAddress);
     expect(u.token!.amount).toBe(1_000_000n + f.fee);
   });
 
@@ -50,7 +50,7 @@ describe('FlashVaultToken — BCH VM (real cashc 0.14 bytecode)', () => {
     const f = setupTokenVault();
     const junkCat = randomHex32();
     // attacker mints a junk token in the same tx (genesis needs vout 0 input) — represent by a pre-existing junk UTXO
-    const junk = f.provider.addUtxo(f.borrower.address, randomUtxo({ satoshis: 1_000n, token: { category: junkCat, amount: 10_000_000n } }));
+    const junk = addSpendable(f.provider, f.borrower.address, randomUtxo({ satoshis: 1_000n, token: { category: junkCat, amount: 10_000_000n } }));
     const b = builder(f.provider)
       .addInput(f.shard, f.vault.unlock.flash())
       .addInput(junk, f.borrower.sig.unlockP2PKH())

@@ -46,6 +46,7 @@
     "@fuse/config": "workspace:*",
     "@fuse/contracts": "workspace:*",
     "@fuse/protocol-adapters": "workspace:*",
-    "@fuse/indexer-client": "workspace:*"
+    "@fuse/indexer-client": "workspace:*",
+    "@fuse/auction": "workspace:*"
   }
 }

@@ -93,7 +93,7 @@ export function bchVaultContract(p: BchVaultParams, provider: NetworkProvider): 
   return new Contract(
     artifacts.FlashVaultBCH,
     [hexToBin(categoryToVmOrder(p.vaultCategory)), p.feeBps, p.minFee, p.maxExposure, hexToBin(p.ownerPkh)],
-    { provider, addressType: 'p2sh32' },
+    { provider, contractType: 'p2sh32' },
   );
 }
 
@@ -101,7 +101,7 @@ export function tokenVaultContract(p: TokenVaultParams, provider: NetworkProvide
   return new Contract(
     artifacts.FlashVaultToken,
     [hexToBin(categoryToVmOrder(p.assetCategory)), p.feeBps, p.minFee, p.maxExposure, hexToBin(p.ownerPkh)],
-    { provider, addressType: 'p2sh32' },
+    { provider, contractType: 'p2sh32' },
   );
 }
 
@@ -118,7 +118,7 @@ export function cauldronPoolArtifact(ownerPkhHex: string): Artifact {
 }
 
 export function cauldronPoolContract(ownerPkhHex: string, provider: NetworkProvider): Contract {
-  return new Contract(cauldronPoolArtifact(ownerPkhHex), [], { provider, addressType: 'p2sh32' });
+  return new Contract(cauldronPoolArtifact(ownerPkhHex), [], { provider, contractType: 'p2sh32' });
 }
 
 export const CAULDRON_FEE_NUM = 3n;

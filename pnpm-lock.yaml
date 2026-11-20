@@ -11,6 +11,9 @@ importers:
       '@bitauth/libauth':
         specifier: 3.1.0-next.8
         version: 3.1.0-next.8
+      '@fuse/auction':
+        specifier: workspace:*
+        version: link:packages/auction
       '@fuse/config':
         specifier: workspace:*
         version: link:packages/config
@@ -93,6 +96,8 @@ importers:
       vitest:
         specifier: '3'
         version: 3.2.7(@types/node@26.6.6)(tsx@4.23.15)
+
+  packages/auction: {}
 
   packages/config: {}
 
