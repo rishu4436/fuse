@@ -3,6 +3,7 @@ import cors from '@fastify/cors';
 import { z } from 'zod';
 import { toJson, fromJson, type Bid } from '@fuse/solver-sdk';
 import { FuseState, serializeAuction } from './state.js';
+import { registerExtra } from './extra.js';
 import { PARYON_OPERATION_STATUS } from '@fuse/protocol-adapters';
 import { buildSelfConsolidation, preflight, wcSignRequest, verifyWalletSigned, lockingBytecodeOf } from '@fuse/wallet';
 import { binToHex, encodeTransaction } from '@bitauth/libauth';
@@ -86,6 +87,8 @@ export async function buildApp(state: FuseState) {
     const v = verifyWalletSigned(pf.template, b.signedTransaction, { ownerLockingBytecode: pf.owner, maxMinerFee: pf.maxFee });
     return { ...v, broadcast: 'DISABLED', note: v.ok ? 'Signed transaction is valid and matches the reviewed preflight. FUSE did not broadcast it.' : 'Wallet response rejected.' };
   });
+
+  registerExtra(app, state);
 
   // ---- events (SSE) ----
   app.get('/api/events', async (req, reply) => {

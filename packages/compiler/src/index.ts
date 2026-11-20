@@ -118,3 +118,5 @@ export function compileIntent(input: unknown, ctx: CompileContext): CompiledPlan
   });
   return { ok: !failed, intentCommitment: commit, stages, candidates, selected, explanation, error: failed };
 }
+export * from './netting.js';
+export * from './worlds.js';
