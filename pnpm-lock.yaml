@@ -9,8 +9,56 @@ importers:
   .:
     dependencies:
       '@bitauth/libauth':
-        specifier: 3.0.0
-        version: 3.0.0
+        specifier: 3.1.0-next.8
+        version: 3.1.0-next.8
+      '@fuse/config':
+        specifier: workspace:*
+        version: link:packages/config
+      '@fuse/contracts':
+        specifier: workspace:*
+        version: link:packages/contracts
+      '@fuse/core':
+        specifier: workspace:*
+        version: link:packages/core
+      '@fuse/flash-liquidity':
+        specifier: workspace:*
+        version: link:packages/flash-liquidity
+      '@fuse/indexer-client':
+        specifier: workspace:*
+        version: link:packages/indexer-client
+      '@fuse/intent':
+        specifier: workspace:*
+        version: link:packages/intent
+      '@fuse/math':
+        specifier: workspace:*
+        version: link:packages/math
+      '@fuse/notifications':
+        specifier: workspace:*
+        version: link:packages/notifications
+      '@fuse/policy-engine':
+        specifier: workspace:*
+        version: link:packages/policy-engine
+      '@fuse/proof-verifier':
+        specifier: workspace:*
+        version: link:packages/proof-verifier
+      '@fuse/protocol-adapters':
+        specifier: workspace:*
+        version: link:packages/protocol-adapters
+      '@fuse/risk-engine':
+        specifier: workspace:*
+        version: link:packages/risk-engine
+      '@fuse/simulation':
+        specifier: workspace:*
+        version: link:packages/simulation
+      '@fuse/solver-sdk':
+        specifier: workspace:*
+        version: link:packages/solver-sdk
+      '@fuse/transaction-composer':
+        specifier: workspace:*
+        version: link:packages/transaction-composer
+      '@paryonusd/contracts':
+        specifier: 1.1.0
+        version: 1.1.0
       cashc:
         specifier: 0.14.0
         version: 0.14.0
@@ -46,11 +94,37 @@ importers:
         specifier: '3'
         version: 3.2.7(@types/node@26.6.6)(tsx@4.23.15)
 
-packages:
+  packages/config: {}
 
-  '@bitauth/libauth@3.0.0':
-    resolution: {integrity: sha512-3yoL31XpnhAnf5nDVMFk4xPqebxDwXrgYAwpa31ARJnV5A/eXWlpNYvCd6FTZPFM4VvKfjCBi+jRCrw1hOZ0Jg==}
-    engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
+  packages/contracts: {}
+
+  packages/core: {}
+
+  packages/flash-liquidity: {}
+
+  packages/indexer-client: {}
+
+  packages/intent: {}
+
+  packages/math: {}
+
+  packages/notifications: {}
+
+  packages/policy-engine: {}
+
+  packages/proof-verifier: {}
+
+  packages/protocol-adapters: {}
+
+  packages/risk-engine: {}
+
+  packages/simulation: {}
+
+  packages/solver-sdk: {}
+
+  packages/transaction-composer: {}
+
+packages:
 
   '@bitauth/libauth@3.1.0-next.8':
     resolution: {integrity: sha512-Pm+Ju+YP3JeBLLTiVrBnia2wwE4G17r4XqpvPRMcklElJTe8J6x3JgKRg1by0Xm3ZY6UFxACkEAoSA+x419/zA==}
@@ -295,6 +369,9 @@ packages:
     resolution: {integrity: sha512-BWfWUffbg3uO4K6Cyokg9ff43lPaXAOZcCnNe1lcjCjUMDVrRAb5qEHG5qeJp3ud2SPYbORaNsls5as6SR3oig==}
     peerDependencies:
       ws: '*'
+
+  '@paryonusd/contracts@1.1.0':
+    resolution: {integrity: sha512-FkA0xIwkaN8efe2/R8gg+56LmdYVe5GrUpeedsLUIPrHOqs9tARd8P+qL8LGODhxTX8Xxua5yGftaoANLc+8nQ==}
 
   '@rollup/rollup-android-arm-eabi@4.68.7':
     resolution: {integrity: sha512-ZL7MgOeMUiBum1bjzzyBotE3DuHVz+UUxcDVlLL7gpdhDM4RpjG4bZOIly7ensIcXw9jhWl7HTIIQ9KsgjykGQ==}
@@ -1117,8 +1194,6 @@ packages:
 
 snapshots:
 
-  '@bitauth/libauth@3.0.0': {}
-
   '@bitauth/libauth@3.1.0-next.8': {}
 
   '@cashscript/utils@0.14.0':
@@ -1309,6 +1384,8 @@ snapshots:
   '@monsterbitar/isomorphic-ws@5.3.1(ws@8.23.0)':
     dependencies:
       ws: 8.23.0
+
+  '@paryonusd/contracts@1.1.0': {}
 
   '@rollup/rollup-android-arm-eabi@4.68.7':
     optional: true

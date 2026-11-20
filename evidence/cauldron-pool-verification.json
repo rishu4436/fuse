@@ -1,0 +1,120 @@
+{
+  "checkedAt": "2026-11-20T13:09:45.517Z",
+  "network": "mainnet",
+  "token": "2469acc5afa4b10cb5b5c04afb89c3a3ffd61c5da9c01e26d00951cae2a02544",
+  "indexer": "https://indexer.cauldron.quest/cauldron",
+  "chainSource": "chaingraph (raw tx re-hashed locally)",
+  "poolsReturned": 58,
+  "checked": [
+    {
+      "pool_id": "dc7c57bb7963b7ed2039150b1eef0d6f21f71f8d33a6aecfce5a23b2f5f2c302",
+      "outpoint": "1ff8a8ecb31c79d163540443ae20979c99dd90ce91efa92b2746e551be4f4fd7:42",
+      "blockHeight": null,
+      "scriptMatchesPublishedCauldronArtifact": true,
+      "satsMatchIndexer": true,
+      "tokensMatchIndexer": true,
+      "categoryMatches": true,
+      "sats": "7137636",
+      "tokens": "1407"
+    },
+    {
+      "pool_id": "d52e2e51f811e6b1bca82256d4193d5c0c8e493d12777e13b8fb99347adc540b",
+      "outpoint": "fd2e24e9996f6d99fb5d529e0c2d139b46762cc45b20bce903b07a48da80a9ed:44",
+      "blockHeight": null,
+      "scriptMatchesPublishedCauldronArtifact": true,
+      "satsMatchIndexer": true,
+      "tokensMatchIndexer": true,
+      "categoryMatches": true,
+      "sats": "58981621",
+      "tokens": "11614"
+    },
+    {
+      "pool_id": "fac5a4a69f7c7459f751f43495cbee3821cbc478165d83e78db66a82cc697b0c",
+      "outpoint": "fd2e24e9996f6d99fb5d529e0c2d139b46762cc45b20bce903b07a48da80a9ed:48",
+      "blockHeight": null,
+      "scriptMatchesPublishedCauldronArtifact": true,
+      "satsMatchIndexer": true,
+      "tokensMatchIndexer": true,
+      "categoryMatches": true,
+      "sats": "25921991039",
+      "tokens": "5103747"
+    },
+    {
+      "pool_id": "d096dee662ac34d25a5fcd223e15ee57c1f3791333699c91249c6c53e199fa0d",
+      "outpoint": "fd2e24e9996f6d99fb5d529e0c2d139b46762cc45b20bce903b07a48da80a9ed:42",
+      "blockHeight": null,
+      "scriptMatchesPublishedCauldronArtifact": true,
+      "satsMatchIndexer": true,
+      "tokensMatchIndexer": true,
+      "categoryMatches": true,
+      "sats": "88291861",
+      "tokens": "17385"
+    },
+    {
+      "pool_id": "a0a711845ae4ca00a6643745fcb7b5bdfe9f046f9d77ad32015cad3c442ad50e",
+      "outpoint": "fd2e24e9996f6d99fb5d529e0c2d139b46762cc45b20bce903b07a48da80a9ed:0",
+      "blockHeight": null,
+      "scriptMatchesPublishedCauldronArtifact": true,
+      "satsMatchIndexer": true,
+      "tokensMatchIndexer": true,
+      "categoryMatches": true,
+      "sats": "2781932",
+      "tokens": "548"
+    },
+    {
+      "pool_id": "abfe8311d31ccd67e65761e00a58de5d49f0a7bcda7161a3e5297feacc1b3b13",
+      "outpoint": "fd2e24e9996f6d99fb5d529e0c2d139b46762cc45b20bce903b07a48da80a9ed:43",
+      "blockHeight": null,
+      "scriptMatchesPublishedCauldronArtifact": true,
+      "satsMatchIndexer": true,
+      "tokensMatchIndexer": true,
+      "categoryMatches": true,
+      "sats": "76970164",
+      "tokens": "15155"
+    },
+    {
+      "pool_id": "f72838e86a38bcd53485492cba8aa85275c255cc70adc96edb494d2814aa5118",
+      "outpoint": "fd2e24e9996f6d99fb5d529e0c2d139b46762cc45b20bce903b07a48da80a9ed:47",
+      "blockHeight": null,
+      "scriptMatchesPublishedCauldronArtifact": true,
+      "satsMatchIndexer": true,
+      "tokensMatchIndexer": true,
+      "categoryMatches": true,
+      "sats": "7337959171",
+      "tokens": "1444761"
+    },
+    {
+      "pool_id": "f4ccba69445e0e12e2a16abb1826415b24a8db45bee3be08d63d5b30ff42b020",
+      "outpoint": "fd2e24e9996f6d99fb5d529e0c2d139b46762cc45b20bce903b07a48da80a9ed:41",
+      "blockHeight": null,
+      "scriptMatchesPublishedCauldronArtifact": true,
+      "satsMatchIndexer": true,
+      "tokensMatchIndexer": true,
+      "categoryMatches": true,
+      "sats": "14268538",
+      "tokens": "2810"
+    },
+    {
+      "pool_id": "f7ed4d5353cddb0abc5b02e1e361fad02dec547dcde4fc28c4c641907d9d3323",
+      "outpoint": "fd2e24e9996f6d99fb5d529e0c2d139b46762cc45b20bce903b07a48da80a9ed:26",
+      "blockHeight": null,
+      "scriptMatchesPublishedCauldronArtifact": true,
+      "satsMatchIndexer": true,
+      "tokensMatchIndexer": true,
+      "categoryMatches": true,
+      "sats": "4752266826",
+      "tokens": "935668"
+    },
+    {
+      "pool_id": "ead57d4e6b8dfd72999d55c64e93fdb819cd6e16abea2dbe7fe9e7add6b64624",
+      "outpoint": "fd2e24e9996f6d99fb5d529e0c2d139b46762cc45b20bce903b07a48da80a9ed:24",
+      "blockHeight": null,
+      "scriptMatchesPublishedCauldronArtifact": true,
+      "satsMatchIndexer": true,
+      "tokensMatchIndexer": true,
+      "categoryMatches": true,
+      "sats": "36496234",
+      "tokens": "7186"
+    }
+  ]
+}
