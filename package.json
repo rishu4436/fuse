@@ -1,0 +1,35 @@
+{
+  "name": "fuse",
+  "private": true,
+  "version": "0.1.0",
+  "description": "FUSE — the execution layer for Bitcoin Cash DeFi",
+  "license": "MIT",
+  "packageManager": "pnpm@9.15.4",
+  "type": "module",
+  "scripts": {
+    "compile:contracts": "pnpm --filter @fuse/contracts compile",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "build": "pnpm --filter @fuse/web build",
+    "dev:api": "tsx services/api/src/server.ts",
+    "dev:web": "pnpm --filter @fuse/web dev",
+    "solvers": "tsx services/solver-reference/src/launch.ts"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "@types/node": "^26.6.6",
+    "eslint": "9",
+    "fast-check": "^4.10.3",
+    "tsx": "^4.23.15",
+    "typescript": "5.9",
+    "typescript-eslint": "^8.73.0",
+    "vitest": "3"
+  },
+  "dependencies": {
+    "@bitauth/libauth": "3.0.0",
+    "cashc": "0.14.0",
+    "cashscript": "0.14.0",
+    "zod": "3"
+  }
+}

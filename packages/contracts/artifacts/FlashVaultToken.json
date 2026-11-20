@@ -1,0 +1,112 @@
+{
+  "contractName": "FlashVaultToken",
+  "constructorInputs": [
+    {
+      "name": "assetCategory",
+      "type": "bytes32"
+    },
+    {
+      "name": "feeBps",
+      "type": "int"
+    },
+    {
+      "name": "minFee",
+      "type": "int"
+    },
+    {
+      "name": "maxExposure",
+      "type": "int"
+    },
+    {
+      "name": "ownerPkh",
+      "type": "bytes20"
+    }
+  ],
+  "abi": [
+    {
+      "name": "flash",
+      "inputs": []
+    },
+    {
+      "name": "withdraw",
+      "inputs": [
+        {
+          "name": "ownerPk",
+          "type": "pubkey"
+        },
+        {
+          "name": "ownerSig",
+          "type": "sig"
+        }
+      ]
+    }
+  ],
+  "bytecode": "OP_5 OP_PICK OP_0 OP_NUMEQUAL OP_IF OP_INPUTINDEX OP_DUP OP_UTXOTOKENCATEGORY OP_2 OP_PICK OP_EQUALVERIFY OP_DUP OP_UTXOTOKENAMOUNT OP_DUP OP_0 OP_GREATERTHAN OP_VERIFY OP_DUP OP_6 OP_ROLL OP_LESSTHANOREQUAL OP_VERIFY OP_4 OP_ROLL OP_OVER OP_5 OP_ROLL OP_MUL 0f27 OP_ADD 1027 OP_DIV OP_MAX OP_2 OP_PICK OP_OUTPUTBYTECODE OP_3 OP_PICK OP_UTXOBYTECODE OP_EQUALVERIFY OP_2 OP_PICK OP_OUTPUTTOKENCATEGORY OP_4 OP_ROLL OP_EQUALVERIFY OP_2 OP_PICK OP_OUTPUTTOKENCOMMITMENT OP_0 OP_EQUALVERIFY OP_2 OP_PICK OP_OUTPUTTOKENAMOUNT OP_ROT OP_ROT OP_ADD OP_GREATERTHANOREQUAL OP_VERIFY OP_DUP OP_OUTPUTVALUE OP_SWAP OP_UTXOVALUE OP_GREATERTHANOREQUAL OP_NIP OP_NIP OP_ELSE OP_5 OP_ROLL OP_1 OP_NUMEQUALVERIFY OP_5 OP_PICK OP_HASH160 OP_5 OP_ROLL OP_EQUALVERIFY OP_5 OP_PICK OP_SIZE OP_NIP 41 OP_NUMEQUALVERIFY OP_5 OP_PICK 40 OP_SPLIT OP_NIP 61 OP_EQUALVERIFY OP_2ROT OP_CHECKSIGVERIFY OP_2DROP OP_2DROP OP_1 OP_ENDIF",
+  "source": "pragma cashscript ^0.14.0;\n\n// FUSE FlashVaultToken — transaction-scoped fungible CashToken liquidity shard\n// (e.g. PUSD). A CashToken UTXO carries exactly one token category, so this shard\n// holds only fungible tokens of `assetCategory` (no NFT). Shard identity is the\n// locking bytecode + asset category; discovery filters on both.\ncontract FlashVaultToken(\n    bytes32 assetCategory,   // fungible token category held by this shard\n    int feeBps,              // fee in basis points of shard token amount\n    int minFee,              // minimum fee in token base units\n    int maxExposure,         // max token amount usable in one operation\n    bytes20 ownerPkh         // LP owner of this shard\n) {\n    function flash() {\n        int idx = this.activeInputIndex;\n\n        // Exact asset identity: fungible-only category, no NFT capability byte.\n        require(tx.inputs[idx].tokenCategory == assetCategory);\n        int inTokens = tx.inputs[idx].tokenAmount;\n        require(inTokens > 0);\n        require(inTokens <= maxExposure);\n\n        int fee = max(minFee, (inTokens * feeBps + 9999) / 10000);\n\n        require(tx.outputs[idx].lockingBytecode == tx.inputs[idx].lockingBytecode);\n        require(tx.outputs[idx].tokenCategory == assetCategory);\n        require(tx.outputs[idx].nftCommitment == 0x);\n        require(tx.outputs[idx].tokenAmount >= inTokens + fee);\n        // BCH carried by the shard (dust / fee buffer) must not be extracted.\n        require(tx.outputs[idx].value >= tx.inputs[idx].value);\n    }\n\n    function withdraw(pubkey ownerPk, sig ownerSig) {\n        require(hash160(ownerPk) == ownerPkh);\n        require(ownerSig.length == 65);\n        require(ownerSig.split(64)[1] == 0x61);\n        require(checkSig(ownerSig, ownerPk));\n    }\n}\n",
+  "fingerprint": "883557dc87b7d3f7505a266f7aef7a8871c87e02890550ee566ee85f59ec0cf2",
+  "debug": {
+    "bytecode": "5579009c63c076ce52798876d07600a06976567aa169547a78557a95020f279302102796a45279cd5379c7885279d1547a885279d200885279d37b7b93a26976cc7cc6a2777767557a519d5579a9557a885579827701419d557901407f7701618871ad6d6d5168",
+    "sourceMap": "14:4:31:5;;;;;15:18:15:39;18:26:18:29;:16::44:1;:48::61:0;;:8::63:1;19:33:19:36:0;:23::49:1;20:16:20:24:0;:27::28;:16:::1;:8::30;21:16:21:24:0;:28::39;;:16:::1;:8::41;23:22:23:28:0;;:31::39;:42::48;;:31:::1;:51::55:0;:31:::1;:59::64:0;:30:::1;:18::65;25:27:25:30:0;;:16::47:1;:61::64:0;;:51::81:1;:8::83;26:27:26:30:0;;:16::45:1;:49::62:0;;:8::64:1;27:27:27:30:0;;:16::45:1;:49::51:0;:8::53:1;28:27:28:30:0;;:16::43:1;:47::55:0;:58::61;:47:::1;:16;:8::63;30:27:30:30:0;:16::37:1;:51::54:0;:41::61:1;:8::63;14:21:31:5;;:4;33::38::0;;;;34:24:34:31;;:16::32:1;:36::44:0;;:8::46:1;35:16:35:24:0;;:::31:1;;:35::37:0;:8::39:1;36:16:36:24:0;;:31::33;:16::34:1;:::37;:41::45:0;:8::47:1;37:25:37:42:0;:8::45:1;33:52:38:5;;;7:0:39:1",
+    "logs": [],
+    "requires": [
+      {
+        "ip": 15,
+        "line": 18
+      },
+      {
+        "ip": 21,
+        "line": 20
+      },
+      {
+        "ip": 26,
+        "line": 21
+      },
+      {
+        "ip": 44,
+        "line": 25
+      },
+      {
+        "ip": 50,
+        "line": 26
+      },
+      {
+        "ip": 55,
+        "line": 27
+      },
+      {
+        "ip": 63,
+        "line": 28
+      },
+      {
+        "ip": 69,
+        "line": 30
+      },
+      {
+        "ip": 81,
+        "line": 34
+      },
+      {
+        "ip": 87,
+        "line": 35
+      },
+      {
+        "ip": 94,
+        "line": 36
+      },
+      {
+        "ip": 96,
+        "line": 37
+      }
+    ],
+    "sourceTags": "64:65:sc"
+  },
+  "compiler": {
+    "name": "cashc",
+    "version": "0.14.0",
+    "options": {
+      "enforceFunctionParameterTypes": true,
+      "enforceLocktimeGuard": true
+    }
+  },
+  "updatedAt": "1970-01-01T00:00:00.000Z"
+}

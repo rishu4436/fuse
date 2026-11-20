@@ -1,0 +1,67 @@
+pragma cashscript ^0.14.0;
+
+// FUSE FlashVaultBCH — transaction-scoped BCH liquidity shard.
+//
+// A shard is one UTXO locked to this contract carrying a *mutable* identity NFT of
+// `vaultCategory`. Its 17-byte commitment is the vault state:
+//   [0..8)   flashCount       (int64 LE, script number padded to 8 bytes)
+//   [8..16)  cumulativeFees   (int64 LE, sats earned by this shard)
+//   [16]     flags            (0x00 = active, 0x01 = paused by owner)
+//
+// Economic model (BCH UTXO semantics): once a shard input is consumed, its whole value
+// is at the spender's disposal inside that transaction, so "principal utilised" equals
+// the shard value. The fee is therefore charged on the shard value, and solvers pick
+// shards sized to their need (adaptive sharding, see docs/LIQUIDITY-ACCOUNTING.md).
+contract FlashVaultBCH(
+    bytes32 vaultCategory,   // identity-NFT category (genesis outpoint txid, byte order as in token prefix)
+    int feeBps,              // fee in basis points of shard value (e.g. 9 = 0.09%)
+    int minFee,              // minimum absolute fee in sats
+    int maxExposure,         // max shard value that may be flash-used in one operation
+    bytes20 ownerPkh         // LP owner of this shard (withdraw / pause / reconfigure)
+) {
+    // Borrow the whole shard inside one transaction and return it, plus fee, to the
+    // output with the same index, with the same contract, NFT identity and updated state.
+    function flash() {
+        int idx = this.activeInputIndex;
+        int inValue = tx.inputs[idx].value;
+
+        // Identity: the shard being spent must carry this vault's mutable identity NFT.
+        require(tx.inputs[idx].tokenCategory == vaultCategory + 0x01);
+        bytes inState = tx.inputs[idx].nftCommitment;
+        require(inState.length == 17);
+        require(inState.split(16)[1] == 0x00); // not paused
+
+        // Exposure limit for a single operation.
+        require(inValue <= maxExposure);
+
+        // Fee = max(minFee, ceil(inValue * feeBps / 10000)).
+        int fee = max(minFee, (inValue * feeBps + 9999) / 10000);
+
+        // Continuation output: same index, same locking bytecode (immutable params),
+        // same identity NFT (mutable capability), principal + fee preserved.
+        require(tx.outputs[idx].lockingBytecode == tx.inputs[idx].lockingBytecode);
+        require(tx.outputs[idx].tokenCategory == vaultCategory + 0x01);
+        require(tx.outputs[idx].tokenAmount == 0);
+        int outValue = tx.outputs[idx].value;
+        require(outValue >= inValue + fee);
+
+        // State transition: count + 1, cumulativeFees + actual surplus, flags unchanged.
+        int count = int(inState.slice(0, 8));
+        int fees = int(inState.slice(8, 16));
+        require(count >= 0);
+        require(fees >= 0);
+        int surplus = outValue - inValue;
+        bytes expected = toPaddedBytes(count + 1, 8) + toPaddedBytes(fees + surplus, 8) + 0x00;
+        require(tx.outputs[idx].nftCommitment == expected);
+    }
+
+    // LP owner path: withdraw, partially withdraw, pause/unpause or migrate the shard.
+    // Only the owner can move LP capital; the signature must use
+    // SIGHASH_ALL | SIGHASH_FORKID | SIGHASH_UTXOS (0x61) — weaker modes are rejected.
+    function withdraw(pubkey ownerPk, sig ownerSig) {
+        require(hash160(ownerPk) == ownerPkh);
+        require(ownerSig.length == 65);
+        require(ownerSig.split(64)[1] == 0x61);
+        require(checkSig(ownerSig, ownerPk));
+    }
+}

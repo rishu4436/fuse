@@ -1,0 +1,12 @@
+{
+  "FlashVaultBCH": {
+    "bytecodeSha256": "b2a529a45f31f2665c07cb50ab2cb45d4a0d07e2fc2f78b4a1ee619dda222a5a",
+    "opcodes": 145,
+    "compiler": "cashc@0.14.0"
+  },
+  "FlashVaultToken": {
+    "bytecodeSha256": "7ca379d5c8aa0e58e75332197ec37f1ecb3183e072f6a5c330471346d8657a04",
+    "opcodes": 96,
+    "compiler": "cashc@0.14.0"
+  }
+}

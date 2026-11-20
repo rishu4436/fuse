@@ -1,0 +1,15 @@
+node_modules
+.next
+dist
+coverage
+*.log
+.env
+.env.*
+!.env.example
+secrets/
+*.key
+.local-keys/
+test-results/
+playwright-report/
+.turbo
+*.tsbuildinfo

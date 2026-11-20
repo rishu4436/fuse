@@ -1,0 +1,39 @@
+pragma cashscript ^0.14.0;
+
+// FUSE FlashVaultToken — transaction-scoped fungible CashToken liquidity shard
+// (e.g. PUSD). A CashToken UTXO carries exactly one token category, so this shard
+// holds only fungible tokens of `assetCategory` (no NFT). Shard identity is the
+// locking bytecode + asset category; discovery filters on both.
+contract FlashVaultToken(
+    bytes32 assetCategory,   // fungible token category held by this shard
+    int feeBps,              // fee in basis points of shard token amount
+    int minFee,              // minimum fee in token base units
+    int maxExposure,         // max token amount usable in one operation
+    bytes20 ownerPkh         // LP owner of this shard
+) {
+    function flash() {
+        int idx = this.activeInputIndex;
+
+        // Exact asset identity: fungible-only category, no NFT capability byte.
+        require(tx.inputs[idx].tokenCategory == assetCategory);
+        int inTokens = tx.inputs[idx].tokenAmount;
+        require(inTokens > 0);
+        require(inTokens <= maxExposure);
+
+        int fee = max(minFee, (inTokens * feeBps + 9999) / 10000);
+
+        require(tx.outputs[idx].lockingBytecode == tx.inputs[idx].lockingBytecode);
+        require(tx.outputs[idx].tokenCategory == assetCategory);
+        require(tx.outputs[idx].nftCommitment == 0x);
+        require(tx.outputs[idx].tokenAmount >= inTokens + fee);
+        // BCH carried by the shard (dust / fee buffer) must not be extracted.
+        require(tx.outputs[idx].value >= tx.inputs[idx].value);
+    }
+
+    function withdraw(pubkey ownerPk, sig ownerSig) {
+        require(hash160(ownerPk) == ownerPkh);
+        require(ownerSig.length == 65);
+        require(ownerSig.split(64)[1] == 0x61);
+        require(checkSig(ownerSig, ownerPk));
+    }
+}
