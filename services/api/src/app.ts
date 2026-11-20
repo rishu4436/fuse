@@ -4,6 +4,9 @@ import { z } from 'zod';
 import { toJson, fromJson, type Bid } from '@fuse/solver-sdk';
 import { FuseState, serializeAuction } from './state.js';
 import { PARYON_OPERATION_STATUS } from '@fuse/protocol-adapters';
+import { buildSelfConsolidation, preflight, wcSignRequest, verifyWalletSigned, lockingBytecodeOf } from '@fuse/wallet';
+import { binToHex, encodeTransaction } from '@bitauth/libauth';
+import type { TxTemplate } from '@fuse/transaction-composer';
 
 export async function buildApp(state: FuseState) {
   const app = Fastify({ logger: false, bodyLimit: 512 * 1024 });
@@ -59,6 +62,30 @@ export async function buildApp(state: FuseState) {
   // ---- mainnet READ-ONLY ----
   app.get('/api/mainnet/cauldron', async () => ({ status: 'READ-ONLY', ...state.evidence('cauldron') }));
   app.get('/api/mainnet/paryon', async () => { const p = state.evidence('paryon'); return { status: 'READ-ONLY', operations: PARYON_OPERATION_STATUS, checkedAt: p?.checkedAt, tipHeight: p?.tipHeight, deployment: p?.deployment, live: p?.live }; });
+
+  // ---- wallet: mainnet preflight + independent verification of wallet signatures. NO broadcast endpoint exists. ----
+  const preflights = new Map<string, { template: TxTemplate; owner: string; maxFee: bigint }>();
+  const CoinZ = z.object({ txid: z.string().regex(/^[0-9a-f]{64}$/), vout: z.coerce.number().int().nonnegative(), satoshis: z.coerce.bigint().positive(), hasToken: z.boolean().default(false), path: z.enum(['receive', 'change', 'defi']), addressIndex: z.coerce.number().int().nonnegative() });
+  app.post('/api/wallet/preflight', async (req) => {
+    const b = z.object({ network: z.enum(['mainnet', 'chipnet']), address: z.string().min(20), coins: z.array(CoinZ).min(1).max(50), maxMinerFee: z.coerce.bigint().positive().default(5_000n) }).parse(req.body);
+    const owner = lockingBytecodeOf(b.address);
+    const { template, inputPaths } = buildSelfConsolidation(b.coins.map((c) => ({ ...c, token: c.hasToken ? {} : undefined })), owner);
+    const p = preflight(template, { network: b.network, ownerLockingBytecode: owner, maxMinerFee: b.maxMinerFee, authorization: 'WizardConnect hdwalletv1: wallet-confirmed signature, broadcast:false', contractVerification: 'no contract inputs (P2PKH self-consolidation)' });
+    preflights.set(p.templateHash, { template, owner, maxFee: b.maxMinerFee });
+    const r = wcSignRequest(template, 'FUSE mainnet preflight: consolidate your own coins (FUSE will NOT broadcast)');
+    return {
+      preflight: p, template, inputPaths,
+      wcRequest: { transactionHex: binToHex(encodeTransaction(r.transaction)), broadcast: false, userPrompt: r.userPrompt,
+        sourceOutputs: r.sourceOutputs.map((s) => ({ outpointIndex: s.outpointIndex, outpointTransactionHash: binToHex(s.outpointTransactionHash), sequenceNumber: s.sequenceNumber, unlockingBytecode: binToHex(s.unlockingBytecode), lockingBytecode: binToHex(s.lockingBytecode), valueSatoshis: s.valueSatoshis })) },
+    };
+  });
+  app.post('/api/wallet/verify-signed', async (req, reply) => {
+    const b = z.object({ templateHash: z.string(), signedTransaction: z.string().regex(/^([0-9a-f]{2})+$/) }).parse(req.body);
+    const pf = preflights.get(b.templateHash);
+    if (!pf) return reply.status(404).send({ error: 'UNKNOWN_PREFLIGHT', message: 'run preflight first' });
+    const v = verifyWalletSigned(pf.template, b.signedTransaction, { ownerLockingBytecode: pf.owner, maxMinerFee: pf.maxFee });
+    return { ...v, broadcast: 'DISABLED', note: v.ok ? 'Signed transaction is valid and matches the reviewed preflight. FUSE did not broadcast it.' : 'Wallet response rejected.' };
+  });
 
   // ---- events (SSE) ----
   app.get('/api/events', async (req, reply) => {

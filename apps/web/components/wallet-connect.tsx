@@ -5,8 +5,9 @@ import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import QRCode from 'qrcode';
 import { Button, Badge, Mono } from './ui';
+import { MainnetPreflight, type WalletHandle } from './preflight';
 
-type State = { kind: 'idle' } | { kind: 'pairing'; uri: string; qr: string; relay: string } | { kind: 'connected'; wallet: string; address: string | null; protocol: string | null } | { kind: 'error'; message: string };
+type State = { kind: 'idle' } | { kind: 'pairing'; uri: string; qr: string; relay: string } | { kind: 'connected'; wallet: string; address: string | null; protocol: string | null; handle: WalletHandle | null } | { kind: 'error'; message: string };
 
 export function WalletConnect() {
   const [st, setSt] = useState<State>({ kind: 'idle' });
@@ -23,7 +24,18 @@ export function WalletConnect() {
       mgr.on('walletready', () => {
         const pub = mgr.getPubkey(0, 0n);
         const address = pub ? lib.encodeCashAddress({ prefix: 'bitcoincash', type: 'p2pkh', payload: lib.hash160(pub) }).address : null;
-        setSt({ kind: 'connected', wallet: mgr.walletName ?? 'Wallet', address, protocol: mgr.protocol });
+        const handle: WalletHandle | null = address ? {
+          address,
+          sign: async (req, inputPaths) => {
+            const transaction = lib.decodeTransactionUnsafe(lib.hexToBin(req.transactionHex));
+            const h = (v: unknown) => lib.hexToBin(String(v));
+            const sourceOutputs = req.sourceOutputs.map((s) => ({ outpointIndex: Number(s.outpointIndex), outpointTransactionHash: h(s.outpointTransactionHash), sequenceNumber: Number(s.sequenceNumber), unlockingBytecode: h(s.unlockingBytecode), lockingBytecode: h(s.lockingBytecode), valueSatoshis: BigInt(s.valueSatoshis) }));
+            const res = await mgr.signTransaction({ transaction: { transaction, sourceOutputs, broadcast: false, userPrompt: req.userPrompt }, inputPaths });
+            if (res.error) throw new Error(res.error);
+            return res.signedTransaction;
+          },
+        } : null;
+        setSt({ kind: 'connected', wallet: mgr.walletName ?? 'Wallet', address, protocol: mgr.protocol, handle });
       });
       mgr.on('disconnect', (_r, m) => setSt({ kind: 'error', message: `Wallet disconnected${m ? `: ${m}` : ''}` }));
       ref.current = { cleanup: () => relay.cleanup(), disconnect: async () => { await mgr.sendDisconnect('FUSE Studio closed the session').catch(() => undefined); relay.cleanup(); } };
@@ -59,6 +71,7 @@ export function WalletConnect() {
             <Mono className="break-all text-fog-300">{st.address ?? 'receive path not shared'}</Mono>
             <div className="text-[11px] text-fog-400">protocol {st.protocol ?? '—'} · signing uses SIGHASH_ALL|FORKID|UTXOS</div>
             <Button variant="quiet" onClick={disconnect} className="self-start px-0">Disconnect</Button>
+            {st.handle && <MainnetPreflight wallet={st.handle} />}
           </motion.div>
         )}
         {st.kind === 'error' && (
