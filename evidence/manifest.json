@@ -1,0 +1,43 @@
+{
+  "generatedAt": "2026-11-20",
+  "note": "sha256 over the committed file bytes. checkedAt is copied from each file where present. No item reflects a broadcast or a deployment.",
+  "items": [
+    {
+      "path": "evidence/cauldron-pool-verification.json",
+      "sha256": "7f6bad58f404d7693f433f901c3e6e354a698b4ce17ce8439099c6b4b5d8fdd6",
+      "checkedAt": "2026-11-20T13:09:45.517Z",
+      "producedBy": "scripts/verification/verify-cauldron-pools.ts",
+      "mode": "READ-ONLY mainnet",
+      "description": "Cauldron V0 pool script reconstruction vs live PUSD pools (raw txs re-hashed locally)"
+    },
+    {
+      "path": "evidence/paryon-deployment-verification.json",
+      "sha256": "06a751882802ecfdd9a844f01d8ebb3dd155f43867c77d8ef16490ee3bce89f8",
+      "checkedAt": "2026-11-20T13:21:38.991Z",
+      "producedBy": "scripts/verification/verify-paryon-deployment.ts",
+      "mode": "READ-ONLY mainnet",
+      "description": "Paryon V1 deployment: genesis scripts and live loan/oracle snapshot used by the Guardian radar (F14, X02)"
+    },
+    {
+      "path": "evidence/moria-historical-replay.json",
+      "sha256": "e0ae958c9fe6fb5e4e214034382910c7a3d65811f0601f0408e49cf43af60465",
+      "checkedAt": "2026-11-20T14:25:55.209Z",
+      "producedBy": "scripts/verification/replay-moria-history.ts",
+      "mode": "READ-ONLY mainnet (historical)",
+      "description": "Moria V1 MUSD transactions replayed input by input in a fresh BCH 2026 VM (F43); Moria V1 is disabled and never an active venue"
+    },
+    {
+      "path": "docs/standards/fep-1-vectors.json",
+      "sha256": "5a0f583e578394201a37602f7369e74ccbb271a53eec6ce7e5ede595dbf2f254",
+      "checkedAt": null,
+      "producedBy": "scripts/fep1-vectors.ts",
+      "mode": "deterministic",
+      "description": "FEP-1 conformance vectors from a public test-only key (X04)"
+    }
+  ],
+  "notRecorded": [
+    "No chipnet or mainnet transaction was broadcast by FUSE",
+    "No FlashVault deployment exists",
+    "No real-wallet WizardConnect signature has been captured"
+  ]
+}

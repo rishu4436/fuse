@@ -18,8 +18,18 @@ the BCH 2026 VM and the user's outcome has been recomputed from the transaction 
 * **ParyonUSD V1 mainnet verification:** every contract rebuilt from `@paryonusd/contracts@1.1.0` and matched on
   chain. 360 loans decoded, live oracle read from `PriceContractGuarded`.
 * **Auction** with 4 independent solver processes (3 honest + 1 adversarial). The adversary is always rejected.
-* **Studio** (Next.js 15): live auctions, animated transaction graph, certificates, Guardian radar, and WizardConnect
-  wallet pairing (read-only; signing not built).
+* **Intent compiler**: 10 stages (parse → … → certify), exact fee accounting, a plain-language explanation, parallel
+  worlds (F42), and cross-intent netting (X01). Each one is verified in the VM.
+* **Flash liquidity**: a shard manager with leases, TTLs and exposure caps (tested with 100 concurrent reservations),
+  an adaptive layout, and LP deposit, withdraw, merge, split and pause through the vault's owner path in the VM.
+* **Guardian** (READ-ONLY): a liquidation and redemption radar on the real Paryon V1 snapshot, policies, readiness,
+  sentinel, in-app alerts, and rescue bounties (X03). Proposals are never executable.
+* **Moria V1 historical replay**: 12/12 real MUSD mainnet transactions re-evaluated valid in a fresh VM.
+* **FEP-1** portable policy standard with published conformance vectors ([docs/standards/FEP-1.md](docs/standards/FEP-1.md)).
+* **WizardConnect**: pairing, and signing requests for FUSE-built transactions with a mainnet preflight. The request
+  always carries `broadcast:false`. FUSE has **no broadcast route**. Signing with a real wallet is not yet tested.
+* **Studio** (Next.js 15): every spec §16 route under `/app/*`, with an animated transaction graph, certificates,
+  replay, explorer, strategy builder and developer docs.
 
 ## Quick start
 
@@ -34,12 +44,12 @@ pnpm test && npx playwright test
 
 [Architecture](docs/ARCHITECTURE.md) · [Research](docs/RESEARCH.md) · [Integration feasibility](docs/INTEGRATION-FEASIBILITY.md) ·
 [Feature matrix](docs/FEATURE-MATRIX.md) · [Status](docs/STATUS.md) · [Test report](docs/TEST-REPORT.md) ·
-[Security & threat model](docs/SECURITY.md) · [Demo runbook](docs/DEMO-RUNBOOK.md) · [Hackathon checklist](docs/HACKATHON-SUBMISSION.md)
+[Security & threat model](docs/SECURITY.md) · [Roadmap](docs/ROADMAP.md) · [Contributing](CONTRIBUTING.md) · [FEP-1](docs/standards/FEP-1.md) · [Demo runbook](docs/DEMO-RUNBOOK.md) · [Hackathon checklist](docs/HACKATHON-SUBMISSION.md)
 
 ## Layout
 
-`packages/` contracts, transaction-composer, intent, policy-engine, solver-sdk, auction, proof-verifier,
-protocol-adapters, indexer-client, simulation, core, math · `services/` api, solver-reference · `apps/web` Studio ·
-`scripts/verification` mainnet verification scripts · `evidence/` their outputs.
+`packages/` contracts, transaction-composer, compiler, intent, policy-engine, solver-sdk, auction, proof-verifier,
+flash-liquidity, risk-engine, notifications, wallet, protocol-adapters, indexer-client, simulation, core, math · `services/` api, solver-reference · `apps/web` Studio ·
+`scripts/verification` mainnet verification scripts · `evidence/` their outputs (indexed with sha256 in `evidence/manifest.json`).
 
 Third-party: the Cauldron pool artifact is from `@mr-zwets/cauldron-swap-sdk` (ISC). See `packages/contracts/src/third-party/`.

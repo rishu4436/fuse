@@ -24,7 +24,7 @@ Status labels. Each one has a single meaning, and the categories are never merge
 | ParyonUSD | Manage / change interest / liquidate | BLOCKED | `@paryonusd/library` builders not published. Needs owner-approved live tests |
 | ParyonUSD | V2 | UNSUPPORTED | Not deployed |
 | Moria | V1 as a live venue | UNSUPPORTED | Disabled 23 Apr 2026 |
-| Wallet | WizardConnect pairing (hdwalletv1) in the Studio | IMPLEMENTED | Pairing QR is generated and the relay reports `connected` from the browser (Playwright). Address derivation after `wallet_ready` is untested because no real wallet was paired. No signing is requested |
+| Wallet | WizardConnect pairing (hdwalletv1) in the Studio | IMPLEMENTED | Pairing QR is generated and the relay reports `connected` from the browser (Playwright). Address derivation after `wallet_ready` is untested because no real wallet was paired. A signing request (`broadcast:false`) with a mainnet preflight is implemented and unit-tested with a local key, but has not been tried with a real wallet |
 | Execution | Composer and independent verifier | TESTED | `composer.test.ts` |
 | Execution | FEP-1 policy engine | TESTED | `policy.test.ts` |
 | Execution | Auction, fallback, anti-replay, rate limit | TESTED | `auction.test.ts`, `network.e2e.test.ts` |
@@ -37,7 +37,8 @@ Status labels. Each one has a single meaning, and the categories are never merge
 
 These items have been researched but have no code yet, so they carry no status label:
 
-* **WizardConnect signing** of a FUSE template (`generateWcTransactionObject` → `signTransaction`). Pairing exists, signing does not.
+* **WizardConnect signing with a real wallet.** The code path exists (`signTransaction` with `broadcast:false`, preflight,
+  independent 0x61 verification) and is unit-tested with a local key. It has not been tried with a real wallet.
 * **XO** templates and invitations. Bounty feedback must be written by the developer personally.
 * **Moria V1 historical replay** (READ-ONLY fixtures).
 * Cross-intent netting, health sentinel and rescue bounties.
