@@ -26,6 +26,7 @@ interface Prepared {
   simulation: Array<{ inputIndex: number; kind: string; evaluated: boolean; ok: boolean; detail: string }>;
   risk: { ok: boolean; level: string; checks: Check[] };
   route?: Record<string, unknown> | null;
+  authorization: { payload: string; authHash: string; serverPubkey: string; serverSig: string } | null; authorizationNote?: string;
   sign: { transactionHex: string; sourceOutputs: Array<Record<string, unknown>>; userPrompt: string; userInputs: number[]; inputPaths: Array<[number, string, number]> };
 }
 interface Verified { txid: string; vmValid: boolean; vmDetail: string; minerFee: bigint; sizeBytes: number; broadcast?: boolean; explorer?: string }
@@ -71,8 +72,8 @@ export default function LiveExecute() {
   });
   const verify = (hex: string) => run('Verifying the signed transaction against mainnet source outputs…', async () => { setSignedHex(hex); setVer(await api<Verified>('/api/live/verify-signed', { method: 'POST', json: { rawHex: hex } })); });
   const signWallet = () => run('Confirm in your wallet…', async () => { if (!wallet || !pf) return; const hex = await wallet.sign({ transactionHex: pf.sign.transactionHex, sourceOutputs: pf.sign.sourceOutputs, userPrompt: pf.sign.userPrompt }, pf.sign.inputPaths); setSignedHex(hex); setVer(await api<Verified>('/api/live/verify-signed', { method: 'POST', json: { rawHex: hex } })); });
-  const exportPkg = () => { if (!pf) return; const blob = new Blob([toJson({ network: 'mainnet', templateHash: pf.templateHash, ...pf.sign, template: pf.template })], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `fuse-${action}-${pf.templateHash.slice(0, 8)}.json`; a.click(); };
-  const broadcast = () => run('Relaying the signed hex to BCH mainnet…', async () => { setSent(await api<Verified>('/api/broadcast', { method: 'POST', json: { rawHex: signedHex } })); });
+  const exportPkg = () => { if (!pf) return; const blob = new Blob([toJson({ network: 'mainnet', templateHash: pf.templateHash, ...pf.sign, template: pf.template, authorization: pf.authorization })], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `fuse-${action}-${pf.templateHash.slice(0, 8)}.json`; a.click(); };
+  const broadcast = () => run('Relaying the signed hex to BCH mainnet…', async () => { setSent(await api<Verified>('/api/broadcast', { method: 'POST', json: { rawHex: signedHex, authorization: pf?.authorization } })); });
   useEffect(() => {
     if (!sent?.txid) return; let stop = false;
     const tick = async () => { try { const s = await api<TxStatus>(`/api/live/tx/${sent.txid}`); if (!stop) setSt(s); } catch { /* retry */ } };
@@ -146,11 +147,14 @@ export default function LiveExecute() {
                   <ul className="grid gap-1 text-[11.5px]">{pf.risk.checks.map((c) => <li key={c.name} className="flex gap-2"><span className={clsx('mt-1 size-1.5 shrink-0 rounded-full', c.ok ? 'bg-volt-400' : c.level === 'warn' ? 'bg-amber-sim' : 'bg-rose-bad')} /><span><span className="text-fog-200">{c.name}</span> <span className="text-fog-400">{c.detail}</span></span></li>)}</ul>
                 </div>
               </div>
+              <div className="mt-3 rounded-md border hairline p-2 text-[11.5px]" data-testid="live-authorization">
+                {pf.authorization ? (() => { const a = JSON.parse(atob(pf.authorization.payload.replace(/-/g, '+').replace(/_/g, '/'))) as { intentId: string; expiresAt: number; structureHash: string }; return <span className="text-fog-300">Execution authorization <Mono className="text-volt-300">{a.intentId}</Mono> · binds the exact transaction structure <Mono>{short(a.structureHash, 8)}</Mono> · single use · expires {new Date(a.expiresAt * 1000).toLocaleTimeString()}. The relay refuses any signed tx that differs from it.</span>; })() : <span className="text-rose-bad">No execution authorization: {pf.authorizationNote}</span>}
+              </div>
               {pf.route && <pre className="mt-3 overflow-x-auto rounded-md bg-ink-900 p-2 text-[10.5px] text-fog-400">{JSON.stringify(pf.route, (_k, v) => (typeof v === "bigint" ? v.toString() : v), 1)}</pre>}
             </Panel>
           )}
 
-          {pf?.risk.ok && (
+          {pf?.risk.ok && pf.authorization && (
             <Panel title="3 · Sign in your wallet" kicker="FUSE never sees your key">
               <div className="flex flex-wrap gap-3">
                 {wallet && <Button onClick={signWallet} disabled={Boolean(busy)} data-testid="live-sign-wc">Sign with {`WizardConnect`}</Button>}

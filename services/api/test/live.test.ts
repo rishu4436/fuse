@@ -11,7 +11,7 @@ const run = (t: TxTemplate, fee: bigint, expected: bigint) => guardianPreflight(
 
 describe('live broadcast relay', () => {
   it('refuses when broadcasting is disabled, before any network call', async () => {
-    await expect(broadcast('00', { enabled: false })).rejects.toMatchObject({ statusCode: 503 });
+    await expect(broadcast({ rawHex: '00' }, { enabled: false, trustedPubkey: null })).rejects.toMatchObject({ statusCode: 503 });
   });
   it('rejects non-hex and non-transactions with 400', async () => {
     await expect(verifySigned('zz')).rejects.toMatchObject({ statusCode: 400 });

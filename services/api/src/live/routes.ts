@@ -8,11 +8,18 @@ import { livePools, bestRoundTrip } from './cauldron.js';
 import { liveParyon } from './paryon.js';
 import { prepare, LIVE_CAPS } from './execute.js';
 import { broadcast, verifySigned, rateLimit } from './relay.js';
+import { issueAuthorization, serverKey } from './authz.js';
 import { liveCertificate } from './certificate.js';
 import { radar, sentinel } from '@fuse/risk-engine';
 import { parseLoan } from '@fuse/risk-engine';
 
 export const broadcastEnabled = () => process.env.FUSE_BROADCAST === '1';
+/** Preflight result + an execution authorization when Guardian passed (none on BLOCK, so a blocked tx can never be relayed). */
+export function withAuthorization<T extends Awaited<ReturnType<typeof prepare>>>(p: T, auction: { auctionId: string; transcriptHash: string; winner: string } | null = null) {
+  if (!p.risk.ok || !serverKey()) return { ...p, authorization: null, authorizationNote: !p.risk.ok ? 'Guardian BLOCK: no execution authorization issued' : 'authorizations not configured on this deployment' };
+  const authorization = issueAuthorization({ action: p.action, address: p.address, templateHash: p.templateHash, template: p.template, constraints: p.constraints as never, guardian: { level: p.risk.level, ok: p.risk.ok, checks: p.risk.checks.map((c) => `${c.ok ? 'ok' : 'FAIL'}:${c.name}`) }, auction });
+  return { ...p, authorization };
+}
 const Txid = z.string().regex(/^[0-9a-f]{64}$/);
 
 export function registerLive(app: FastifyInstance, ctx: { root: string; paryonSnapshot: () => unknown }) {
@@ -20,7 +27,7 @@ export function registerLive(app: FastifyInstance, ctx: { root: string; paryonSn
   app.get('/api/live/status', async () => {
     const t0 = Date.now(); let tipHeight: number | null = null; let err: string | null = null;
     try { tipHeight = await tip(); } catch (e) { err = (e as Error).message; }
-    return { mode: 'LIVE', network: 'mainnet', tipHeight, chainSource: ESPLORA, latencyMs: Date.now() - t0, error: err, broadcast: broadcastEnabled() ? 'ENABLED (relays already-signed hex after a full VM check; server holds no keys)' : 'DISABLED', vaults: configs().map((c) => ({ id: c.id, status: c.status, category: c.category })), caps: LIVE_CAPS, sandbox: 'opt-in local BCH VM (toggle in the app)' };
+    return { mode: 'LIVE', network: 'mainnet', tipHeight, chainSource: ESPLORA, latencyMs: Date.now() - t0, error: err, broadcast: broadcastEnabled() && serverKey() ? 'ENABLED (relays only signed txs that match an unexpired, single-use execution authorization from preflight; full VM + constraint re-check; server holds no fund keys)' : 'DISABLED', authorization: serverKey() ? { scheme: 'Schnorr secp256k1 over sha256("fuse-authz/v1:" + payload)', attestationPubkey: serverKey()!.pub, ttlSeconds: 300, singleUse: 'per-instance used-set + exact input outpoints re-checked unspent' } : null, vaults: configs().map((c) => ({ id: c.id, status: c.status, category: c.category })), caps: LIVE_CAPS, sandbox: 'opt-in local BCH VM (toggle in the app)' };
   });
   app.get('/api/live/vaults', async () => Promise.all(configs().map((c) => trackVault(c).catch((e: Error) => ({ id: c.id, error: e.message })))));
   app.get('/api/live/vault/:id', async (req, reply) => { const c = configs().find((x) => x.id === (req.params as { id: string }).id); return c ? trackVault(c) : reply.status(404).send({ error: 'NOT_FOUND' }); });
@@ -45,9 +52,14 @@ export function registerLive(app: FastifyInstance, ctx: { root: string; paryonSn
   app.get('/api/live/guardian/sentinel', async () => { const v = await liveView(); return { checkedAt: v.checkedAt, ...sentinel({ priceStates: v.live.priceStates as never, latestPrice: v.live.latestPrice as never, activeLoans: v.live.activeLoans, staleLoans: v.live.staleLoans, checkedAt: v.checkedAt }) }; });
   app.get('/api/live/wallet/:address', async (req) => { const a = (req.params as { address: string }).address; const coins = await addressUtxos(a); return { address: a, balance: coins.reduce((s, c) => s + c.satoshis, 0n), coins }; });
   const PrepareZ = z.object({ action: z.enum(['flash', 'flash-cauldron', 'deposit', 'withdraw', 'deploy-vault', 'consolidate']), address: z.string().min(20).max(120), vaultId: z.string().max(40).optional(), amount: z.coerce.bigint().positive().optional(), principal: z.coerce.bigint().positive().optional(), units: z.coerce.bigint().min(1n).max(5n).optional(), maxUserCost: z.coerce.bigint().positive().optional() });
-  app.post('/api/live/prepare', async (req) => prepare(configs(), PrepareZ.parse(req.body)));
-  app.post('/api/live/verify-signed', async (req) => verifySigned(z.object({ rawHex: z.string() }).parse(req.body).rawHex));
-  app.post('/api/broadcast', async (req) => { rateLimit(String(req.headers['x-forwarded-for'] ?? req.ip).split(',')[0]); return broadcast(z.object({ rawHex: z.string() }).parse(req.body).rawHex, { enabled: broadcastEnabled() }); });
+  app.post('/api/live/prepare', async (req) => withAuthorization(await prepare(configs(), PrepareZ.parse(req.body))));
+  app.post('/api/live/verify-signed', async (req) => { const { tx: _t, src: _s, ...v } = await verifySigned(z.object({ rawHex: z.string() }).parse(req.body).rawHex); return v; });
+  const AuthZ = z.object({ payload: z.string().max(200_000), authHash: z.string(), serverPubkey: z.string(), serverSig: z.string() });
+  app.post('/api/broadcast', async (req) => {
+    rateLimit(String(req.headers['x-forwarded-for'] ?? req.ip).split(',')[0]);
+    const b = z.object({ rawHex: z.string(), authorization: AuthZ.optional(), userSignature: z.object({ pubkey: z.string(), sig: z.string() }).optional() }).parse(req.body);
+    return broadcast(b, { enabled: broadcastEnabled(), trustedPubkey: serverKey()?.pub ?? null });
+  });
   app.get('/api/live/tx/:txid', async (req) => { const t = Txid.parse((req.params as { txid: string }).txid); return { txid: t, explorer: EXPLORER_TX + t, ...(await confirmations(t)) }; });
   app.post('/api/live/certificate', async (req) => liveCertificate(configs(), Txid.parse(z.object({ txid: z.string() }).parse(req.body).txid)));
 }

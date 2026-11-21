@@ -7,6 +7,7 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { toJson, fromJson } from '@fuse/solver-sdk';
 import { loadTestWallet, signPrepared, type Prepared } from './test-signer.js';
+import { signAuthAsUser, structureHashOfTemplate, type Authorization } from '../../services/api/src/live/authz.js';
 
 const args = process.argv.slice(2); const [action] = args;
 const flag = (k: string) => { const i = args.indexOf(`--${k}`); return i >= 0 ? args[i + 1] : undefined; };
@@ -58,11 +59,17 @@ async function main() {
   const s = signPrepared(p, w, { maxFee: MAX_FEE, maxUserCost: remaining < 20_000n ? remaining : 20_000n });
   console.log(`signed locally (box-only test signer): txid ${s.txid}, net cost ${s.cost} sats; round budget left ${remaining}`);
   if (!BROADCAST) { console.log('DRY RUN: not broadcast. Re-run with --broadcast.'); return; }
-  const b = await call<{ txid: string; explorer: string; vmDetail: string; minerFee: bigint }>('POST', '/api/broadcast', { rawHex: s.raw });
+  const authz = (p as unknown as { authorization: Authorization | null }).authorization;
+  if (!authz) throw new Error('preflight issued no execution authorization: refusing');
+  const ap = JSON.parse(Buffer.from(authz.payload, 'base64url').toString('utf8')) as { structureHash: string; intentId: string; expiresAt: number };
+  if (ap.structureHash !== structureHashOfTemplate(p.template)) throw new Error('authorization is not for the template the signer reviewed');
+  const userSignature = signAuthAsUser(authz.authHash, w.priv); // the wallet key also signs the authorization hash
+  const b = await call<{ txid: string; explorer: string; vmDetail: string; minerFee: bigint; intentId: string; intentBound: boolean; constraintChecks: unknown; userSignature: unknown }>('POST', '/api/broadcast', { rawHex: s.raw, authorization: authz, userSignature });
+  writeFileSync(new URL(`../../evidence/mainnet/authorizations/${b.txid}.json`, import.meta.url), JSON.stringify({ txid: b.txid, authorization: authz, userSignature, broadcastResult: { intentId: b.intentId, intentBound: b.intentBound, constraintChecks: b.constraintChecks, userSignature: b.userSignature } }, (_k, v) => (typeof v === 'bigint' ? v.toString() : v), 1));
   if (b.txid !== s.txid) throw new Error('broadcast txid mismatch');
   ledger.spent = String(BigInt(ledger.spent) + s.cost); ledger.txs.push({ action, txid: b.txid, minerFee: String(b.minerFee), cost: String(s.cost), at: new Date().toISOString() });
   writeFileSync(LEDGER, JSON.stringify(ledger, null, 1), { mode: 0o600 });
-  record({ action, txid: b.txid, explorer: b.explorer, minerFee: b.minerFee, netCost: s.cost, relayedBy: `${BASE}/api/broadcast`, serverVmCheck: b.vmDetail, guardian: p.risk.level, route: p.route, at: new Date().toISOString() });
+  record({ action, txid: b.txid, intentId: b.intentId, intentBound: b.intentBound, explorer: b.explorer, minerFee: b.minerFee, netCost: s.cost, relayedBy: `${BASE}/api/broadcast`, serverVmCheck: b.vmDetail, guardian: p.risk.level, route: p.route, at: new Date().toISOString() });
   console.log(`BROADCAST via hosted /api/broadcast OK ${b.txid}\n  ${b.explorer}`);
 }
 main().catch((e) => { console.error('ERROR:', (e as Error).message); process.exit(1); });

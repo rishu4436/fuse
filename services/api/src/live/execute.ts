@@ -149,9 +149,15 @@ export async function prepare(configs: VaultConfig[], req: PrepareInput) {
   const sourceOutputs = t.inputs.map((x, i) => ({ outpointIndex: x.vout, outpointTransactionHash: x.txid, sequenceNumber: 0xffffffff, unlockingBytecode: cu.get(i) ?? '', lockingBytecode: x.lockingBytecode, valueSatoshis: src[i].valueSatoshis.toString(), ...tok(x) }));
   const userInputs = t.inputs.map((x, i) => [x, i] as const).filter(([x]) => x.unlock.kind === 'p2pkh' || x.unlock.kind === 'flashvault-bch-owner').map(([, i]) => i);
   return {
-    network: 'mainnet' as const, action: req.action, templateHash: templateHash(t), template: t, minerFee: built.fee, estimatedSizeBytes: built.sizeBytes, expectedUserCost,
+    network: 'mainnet' as const, action: req.action, address: req.address, templateHash: templateHash(t), template: t, minerFee: built.fee, estimatedSizeBytes: built.sizeBytes, expectedUserCost,
     vault: vaultInfo ? { id: vaultInfo.id, address: vaultInfo.address, current: vaultInfo.current } : p ? { id: 'new', category: p.vaultCategory, ownerPkh: p.ownerPkh, lockingBytecode: vaultLb(p) } : null,
     route, simulation: sim, risk, notes,
+    constraints: {
+      userLockingBytecode: user.lb, maxMinerFee: LIVE_CAPS.maxMinerFee, expectedUserCost, capital, maxUserCost: req.maxUserCost ?? expectedUserCost,
+      allowedRecipients: [...new Set(t.outputs.map((o) => o.lockingBytecode))],
+      vault: p ? { id: vaultInfo?.id ?? 'new', lockingBytecode: vaultLb(p), category: p.vaultCategory, feeBps: p.feeBps, minFee: p.minFee, maxExposure: p.maxExposure, ownerPkh: p.ownerPkh, requiredReturn } : null,
+      route: route ? { units: route.units, buyOutpoint: route.buyOutpoint, sellOutpoint: route.sellOutpoint, satsIn: route.satsIn, minSatsOut: route.satsOut, slippageBps: 0 } : null,
+    },
     sign: { transactionHex, sourceOutputs, userPrompt: `FUSE ${req.action} on BCH mainnet — you pay ≈ ${expectedUserCost} sats`, broadcast: false, userInputs, inputPaths: userInputs.map((i) => [i, 'receive', 0] as [number, string, number]) },
   };
 }
