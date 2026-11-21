@@ -11,7 +11,7 @@
 import { binToHex, hexToBin, decodeTransaction, createVirtualMachineBch2026, type Output } from '@bitauth/libauth';
 import { contractUnlocks, txidOfRaw, type TxTemplate } from '@fuse/transaction-composer';
 import { cauldronSwapIsValid } from '@fuse/contracts';
-import { outputAt, outspend, pool, relay, EXPLORER_TX, type LiveUtxo } from './chain.js';
+import { outputAt, outspend, pool, relay, relayPaths, EXPLORER_TX, type LiveUtxo } from './chain.js';
 import { openAuthorization, structureDiff, verifyUserSignature, type Authorization, type AuthPayload } from './authz.js';
 import { guardianPreflight, simulate } from './execute.js';
 
@@ -104,6 +104,6 @@ export async function broadcast(req: BroadcastRequest, opts: { enabled: boolean;
   const nodeTxid = await deps.relay(req.rawHex);
   if (nodeTxid !== v.txid) throw Object.assign(new Error(`node returned ${nodeTxid}, expected ${v.txid}`), { statusCode: 502 });
   const { tx: _t, src: _s, ...pub } = v;
-  return { ...pub, broadcast: true, intentId: p.intentId, authHash: req.authorization!.authHash, intentBound: true, userSignature: us, constraintChecks: c.checks, guardianAtBroadcast: c.guardian, relayedVia: 'bchexplorer.cash (POST /api/tx → Fulcrum/BCHN)', explorer: EXPLORER_TX + v.txid };
+  return { ...pub, broadcast: true, intentId: p.intentId, authHash: req.authorization!.authHash, intentBound: true, userSignature: us, constraintChecks: c.checks, guardianAtBroadcast: c.guardian, relayedVia: relayPaths.get(v.txid)?.join(' + ') ?? 'relay', explorer: EXPLORER_TX + v.txid };
 }
 export const _resetUsedForTests = () => used.clear();

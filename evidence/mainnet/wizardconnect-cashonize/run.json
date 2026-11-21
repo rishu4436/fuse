@@ -1,0 +1,744 @@
+{
+ "note": "Round 6: a real third-party wallet (Cashonize v0.16.0, https://cashonize.com, built on @wizardconnect/wallet) paired with the deployed FUSE app over WizardConnect and signed a mainnet flash on fuse-live-1. Raw HTTP exchanges captured from the FUSE page (Playwright). Contains public chain data and the (spent, expired) execution authorization only; no wallet secret.",
+ "wallet": {
+  "app": "Cashonize",
+  "source": "https://github.com/cashonize/cashonize-wallet",
+  "hosted": "https://cashonize.com",
+  "walletType": "HD, derivation m/44'/145'/0' (standard); fresh BIP39 seed generated on the box, kept outside the repo",
+  "electrumServer": "cashnode.bch.ninja:443 (single mode; the default port 50004 is not reachable from the box)",
+  "fuseAddress": "bitcoincash:qp6srfqe44p5kx0m7c4k84r8knej5cvlwydeuta5ta",
+  "path": "m/44'/145'/0'/0/0",
+  "pubkey": "021b7db5fcbae0dc9888204f2de01cbe493c942d2fe97ee42e67d8706c293efda6"
+ },
+ "timeline": [
+  [
+   "2026-11-21T03:04:46.986Z",
+   "cashonize console[log]: Wallet initialization #1"
+  ],
+  [
+   "2026-11-21T03:05:02.341Z",
+   "wiz uri obtained: wiz://?p=pa3\u2026"
+  ],
+  [
+   "2026-11-21T03:05:08.226Z",
+   "cashonize dialog: SHARE WALLET ADDRESSES WITH THIS DAPP? Connecting shares your wallet's full current and future address list (the xpub) with the dApp. The dApp can see your entire balance and transaction history, even after disconnecting. You lose the privacy of using fresh HD wallet addresses. Spending your funds still requires your approval for each transaction. Note: the dApp's name and icon are only received a"
+  ],
+  [
+   "2026-11-21T03:05:11.005Z",
+   "cashonize console[debug]: [wizardconnect/wallet] Dapp selected protocol: hdwalletv1"
+  ],
+  [
+   "2026-11-21T03:05:11.085Z",
+   "cashonize console[debug]: [wizardconnect/wallet] Dapp selected protocol: hdwalletv1"
+  ],
+  [
+   "2026-11-21T03:05:12.082Z",
+   "FUSE connected: Cashonize LIVE bitcoincash:qp6srfqe44p5kx0m7c4k84r8knej5cvlwydeuta5ta protocol hdwalletv1 \u00b7 signing uses SIGHASH_ALL|FORKID|UTXOS Disconnect"
+  ],
+  [
+   "2026-11-21T03:05:12.203Z",
+   "vault: fuse-live-1"
+  ],
+  [
+   "2026-11-21T03:05:14.093Z",
+   "FUSE live/prepare \u2192 200"
+  ],
+  [
+   "2026-11-21T03:05:14.532Z",
+   "authorization: Execution authorization int_8e66bc9092a32f90b5cfc780 \u00b7 binds the exact transaction structure 8172ad63\u2026a85bffdc \u00b7 single use \u00b7 expires 3:10:13 AM. The relay refuses any signed tx that differs from it."
+  ],
+  [
+   "2026-11-21T03:05:14.535Z",
+   "guardian: Guardian PASS"
+  ],
+  [
+   "2026-11-21T03:05:14.766Z",
+   "FUSE alert: "
+  ],
+  [
+   "2026-11-21T03:05:15.175Z",
+   "cashonize console[error]: Failed to load resource: the server responded with a status of 404 ()"
+  ],
+  [
+   "2026-11-21T03:05:15.175Z",
+   "cashonize console[error]: Failed to fetch metadata for fa0c5163b8490a12d995f09ebc6c5cc32ebe3b3fc104951819b7cfee5d74549b: Error: Fetch https://bcmr.paytaca.com/api/tokens/fa0c5163b8490a12d995f09ebc6c5cc32ebe3b3fc104951819b7cfee5d74549b/ failed: 404 \n    at l_ (https://cashonize.com/assets/WalletPage-Dbp9f3EA.js:2060:96683)\n    at async Proxy.cn (https://cashonize.com/assets/WalletPage-Dbp9f3EA.js:2201:234221)\n    at async r (https://cashonize.com/assets/WalletPage-Dbp9f3EA.js:2200:166449)"
+  ],
+  [
+   "2026-11-21T03:05:19.425Z",
+   "cashonize sign dialog: SIGN TRANSACTION FUSE flash on BCH mainnet \u2014 you pay \u2248 1186 sats Origin: FUSE Studio Balance Change: - 1186 sat (-$0.00) Full Transaction Details"
+  ],
+  [
+   "2026-11-21T03:05:20.207Z",
+   "FUSE live/verify-signed \u2192 200"
+  ],
+  [
+   "2026-11-21T03:05:20.379Z",
+   "verified: \u2713 all inputs valid in the BCH 2026 VM against chain-derived source outputs \u00b7 txid 9df5dcede4\u202621d6bee8d0 \u00b7 fee 1,086 sats \u00b7 541 B"
+  ],
+  [
+   "2026-11-21T03:05:21.801Z",
+   "FUSE broadcast \u2192 200"
+  ],
+  [
+   "2026-11-21T03:05:22.062Z",
+   "sent: Broadcast \u00b7 txid 9df5dcede4a6e3a7d14f738a0a340d9f806c2317bedb33238d081a21d6bee8d0 Public indexers can lag the mempool by up to a minute: wait until this tx shows in the vault history before composing another action on the same vault, or the node will reject it as a double-spend (nothing is lost). checking\u2026 Verify certificate against mainnet"
+  ],
+  [
+   "2026-11-21T03:23:24.102Z",
+   "FUSE live/certificate \u2192 200"
+  ],
+  [
+   "2026-11-21T03:23:24.223Z",
+   "cert: FLASH_USE certificate \u2713 VERIFIED Verified against independent chain data. This is execution verification, not a security audit. Highest level: INTENT_BOUND. \u2713 INCLUDED 1 tx(s) found, re-hashed and confirmed \u2713 STRUCTURE VERIFIED 2 inputs, 2 outputs, 1 vault continuation(s) and the owner outcome match chain data \u2713 OUTCOME VERIFIED 5 contract-specific facts re-derived from chain data \u2713 INTENT BOUND tx matches authorization int_8e66bc9092a32f90b5cfc780 (attestation key 037e044ab0\u2026, Guardian PASS); no user wallet signature over the auth hash schema certificate-commitment tx-hash:9df5dcede4a6 confir"
+  ],
+  [
+   "2026-11-21T03:23:25.886Z",
+   "done"
+  ]
+ ],
+ "exchanges": {
+  "live/prepare": {
+   "status": 200,
+   "request": {
+    "action": "flash",
+    "address": "bitcoincash:qp6srfqe44p5kx0m7c4k84r8knej5cvlwydeuta5ta",
+    "vaultId": "fuse-live-1"
+   },
+   "response": {
+    "network": "mainnet",
+    "action": "flash",
+    "address": "bitcoincash:qp6srfqe44p5kx0m7c4k84r8knej5cvlwydeuta5ta",
+    "templateHash": "a95402b1008e39ebe5d14bf845a3757e661e85dd37e312860c0f171a978fdcc7",
+    "template": {
+     "version": 2,
+     "locktime": 0,
+     "inputs": [
+      {
+       "txid": "cb003c5645ec52aea77b896e7f29fba22a751ad937a8a44f4d1649f954733c3c",
+       "vout": 0,
+       "satoshis": "30400n",
+       "lockingBytecode": "aa2014fa3605d51dd8c9cf29878038a46c72eab1862c65ad42966d17042d59a723db87",
+       "token": {
+        "category": "fa0c5163b8490a12d995f09ebc6c5cc32ebe3b3fc104951819b7cfee5d74549b",
+        "amount": "0n",
+        "nft": {
+         "capability": "mutable",
+         "commitment": "0400000000000000900100000000000000"
+        }
+       },
+       "role": "vault",
+       "unlock": {
+        "kind": "flashvault-bch",
+        "params": {
+         "vaultCategory": "fa0c5163b8490a12d995f09ebc6c5cc32ebe3b3fc104951819b7cfee5d74549b",
+         "feeBps": "9n",
+         "minFee": "100n",
+         "maxExposure": "100000n",
+         "ownerPkh": "16ce0ac40f684f525f7d2fd58ae797d30f914dd3"
+        },
+        "fn": "flash"
+       }
+      },
+      {
+       "txid": "5584a8b0aabba5c7d250c70a6f72a5323cba6cf2d55cf283073aa93cb87af5e0",
+       "vout": 0,
+       "satoshis": "20000n",
+       "lockingBytecode": "76a9147501a419ad434b19fbf62b63d467b4f32a619f7188ac",
+       "role": "wallet",
+       "unlock": {
+        "kind": "p2pkh",
+        "signer": "user"
+       }
+      }
+     ],
+     "outputs": [
+      {
+       "lockingBytecode": "aa2014fa3605d51dd8c9cf29878038a46c72eab1862c65ad42966d17042d59a723db87",
+       "satoshis": "30500n",
+       "token": {
+        "category": "fa0c5163b8490a12d995f09ebc6c5cc32ebe3b3fc104951819b7cfee5d74549b",
+        "amount": "0n",
+        "nft": {
+         "capability": "mutable",
+         "commitment": "0500000000000000f40100000000000000"
+        }
+       },
+       "role": "vault-continuation",
+       "label": "principal 30400 + flash fee 100"
+      },
+      {
+       "lockingBytecode": "76a9147501a419ad434b19fbf62b63d467b4f32a619f7188ac",
+       "satoshis": "18814n",
+       "role": "change"
+      }
+     ]
+    },
+    "minerFee": "1086n",
+    "estimatedSizeBytes": 541,
+    "expectedUserCost": "1186n",
+    "vault": {
+     "id": "fuse-live-1",
+     "address": "bitcoincash:rv205ds965wa3jw09xrcqw9yd3ew4vvx93j66s5kd5tsgt2e5u3akkk0tg0k5",
+     "current": {
+      "txid": "cb003c5645ec52aea77b896e7f29fba22a751ad937a8a44f4d1649f954733c3c",
+      "vout": 0,
+      "satoshis": "30400n",
+      "commitment": "0400000000000000900100000000000000",
+      "state": {
+       "flashCount": "4n",
+       "cumulativeFees": "400n",
+       "paused": false
+      }
+     }
+    },
+    "route": null,
+    "simulation": [
+     {
+      "inputIndex": 0,
+      "kind": "flashvault-bch",
+      "evaluated": true,
+      "ok": true,
+      "detail": "covenant accepts this transaction (BCH 2026 VM)"
+     },
+     {
+      "inputIndex": 1,
+      "kind": "p2pkh",
+      "evaluated": false,
+      "ok": true,
+      "detail": "your signature \u2014 verified by the VM after signing"
+     }
+    ],
+    "risk": {
+     "ok": true,
+     "level": "PASS",
+     "checks": [
+      {
+       "name": "covenant simulation",
+       "ok": true,
+       "level": "block",
+       "detail": "input 0 flashvault-bch: ok"
+      },
+      {
+       "name": "no hidden transfers",
+       "ok": true,
+       "level": "block",
+       "detail": "every output pays you, the vault, or a pool that is also spent here (same-index covenant continuation)"
+      },
+      {
+       "name": "miner fee within cap",
+       "ok": true,
+       "level": "block",
+       "detail": "1086 sats (cap 5000, 2 sat/B)"
+      },
+      {
+       "name": "your net cost",
+       "ok": true,
+       "level": "block",
+       "detail": "1186 sats spent (expected 1186)"
+      },
+      {
+       "name": "vault repaid in the same tx",
+       "ok": true,
+       "level": "block",
+       "detail": "vault receives 30500 \u2265 30500"
+      },
+      {
+       "name": "no token side effects on your wallet",
+       "ok": true,
+       "level": "block",
+       "detail": "no tokens move to or from your wallet"
+      },
+      {
+       "name": "your coins are confirmed",
+       "ok": true,
+       "level": "warn",
+       "detail": "unconfirmed inputs work on BCH but are re-checked at broadcast"
+      }
+     ],
+     "netUserCost": "1186n",
+     "capitalToOwnVault": "0n"
+    },
+    "notes": [],
+    "constraints": {
+     "userLockingBytecode": "76a9147501a419ad434b19fbf62b63d467b4f32a619f7188ac",
+     "maxMinerFee": "5000n",
+     "expectedUserCost": "1186n",
+     "capital": "0n",
+     "maxUserCost": "1186n",
+     "allowedRecipients": [
+      "aa2014fa3605d51dd8c9cf29878038a46c72eab1862c65ad42966d17042d59a723db87",
+      "76a9147501a419ad434b19fbf62b63d467b4f32a619f7188ac"
+     ],
+     "vault": {
+      "id": "fuse-live-1",
+      "lockingBytecode": "aa2014fa3605d51dd8c9cf29878038a46c72eab1862c65ad42966d17042d59a723db87",
+      "category": "fa0c5163b8490a12d995f09ebc6c5cc32ebe3b3fc104951819b7cfee5d74549b",
+      "feeBps": "9n",
+      "minFee": "100n",
+      "maxExposure": "100000n",
+      "ownerPkh": "16ce0ac40f684f525f7d2fd58ae797d30f914dd3",
+      "requiredReturn": "30500n"
+     },
+     "route": null
+    },
+    "sign": {
+     "transactionHex": "02000000023c3c7354f949164d4fa4a837d91a752aa2fb297f6e897ba7ae52ec45563c00cb00000000db004cd81416ce0ac40f684f525f7d2fd58ae797d30f914dd303a08601016459209b54745deecfb719189504c13f3bbe2ec35c6cbc9ef095d9120a49b863510cfa5579009c63c076c678ce5379517e8878cf8201119d76607f7701008878577aa169557a5279567a95020f279302102796a45379cd5479c7885379d1557a517e885379d3009d5379cc765479537a93a26978587f75817b607f75587f77817800a2697600a269727c947b8b58807b7b9358807e01007e7cd287777767557a519d5579a9557a885579827701419d557901407f7701618871ad6d6d5168ffffffffe0f57ab83ca93a0783f25cd5f26cba3c32a5726f0ac750d2c7a5bbaab0a884550000000000ffffffff02247700000000000057ef9b54745deecfb719189504c13f3bbe2ec35c6cbc9ef095d9120a49b863510cfa61110500000000000000f40100000000000000aa2014fa3605d51dd8c9cf29878038a46c72eab1862c65ad42966d17042d59a723db877e490000000000001976a9147501a419ad434b19fbf62b63d467b4f32a619f7188ac00000000",
+     "sourceOutputs": [
+      {
+       "outpointIndex": 0,
+       "outpointTransactionHash": "cb003c5645ec52aea77b896e7f29fba22a751ad937a8a44f4d1649f954733c3c",
+       "sequenceNumber": 4294967295,
+       "unlockingBytecode": "004cd81416ce0ac40f684f525f7d2fd58ae797d30f914dd303a08601016459209b54745deecfb719189504c13f3bbe2ec35c6cbc9ef095d9120a49b863510cfa5579009c63c076c678ce5379517e8878cf8201119d76607f7701008878577aa169557a5279567a95020f279302102796a45379cd5479c7885379d1557a517e885379d3009d5379cc765479537a93a26978587f75817b607f75587f77817800a2697600a269727c947b8b58807b7b9358807e01007e7cd287777767557a519d5579a9557a885579827701419d557901407f7701618871ad6d6d5168",
+       "lockingBytecode": "aa2014fa3605d51dd8c9cf29878038a46c72eab1862c65ad42966d17042d59a723db87",
+       "valueSatoshis": "30400",
+       "token": {
+        "category": "fa0c5163b8490a12d995f09ebc6c5cc32ebe3b3fc104951819b7cfee5d74549b",
+        "amount": "0",
+        "nft": {
+         "capability": "mutable",
+         "commitment": "0400000000000000900100000000000000"
+        }
+       }
+      },
+      {
+       "outpointIndex": 0,
+       "outpointTransactionHash": "5584a8b0aabba5c7d250c70a6f72a5323cba6cf2d55cf283073aa93cb87af5e0",
+       "sequenceNumber": 4294967295,
+       "unlockingBytecode": "",
+       "lockingBytecode": "76a9147501a419ad434b19fbf62b63d467b4f32a619f7188ac",
+       "valueSatoshis": "20000"
+      }
+     ],
+     "userPrompt": "FUSE flash on BCH mainnet \u2014 you pay \u2248 1186 sats",
+     "broadcast": false,
+     "userInputs": [
+      1
+     ],
+     "inputPaths": [
+      [
+       1,
+       "receive",
+       0
+      ]
+     ]
+    },
+    "authorization": {
+     "payload": "eyJ2IjoxLCJraW5kIjoiZnVzZS5leGVjdXRpb24tYXV0aG9yaXphdGlvbi92MSIsImludGVudElkIjoiaW50XzhlNjZiYzkwOTJhMzJmOTBiNWNmYzc4MCIsIm5ldHdvcmsiOiJtYWlubmV0IiwiaXNzdWVkQXQiOjE3OTUyMzAzMTMsImV4cGlyZXNBdCI6MTc5NTIzMDYxMywic3RydWN0dXJlSGFzaCI6IjgxNzJhZDYzNjA4ZDViMzBhNTIzMGI2ODMxNmY0OTU4MThjNGFhOGQ2YWI0MjFjYzM3MTQwMTgwYTg1YmZmZGMiLCJhY3Rpb24iOiJmbGFzaCIsImFkZHJlc3MiOiJiaXRjb2luY2FzaDpxcDZzcmZxZTQ0cDVreDBtN2M0azg0cjhrbmVqNWN2bHd5ZGV1dGE1dGEiLCJ0ZW1wbGF0ZUhhc2giOiJhOTU0MDJiMTAwOGUzOWViZTVkMTRiZjg0NWEzNzU3ZTY2MWU4NWRkMzdlMzEyODYwYzBmMTcxYTk3OGZkY2M3IiwidGVtcGxhdGUiOnsidmVyc2lvbiI6MiwibG9ja3RpbWUiOjAsImlucHV0cyI6W3sidHhpZCI6ImNiMDAzYzU2NDVlYzUyYWVhNzdiODk2ZTdmMjlmYmEyMmE3NTFhZDkzN2E4YTQ0ZjRkMTY0OWY5NTQ3MzNjM2MiLCJ2b3V0IjowLCJzYXRvc2hpcyI6IjMwNDAwbiIsImxvY2tpbmdCeXRlY29kZSI6ImFhMjAxNGZhMzYwNWQ1MWRkOGM5Y2YyOTg3ODAzOGE0NmM3MmVhYjE4NjJjNjVhZDQyOTY2ZDE3MDQyZDU5YTcyM2RiODciLCJ0b2tlbiI6eyJjYXRlZ29yeSI6ImZhMGM1MTYzYjg0OTBhMTJkOTk1ZjA5ZWJjNmM1Y2MzMmViZTNiM2ZjMTA0OTUxODE5YjdjZmVlNWQ3NDU0OWIiLCJhbW91bnQiOiIwbiIsIm5mdCI6eyJjYXBhYmlsaXR5IjoibXV0YWJsZSIsImNvbW1pdG1lbnQiOiIwNDAwMDAwMDAwMDAwMDAwOTAwMTAwMDAwMDAwMDAwMDAwIn19LCJyb2xlIjoidmF1bHQiLCJ1bmxvY2siOnsia2luZCI6ImZsYXNodmF1bHQtYmNoIiwicGFyYW1zIjp7InZhdWx0Q2F0ZWdvcnkiOiJmYTBjNTE2M2I4NDkwYTEyZDk5NWYwOWViYzZjNWNjMzJlYmUzYjNmYzEwNDk1MTgxOWI3Y2ZlZTVkNzQ1NDliIiwiZmVlQnBzIjoiOW4iLCJtaW5GZWUiOiIxMDBuIiwibWF4RXhwb3N1cmUiOiIxMDAwMDBuIiwib3duZXJQa2giOiIxNmNlMGFjNDBmNjg0ZjUyNWY3ZDJmZDU4YWU3OTdkMzBmOTE0ZGQzIn0sImZuIjoiZmxhc2gifX0seyJ0eGlkIjoiNTU4NGE4YjBhYWJiYTVjN2QyNTBjNzBhNmY3MmE1MzIzY2JhNmNmMmQ1NWNmMjgzMDczYWE5M2NiODdhZjVlMCIsInZvdXQiOjAsInNhdG9zaGlzIjoiMjAwMDBuIiwibG9ja2luZ0J5dGVjb2RlIjoiNzZhOTE0NzUwMWE0MTlhZDQzNGIxOWZiZjYyYjYzZDQ2N2I0ZjMyYTYxOWY3MTg4YWMiLCJyb2xlIjoid2FsbGV0IiwidW5sb2NrIjp7ImtpbmQiOiJwMnBraCIsInNpZ25lciI6InVzZXIifX1dLCJvdXRwdXRzIjpbeyJsb2NraW5nQnl0ZWNvZGUiOiJhYTIwMTRmYTM2MDVkNTFkZDhjOWNmMjk4NzgwMzhhNDZjNzJlYWIxODYyYzY1YWQ0Mjk2NmQxNzA0MmQ1OWE3MjNkYjg3Iiwic2F0b3NoaXMiOiIzMDUwMG4iLCJ0b2tlbiI6eyJjYXRlZ29yeSI6ImZhMGM1MTYzYjg0OTBhMTJkOTk1ZjA5ZWJjNmM1Y2MzMmViZTNiM2ZjMTA0OTUxODE5YjdjZmVlNWQ3NDU0OWIiLCJhbW91bnQiOiIwbiIsIm5mdCI6eyJjYXBhYmlsaXR5IjoibXV0YWJsZSIsImNvbW1pdG1lbnQiOiIwNTAwMDAwMDAwMDAwMDAwZjQwMTAwMDAwMDAwMDAwMDAwIn19LCJyb2xlIjoidmF1bHQtY29udGludWF0aW9uIiwibGFiZWwiOiJwcmluY2lwYWwgMzA0MDAgKyBmbGFzaCBmZWUgMTAwIn0seyJsb2NraW5nQnl0ZWNvZGUiOiI3NmE5MTQ3NTAxYTQxOWFkNDM0YjE5ZmJmNjJiNjNkNDY3YjRmMzJhNjE5ZjcxODhhYyIsInNhdG9zaGlzIjoiMTg4MTRuIiwicm9sZSI6ImNoYW5nZSJ9XX0sImNvbnN0cmFpbnRzIjp7InVzZXJMb2NraW5nQnl0ZWNvZGUiOiI3NmE5MTQ3NTAxYTQxOWFkNDM0YjE5ZmJmNjJiNjNkNDY3YjRmMzJhNjE5ZjcxODhhYyIsIm1heE1pbmVyRmVlIjoiNTAwMG4iLCJleHBlY3RlZFVzZXJDb3N0IjoiMTE4Nm4iLCJjYXBpdGFsIjoiMG4iLCJtYXhVc2VyQ29zdCI6IjExODZuIiwiYWxsb3dlZFJlY2lwaWVudHMiOlsiYWEyMDE0ZmEzNjA1ZDUxZGQ4YzljZjI5ODc4MDM4YTQ2YzcyZWFiMTg2MmM2NWFkNDI5NjZkMTcwNDJkNTlhNzIzZGI4NyIsIjc2YTkxNDc1MDFhNDE5YWQ0MzRiMTlmYmY2MmI2M2Q0NjdiNGYzMmE2MTlmNzE4OGFjIl0sInZhdWx0Ijp7ImlkIjoiZnVzZS1saXZlLTEiLCJsb2NraW5nQnl0ZWNvZGUiOiJhYTIwMTRmYTM2MDVkNTFkZDhjOWNmMjk4NzgwMzhhNDZjNzJlYWIxODYyYzY1YWQ0Mjk2NmQxNzA0MmQ1OWE3MjNkYjg3IiwiY2F0ZWdvcnkiOiJmYTBjNTE2M2I4NDkwYTEyZDk5NWYwOWViYzZjNWNjMzJlYmUzYjNmYzEwNDk1MTgxOWI3Y2ZlZTVkNzQ1NDliIiwiZmVlQnBzIjoiOW4iLCJtaW5GZWUiOiIxMDBuIiwibWF4RXhwb3N1cmUiOiIxMDAwMDBuIiwib3duZXJQa2giOiIxNmNlMGFjNDBmNjg0ZjUyNWY3ZDJmZDU4YWU3OTdkMzBmOTE0ZGQzIiwicmVxdWlyZWRSZXR1cm4iOiIzMDUwMG4ifSwicm91dGUiOm51bGx9LCJndWFyZGlhbiI6eyJsZXZlbCI6IlBBU1MiLCJvayI6dHJ1ZSwiY2hlY2tzIjpbIm9rOmNvdmVuYW50IHNpbXVsYXRpb24iLCJvazpubyBoaWRkZW4gdHJhbnNmZXJzIiwib2s6bWluZXIgZmVlIHdpdGhpbiBjYXAiLCJvazp5b3VyIG5ldCBjb3N0Iiwib2s6dmF1bHQgcmVwYWlkIGluIHRoZSBzYW1lIHR4Iiwib2s6bm8gdG9rZW4gc2lkZSBlZmZlY3RzIG9uIHlvdXIgd2FsbGV0Iiwib2s6eW91ciBjb2lucyBhcmUgY29uZmlybWVkIl19LCJhdWN0aW9uIjpudWxsfQ",
+     "authHash": "6c425ced7fb1951304543fb542650c1376455f75ed980a9c2af9cba3fa8de9ad",
+     "serverPubkey": "037e044ab06145cc82956a836cb712f0f422a5bc05371e49eabd4936592419401f",
+     "serverSig": "e96e6b428abc9c33eb3f25116f3829b97f62124ab805cdb81f490512f3b267a242e1229859d33dc8ca1b0490a074b2b10cd4f61e284fae29d81f526695af1ad7"
+    }
+   }
+  },
+  "live/verify-signed": {
+   "status": 200,
+   "request": {
+    "rawHex": "02000000023c3c7354f949164d4fa4a837d91a752aa2fb297f6e897ba7ae52ec45563c00cb00000000db004cd81416ce0ac40f684f525f7d2fd58ae797d30f914dd303a08601016459209b54745deecfb719189504c13f3bbe2ec35c6cbc9ef095d9120a49b863510cfa5579009c63c076c678ce5379517e8878cf8201119d76607f7701008878577aa169557a5279567a95020f279302102796a45379cd5479c7885379d1557a517e885379d3009d5379cc765479537a93a26978587f75817b607f75587f77817800a2697600a269727c947b8b58807b7b9358807e01007e7cd287777767557a519d5579a9557a885579827701419d557901407f7701618871ad6d6d5168ffffffffe0f57ab83ca93a0783f25cd5f26cba3c32a5726f0ac750d2c7a5bbaab0a8845500000000644166cf2988d54843d7ab748ab417ef239046c848cfb59481a70dd4d1d33d4e16d7786a27e162b75a00734403a1b4d1653cb48994b1d89c4dc78b1008a4815404216121021b7db5fcbae0dc9888204f2de01cbe493c942d2fe97ee42e67d8706c293efda6ffffffff02247700000000000057ef9b54745deecfb719189504c13f3bbe2ec35c6cbc9ef095d9120a49b863510cfa61110500000000000000f40100000000000000aa2014fa3605d51dd8c9cf29878038a46c72eab1862c65ad42966d17042d59a723db877e490000000000001976a9147501a419ad434b19fbf62b63d467b4f32a619f7188ac00000000"
+   },
+   "response": {
+    "txid": "9df5dcede4a6e3a7d14f738a0a340d9f806c2317bedb33238d081a21d6bee8d0",
+    "vmValid": true,
+    "vmDetail": "all inputs valid in the BCH 2026 VM against chain-derived source outputs",
+    "minerFee": "1086n",
+    "sizeBytes": 541,
+    "inputs": 2,
+    "outputs": 2
+   }
+  },
+  "broadcast": {
+   "status": 200,
+   "request": {
+    "rawHex": "02000000023c3c7354f949164d4fa4a837d91a752aa2fb297f6e897ba7ae52ec45563c00cb00000000db004cd81416ce0ac40f684f525f7d2fd58ae797d30f914dd303a08601016459209b54745deecfb719189504c13f3bbe2ec35c6cbc9ef095d9120a49b863510cfa5579009c63c076c678ce5379517e8878cf8201119d76607f7701008878577aa169557a5279567a95020f279302102796a45379cd5479c7885379d1557a517e885379d3009d5379cc765479537a93a26978587f75817b607f75587f77817800a2697600a269727c947b8b58807b7b9358807e01007e7cd287777767557a519d5579a9557a885579827701419d557901407f7701618871ad6d6d5168ffffffffe0f57ab83ca93a0783f25cd5f26cba3c32a5726f0ac750d2c7a5bbaab0a8845500000000644166cf2988d54843d7ab748ab417ef239046c848cfb59481a70dd4d1d33d4e16d7786a27e162b75a00734403a1b4d1653cb48994b1d89c4dc78b1008a4815404216121021b7db5fcbae0dc9888204f2de01cbe493c942d2fe97ee42e67d8706c293efda6ffffffff02247700000000000057ef9b54745deecfb719189504c13f3bbe2ec35c6cbc9ef095d9120a49b863510cfa61110500000000000000f40100000000000000aa2014fa3605d51dd8c9cf29878038a46c72eab1862c65ad42966d17042d59a723db877e490000000000001976a9147501a419ad434b19fbf62b63d467b4f32a619f7188ac00000000",
+    "authorization": {
+     "payload": "eyJ2IjoxLCJraW5kIjoiZnVzZS5leGVjdXRpb24tYXV0aG9yaXphdGlvbi92MSIsImludGVudElkIjoiaW50XzhlNjZiYzkwOTJhMzJmOTBiNWNmYzc4MCIsIm5ldHdvcmsiOiJtYWlubmV0IiwiaXNzdWVkQXQiOjE3OTUyMzAzMTMsImV4cGlyZXNBdCI6MTc5NTIzMDYxMywic3RydWN0dXJlSGFzaCI6IjgxNzJhZDYzNjA4ZDViMzBhNTIzMGI2ODMxNmY0OTU4MThjNGFhOGQ2YWI0MjFjYzM3MTQwMTgwYTg1YmZmZGMiLCJhY3Rpb24iOiJmbGFzaCIsImFkZHJlc3MiOiJiaXRjb2luY2FzaDpxcDZzcmZxZTQ0cDVreDBtN2M0azg0cjhrbmVqNWN2bHd5ZGV1dGE1dGEiLCJ0ZW1wbGF0ZUhhc2giOiJhOTU0MDJiMTAwOGUzOWViZTVkMTRiZjg0NWEzNzU3ZTY2MWU4NWRkMzdlMzEyODYwYzBmMTcxYTk3OGZkY2M3IiwidGVtcGxhdGUiOnsidmVyc2lvbiI6MiwibG9ja3RpbWUiOjAsImlucHV0cyI6W3sidHhpZCI6ImNiMDAzYzU2NDVlYzUyYWVhNzdiODk2ZTdmMjlmYmEyMmE3NTFhZDkzN2E4YTQ0ZjRkMTY0OWY5NTQ3MzNjM2MiLCJ2b3V0IjowLCJzYXRvc2hpcyI6IjMwNDAwbiIsImxvY2tpbmdCeXRlY29kZSI6ImFhMjAxNGZhMzYwNWQ1MWRkOGM5Y2YyOTg3ODAzOGE0NmM3MmVhYjE4NjJjNjVhZDQyOTY2ZDE3MDQyZDU5YTcyM2RiODciLCJ0b2tlbiI6eyJjYXRlZ29yeSI6ImZhMGM1MTYzYjg0OTBhMTJkOTk1ZjA5ZWJjNmM1Y2MzMmViZTNiM2ZjMTA0OTUxODE5YjdjZmVlNWQ3NDU0OWIiLCJhbW91bnQiOiIwbiIsIm5mdCI6eyJjYXBhYmlsaXR5IjoibXV0YWJsZSIsImNvbW1pdG1lbnQiOiIwNDAwMDAwMDAwMDAwMDAwOTAwMTAwMDAwMDAwMDAwMDAwIn19LCJyb2xlIjoidmF1bHQiLCJ1bmxvY2siOnsia2luZCI6ImZsYXNodmF1bHQtYmNoIiwicGFyYW1zIjp7InZhdWx0Q2F0ZWdvcnkiOiJmYTBjNTE2M2I4NDkwYTEyZDk5NWYwOWViYzZjNWNjMzJlYmUzYjNmYzEwNDk1MTgxOWI3Y2ZlZTVkNzQ1NDliIiwiZmVlQnBzIjoiOW4iLCJtaW5GZWUiOiIxMDBuIiwibWF4RXhwb3N1cmUiOiIxMDAwMDBuIiwib3duZXJQa2giOiIxNmNlMGFjNDBmNjg0ZjUyNWY3ZDJmZDU4YWU3OTdkMzBmOTE0ZGQzIn0sImZuIjoiZmxhc2gifX0seyJ0eGlkIjoiNTU4NGE4YjBhYWJiYTVjN2QyNTBjNzBhNmY3MmE1MzIzY2JhNmNmMmQ1NWNmMjgzMDczYWE5M2NiODdhZjVlMCIsInZvdXQiOjAsInNhdG9zaGlzIjoiMjAwMDBuIiwibG9ja2luZ0J5dGVjb2RlIjoiNzZhOTE0NzUwMWE0MTlhZDQzNGIxOWZiZjYyYjYzZDQ2N2I0ZjMyYTYxOWY3MTg4YWMiLCJyb2xlIjoid2FsbGV0IiwidW5sb2NrIjp7ImtpbmQiOiJwMnBraCIsInNpZ25lciI6InVzZXIifX1dLCJvdXRwdXRzIjpbeyJsb2NraW5nQnl0ZWNvZGUiOiJhYTIwMTRmYTM2MDVkNTFkZDhjOWNmMjk4NzgwMzhhNDZjNzJlYWIxODYyYzY1YWQ0Mjk2NmQxNzA0MmQ1OWE3MjNkYjg3Iiwic2F0b3NoaXMiOiIzMDUwMG4iLCJ0b2tlbiI6eyJjYXRlZ29yeSI6ImZhMGM1MTYzYjg0OTBhMTJkOTk1ZjA5ZWJjNmM1Y2MzMmViZTNiM2ZjMTA0OTUxODE5YjdjZmVlNWQ3NDU0OWIiLCJhbW91bnQiOiIwbiIsIm5mdCI6eyJjYXBhYmlsaXR5IjoibXV0YWJsZSIsImNvbW1pdG1lbnQiOiIwNTAwMDAwMDAwMDAwMDAwZjQwMTAwMDAwMDAwMDAwMDAwIn19LCJyb2xlIjoidmF1bHQtY29udGludWF0aW9uIiwibGFiZWwiOiJwcmluY2lwYWwgMzA0MDAgKyBmbGFzaCBmZWUgMTAwIn0seyJsb2NraW5nQnl0ZWNvZGUiOiI3NmE5MTQ3NTAxYTQxOWFkNDM0YjE5ZmJmNjJiNjNkNDY3YjRmMzJhNjE5ZjcxODhhYyIsInNhdG9zaGlzIjoiMTg4MTRuIiwicm9sZSI6ImNoYW5nZSJ9XX0sImNvbnN0cmFpbnRzIjp7InVzZXJMb2NraW5nQnl0ZWNvZGUiOiI3NmE5MTQ3NTAxYTQxOWFkNDM0YjE5ZmJmNjJiNjNkNDY3YjRmMzJhNjE5ZjcxODhhYyIsIm1heE1pbmVyRmVlIjoiNTAwMG4iLCJleHBlY3RlZFVzZXJDb3N0IjoiMTE4Nm4iLCJjYXBpdGFsIjoiMG4iLCJtYXhVc2VyQ29zdCI6IjExODZuIiwiYWxsb3dlZFJlY2lwaWVudHMiOlsiYWEyMDE0ZmEzNjA1ZDUxZGQ4YzljZjI5ODc4MDM4YTQ2YzcyZWFiMTg2MmM2NWFkNDI5NjZkMTcwNDJkNTlhNzIzZGI4NyIsIjc2YTkxNDc1MDFhNDE5YWQ0MzRiMTlmYmY2MmI2M2Q0NjdiNGYzMmE2MTlmNzE4OGFjIl0sInZhdWx0Ijp7ImlkIjoiZnVzZS1saXZlLTEiLCJsb2NraW5nQnl0ZWNvZGUiOiJhYTIwMTRmYTM2MDVkNTFkZDhjOWNmMjk4NzgwMzhhNDZjNzJlYWIxODYyYzY1YWQ0Mjk2NmQxNzA0MmQ1OWE3MjNkYjg3IiwiY2F0ZWdvcnkiOiJmYTBjNTE2M2I4NDkwYTEyZDk5NWYwOWViYzZjNWNjMzJlYmUzYjNmYzEwNDk1MTgxOWI3Y2ZlZTVkNzQ1NDliIiwiZmVlQnBzIjoiOW4iLCJtaW5GZWUiOiIxMDBuIiwibWF4RXhwb3N1cmUiOiIxMDAwMDBuIiwib3duZXJQa2giOiIxNmNlMGFjNDBmNjg0ZjUyNWY3ZDJmZDU4YWU3OTdkMzBmOTE0ZGQzIiwicmVxdWlyZWRSZXR1cm4iOiIzMDUwMG4ifSwicm91dGUiOm51bGx9LCJndWFyZGlhbiI6eyJsZXZlbCI6IlBBU1MiLCJvayI6dHJ1ZSwiY2hlY2tzIjpbIm9rOmNvdmVuYW50IHNpbXVsYXRpb24iLCJvazpubyBoaWRkZW4gdHJhbnNmZXJzIiwib2s6bWluZXIgZmVlIHdpdGhpbiBjYXAiLCJvazp5b3VyIG5ldCBjb3N0Iiwib2s6dmF1bHQgcmVwYWlkIGluIHRoZSBzYW1lIHR4Iiwib2s6bm8gdG9rZW4gc2lkZSBlZmZlY3RzIG9uIHlvdXIgd2FsbGV0Iiwib2s6eW91ciBjb2lucyBhcmUgY29uZmlybWVkIl19LCJhdWN0aW9uIjpudWxsfQ",
+     "authHash": "6c425ced7fb1951304543fb542650c1376455f75ed980a9c2af9cba3fa8de9ad",
+     "serverPubkey": "037e044ab06145cc82956a836cb712f0f422a5bc05371e49eabd4936592419401f",
+     "serverSig": "e96e6b428abc9c33eb3f25116f3829b97f62124ab805cdb81f490512f3b267a242e1229859d33dc8ca1b0490a074b2b10cd4f61e284fae29d81f526695af1ad7"
+    }
+   },
+   "response": {
+    "txid": "9df5dcede4a6e3a7d14f738a0a340d9f806c2317bedb33238d081a21d6bee8d0",
+    "vmValid": true,
+    "vmDetail": "all inputs valid in the BCH 2026 VM against chain-derived source outputs",
+    "minerFee": "1086n",
+    "sizeBytes": 541,
+    "inputs": 2,
+    "outputs": 2,
+    "broadcast": true,
+    "intentId": "int_8e66bc9092a32f90b5cfc780",
+    "authHash": "6c425ced7fb1951304543fb542650c1376455f75ed980a9c2af9cba3fa8de9ad",
+    "intentBound": true,
+    "userSignature": {
+     "present": false,
+     "ok": false,
+     "detail": "no user signature over the authorization hash"
+    },
+    "constraintChecks": [
+     {
+      "name": "fresh source outputs match the template",
+      "ok": true,
+      "detail": "value, script and token of every spent output re-read from chain"
+     },
+     {
+      "name": "recipients authorized",
+      "ok": true,
+      "detail": "2 authorized scripts"
+     },
+     {
+      "name": "miner fee within the authorized cap",
+      "ok": true,
+      "detail": "1086 \u2264 5000"
+     },
+     {
+      "name": "user net cost within the authorized limit",
+      "ok": true,
+      "detail": "1186 \u2264 1186"
+     },
+     {
+      "name": "vault repaid as authorized",
+      "ok": true,
+      "detail": "30500 \u2265 30500"
+     },
+     {
+      "name": "Guardian re-run at broadcast",
+      "ok": true,
+      "detail": "level PASS"
+     }
+    ],
+    "guardianAtBroadcast": "PASS",
+    "relayedVia": "bchexplorer.cash (POST /api/tx \u2192 Fulcrum/BCHN)",
+    "explorer": "https://bchexplorer.cash/tx/9df5dcede4a6e3a7d14f738a0a340d9f806c2317bedb33238d081a21d6bee8d0"
+   }
+  },
+  "live/certificate": {
+   "status": 200,
+   "request": {
+    "txid": "9df5dcede4a6e3a7d14f738a0a340d9f806c2317bedb33238d081a21d6bee8d0",
+    "authorization": {
+     "payload": "eyJ2IjoxLCJraW5kIjoiZnVzZS5leGVjdXRpb24tYXV0aG9yaXphdGlvbi92MSIsImludGVudElkIjoiaW50XzhlNjZiYzkwOTJhMzJmOTBiNWNmYzc4MCIsIm5ldHdvcmsiOiJtYWlubmV0IiwiaXNzdWVkQXQiOjE3OTUyMzAzMTMsImV4cGlyZXNBdCI6MTc5NTIzMDYxMywic3RydWN0dXJlSGFzaCI6IjgxNzJhZDYzNjA4ZDViMzBhNTIzMGI2ODMxNmY0OTU4MThjNGFhOGQ2YWI0MjFjYzM3MTQwMTgwYTg1YmZmZGMiLCJhY3Rpb24iOiJmbGFzaCIsImFkZHJlc3MiOiJiaXRjb2luY2FzaDpxcDZzcmZxZTQ0cDVreDBtN2M0azg0cjhrbmVqNWN2bHd5ZGV1dGE1dGEiLCJ0ZW1wbGF0ZUhhc2giOiJhOTU0MDJiMTAwOGUzOWViZTVkMTRiZjg0NWEzNzU3ZTY2MWU4NWRkMzdlMzEyODYwYzBmMTcxYTk3OGZkY2M3IiwidGVtcGxhdGUiOnsidmVyc2lvbiI6MiwibG9ja3RpbWUiOjAsImlucHV0cyI6W3sidHhpZCI6ImNiMDAzYzU2NDVlYzUyYWVhNzdiODk2ZTdmMjlmYmEyMmE3NTFhZDkzN2E4YTQ0ZjRkMTY0OWY5NTQ3MzNjM2MiLCJ2b3V0IjowLCJzYXRvc2hpcyI6IjMwNDAwbiIsImxvY2tpbmdCeXRlY29kZSI6ImFhMjAxNGZhMzYwNWQ1MWRkOGM5Y2YyOTg3ODAzOGE0NmM3MmVhYjE4NjJjNjVhZDQyOTY2ZDE3MDQyZDU5YTcyM2RiODciLCJ0b2tlbiI6eyJjYXRlZ29yeSI6ImZhMGM1MTYzYjg0OTBhMTJkOTk1ZjA5ZWJjNmM1Y2MzMmViZTNiM2ZjMTA0OTUxODE5YjdjZmVlNWQ3NDU0OWIiLCJhbW91bnQiOiIwbiIsIm5mdCI6eyJjYXBhYmlsaXR5IjoibXV0YWJsZSIsImNvbW1pdG1lbnQiOiIwNDAwMDAwMDAwMDAwMDAwOTAwMTAwMDAwMDAwMDAwMDAwIn19LCJyb2xlIjoidmF1bHQiLCJ1bmxvY2siOnsia2luZCI6ImZsYXNodmF1bHQtYmNoIiwicGFyYW1zIjp7InZhdWx0Q2F0ZWdvcnkiOiJmYTBjNTE2M2I4NDkwYTEyZDk5NWYwOWViYzZjNWNjMzJlYmUzYjNmYzEwNDk1MTgxOWI3Y2ZlZTVkNzQ1NDliIiwiZmVlQnBzIjoiOW4iLCJtaW5GZWUiOiIxMDBuIiwibWF4RXhwb3N1cmUiOiIxMDAwMDBuIiwib3duZXJQa2giOiIxNmNlMGFjNDBmNjg0ZjUyNWY3ZDJmZDU4YWU3OTdkMzBmOTE0ZGQzIn0sImZuIjoiZmxhc2gifX0seyJ0eGlkIjoiNTU4NGE4YjBhYWJiYTVjN2QyNTBjNzBhNmY3MmE1MzIzY2JhNmNmMmQ1NWNmMjgzMDczYWE5M2NiODdhZjVlMCIsInZvdXQiOjAsInNhdG9zaGlzIjoiMjAwMDBuIiwibG9ja2luZ0J5dGVjb2RlIjoiNzZhOTE0NzUwMWE0MTlhZDQzNGIxOWZiZjYyYjYzZDQ2N2I0ZjMyYTYxOWY3MTg4YWMiLCJyb2xlIjoid2FsbGV0IiwidW5sb2NrIjp7ImtpbmQiOiJwMnBraCIsInNpZ25lciI6InVzZXIifX1dLCJvdXRwdXRzIjpbeyJsb2NraW5nQnl0ZWNvZGUiOiJhYTIwMTRmYTM2MDVkNTFkZDhjOWNmMjk4NzgwMzhhNDZjNzJlYWIxODYyYzY1YWQ0Mjk2NmQxNzA0MmQ1OWE3MjNkYjg3Iiwic2F0b3NoaXMiOiIzMDUwMG4iLCJ0b2tlbiI6eyJjYXRlZ29yeSI6ImZhMGM1MTYzYjg0OTBhMTJkOTk1ZjA5ZWJjNmM1Y2MzMmViZTNiM2ZjMTA0OTUxODE5YjdjZmVlNWQ3NDU0OWIiLCJhbW91bnQiOiIwbiIsIm5mdCI6eyJjYXBhYmlsaXR5IjoibXV0YWJsZSIsImNvbW1pdG1lbnQiOiIwNTAwMDAwMDAwMDAwMDAwZjQwMTAwMDAwMDAwMDAwMDAwIn19LCJyb2xlIjoidmF1bHQtY29udGludWF0aW9uIiwibGFiZWwiOiJwcmluY2lwYWwgMzA0MDAgKyBmbGFzaCBmZWUgMTAwIn0seyJsb2NraW5nQnl0ZWNvZGUiOiI3NmE5MTQ3NTAxYTQxOWFkNDM0YjE5ZmJmNjJiNjNkNDY3YjRmMzJhNjE5ZjcxODhhYyIsInNhdG9zaGlzIjoiMTg4MTRuIiwicm9sZSI6ImNoYW5nZSJ9XX0sImNvbnN0cmFpbnRzIjp7InVzZXJMb2NraW5nQnl0ZWNvZGUiOiI3NmE5MTQ3NTAxYTQxOWFkNDM0YjE5ZmJmNjJiNjNkNDY3YjRmMzJhNjE5ZjcxODhhYyIsIm1heE1pbmVyRmVlIjoiNTAwMG4iLCJleHBlY3RlZFVzZXJDb3N0IjoiMTE4Nm4iLCJjYXBpdGFsIjoiMG4iLCJtYXhVc2VyQ29zdCI6IjExODZuIiwiYWxsb3dlZFJlY2lwaWVudHMiOlsiYWEyMDE0ZmEzNjA1ZDUxZGQ4YzljZjI5ODc4MDM4YTQ2YzcyZWFiMTg2MmM2NWFkNDI5NjZkMTcwNDJkNTlhNzIzZGI4NyIsIjc2YTkxNDc1MDFhNDE5YWQ0MzRiMTlmYmY2MmI2M2Q0NjdiNGYzMmE2MTlmNzE4OGFjIl0sInZhdWx0Ijp7ImlkIjoiZnVzZS1saXZlLTEiLCJsb2NraW5nQnl0ZWNvZGUiOiJhYTIwMTRmYTM2MDVkNTFkZDhjOWNmMjk4NzgwMzhhNDZjNzJlYWIxODYyYzY1YWQ0Mjk2NmQxNzA0MmQ1OWE3MjNkYjg3IiwiY2F0ZWdvcnkiOiJmYTBjNTE2M2I4NDkwYTEyZDk5NWYwOWViYzZjNWNjMzJlYmUzYjNmYzEwNDk1MTgxOWI3Y2ZlZTVkNzQ1NDliIiwiZmVlQnBzIjoiOW4iLCJtaW5GZWUiOiIxMDBuIiwibWF4RXhwb3N1cmUiOiIxMDAwMDBuIiwib3duZXJQa2giOiIxNmNlMGFjNDBmNjg0ZjUyNWY3ZDJmZDU4YWU3OTdkMzBmOTE0ZGQzIiwicmVxdWlyZWRSZXR1cm4iOiIzMDUwMG4ifSwicm91dGUiOm51bGx9LCJndWFyZGlhbiI6eyJsZXZlbCI6IlBBU1MiLCJvayI6dHJ1ZSwiY2hlY2tzIjpbIm9rOmNvdmVuYW50IHNpbXVsYXRpb24iLCJvazpubyBoaWRkZW4gdHJhbnNmZXJzIiwib2s6bWluZXIgZmVlIHdpdGhpbiBjYXAiLCJvazp5b3VyIG5ldCBjb3N0Iiwib2s6dmF1bHQgcmVwYWlkIGluIHRoZSBzYW1lIHR4Iiwib2s6bm8gdG9rZW4gc2lkZSBlZmZlY3RzIG9uIHlvdXIgd2FsbGV0Iiwib2s6eW91ciBjb2lucyBhcmUgY29uZmlybWVkIl19LCJhdWN0aW9uIjpudWxsfQ",
+     "authHash": "6c425ced7fb1951304543fb542650c1376455f75ed980a9c2af9cba3fa8de9ad",
+     "serverPubkey": "037e044ab06145cc82956a836cb712f0f422a5bc05371e49eabd4936592419401f",
+     "serverSig": "e96e6b428abc9c33eb3f25116f3829b97f62124ab805cdb81f490512f3b267a242e1229859d33dc8ca1b0490a074b2b10cd4f61e284fae29d81f526695af1ad7"
+    }
+   },
+   "response": {
+    "kind": "FLASH_USE",
+    "auction": null,
+    "authorization": {
+     "payload": "eyJ2IjoxLCJraW5kIjoiZnVzZS5leGVjdXRpb24tYXV0aG9yaXphdGlvbi92MSIsImludGVudElkIjoiaW50XzhlNjZiYzkwOTJhMzJmOTBiNWNmYzc4MCIsIm5ldHdvcmsiOiJtYWlubmV0IiwiaXNzdWVkQXQiOjE3OTUyMzAzMTMsImV4cGlyZXNBdCI6MTc5NTIzMDYxMywic3RydWN0dXJlSGFzaCI6IjgxNzJhZDYzNjA4ZDViMzBhNTIzMGI2ODMxNmY0OTU4MThjNGFhOGQ2YWI0MjFjYzM3MTQwMTgwYTg1YmZmZGMiLCJhY3Rpb24iOiJmbGFzaCIsImFkZHJlc3MiOiJiaXRjb2luY2FzaDpxcDZzcmZxZTQ0cDVreDBtN2M0azg0cjhrbmVqNWN2bHd5ZGV1dGE1dGEiLCJ0ZW1wbGF0ZUhhc2giOiJhOTU0MDJiMTAwOGUzOWViZTVkMTRiZjg0NWEzNzU3ZTY2MWU4NWRkMzdlMzEyODYwYzBmMTcxYTk3OGZkY2M3IiwidGVtcGxhdGUiOnsidmVyc2lvbiI6MiwibG9ja3RpbWUiOjAsImlucHV0cyI6W3sidHhpZCI6ImNiMDAzYzU2NDVlYzUyYWVhNzdiODk2ZTdmMjlmYmEyMmE3NTFhZDkzN2E4YTQ0ZjRkMTY0OWY5NTQ3MzNjM2MiLCJ2b3V0IjowLCJzYXRvc2hpcyI6IjMwNDAwbiIsImxvY2tpbmdCeXRlY29kZSI6ImFhMjAxNGZhMzYwNWQ1MWRkOGM5Y2YyOTg3ODAzOGE0NmM3MmVhYjE4NjJjNjVhZDQyOTY2ZDE3MDQyZDU5YTcyM2RiODciLCJ0b2tlbiI6eyJjYXRlZ29yeSI6ImZhMGM1MTYzYjg0OTBhMTJkOTk1ZjA5ZWJjNmM1Y2MzMmViZTNiM2ZjMTA0OTUxODE5YjdjZmVlNWQ3NDU0OWIiLCJhbW91bnQiOiIwbiIsIm5mdCI6eyJjYXBhYmlsaXR5IjoibXV0YWJsZSIsImNvbW1pdG1lbnQiOiIwNDAwMDAwMDAwMDAwMDAwOTAwMTAwMDAwMDAwMDAwMDAwIn19LCJyb2xlIjoidmF1bHQiLCJ1bmxvY2siOnsia2luZCI6ImZsYXNodmF1bHQtYmNoIiwicGFyYW1zIjp7InZhdWx0Q2F0ZWdvcnkiOiJmYTBjNTE2M2I4NDkwYTEyZDk5NWYwOWViYzZjNWNjMzJlYmUzYjNmYzEwNDk1MTgxOWI3Y2ZlZTVkNzQ1NDliIiwiZmVlQnBzIjoiOW4iLCJtaW5GZWUiOiIxMDBuIiwibWF4RXhwb3N1cmUiOiIxMDAwMDBuIiwib3duZXJQa2giOiIxNmNlMGFjNDBmNjg0ZjUyNWY3ZDJmZDU4YWU3OTdkMzBmOTE0ZGQzIn0sImZuIjoiZmxhc2gifX0seyJ0eGlkIjoiNTU4NGE4YjBhYWJiYTVjN2QyNTBjNzBhNmY3MmE1MzIzY2JhNmNmMmQ1NWNmMjgzMDczYWE5M2NiODdhZjVlMCIsInZvdXQiOjAsInNhdG9zaGlzIjoiMjAwMDBuIiwibG9ja2luZ0J5dGVjb2RlIjoiNzZhOTE0NzUwMWE0MTlhZDQzNGIxOWZiZjYyYjYzZDQ2N2I0ZjMyYTYxOWY3MTg4YWMiLCJyb2xlIjoid2FsbGV0IiwidW5sb2NrIjp7ImtpbmQiOiJwMnBraCIsInNpZ25lciI6InVzZXIifX1dLCJvdXRwdXRzIjpbeyJsb2NraW5nQnl0ZWNvZGUiOiJhYTIwMTRmYTM2MDVkNTFkZDhjOWNmMjk4NzgwMzhhNDZjNzJlYWIxODYyYzY1YWQ0Mjk2NmQxNzA0MmQ1OWE3MjNkYjg3Iiwic2F0b3NoaXMiOiIzMDUwMG4iLCJ0b2tlbiI6eyJjYXRlZ29yeSI6ImZhMGM1MTYzYjg0OTBhMTJkOTk1ZjA5ZWJjNmM1Y2MzMmViZTNiM2ZjMTA0OTUxODE5YjdjZmVlNWQ3NDU0OWIiLCJhbW91bnQiOiIwbiIsIm5mdCI6eyJjYXBhYmlsaXR5IjoibXV0YWJsZSIsImNvbW1pdG1lbnQiOiIwNTAwMDAwMDAwMDAwMDAwZjQwMTAwMDAwMDAwMDAwMDAwIn19LCJyb2xlIjoidmF1bHQtY29udGludWF0aW9uIiwibGFiZWwiOiJwcmluY2lwYWwgMzA0MDAgKyBmbGFzaCBmZWUgMTAwIn0seyJsb2NraW5nQnl0ZWNvZGUiOiI3NmE5MTQ3NTAxYTQxOWFkNDM0YjE5ZmJmNjJiNjNkNDY3YjRmMzJhNjE5ZjcxODhhYyIsInNhdG9zaGlzIjoiMTg4MTRuIiwicm9sZSI6ImNoYW5nZSJ9XX0sImNvbnN0cmFpbnRzIjp7InVzZXJMb2NraW5nQnl0ZWNvZGUiOiI3NmE5MTQ3NTAxYTQxOWFkNDM0YjE5ZmJmNjJiNjNkNDY3YjRmMzJhNjE5ZjcxODhhYyIsIm1heE1pbmVyRmVlIjoiNTAwMG4iLCJleHBlY3RlZFVzZXJDb3N0IjoiMTE4Nm4iLCJjYXBpdGFsIjoiMG4iLCJtYXhVc2VyQ29zdCI6IjExODZuIiwiYWxsb3dlZFJlY2lwaWVudHMiOlsiYWEyMDE0ZmEzNjA1ZDUxZGQ4YzljZjI5ODc4MDM4YTQ2YzcyZWFiMTg2MmM2NWFkNDI5NjZkMTcwNDJkNTlhNzIzZGI4NyIsIjc2YTkxNDc1MDFhNDE5YWQ0MzRiMTlmYmY2MmI2M2Q0NjdiNGYzMmE2MTlmNzE4OGFjIl0sInZhdWx0Ijp7ImlkIjoiZnVzZS1saXZlLTEiLCJsb2NraW5nQnl0ZWNvZGUiOiJhYTIwMTRmYTM2MDVkNTFkZDhjOWNmMjk4NzgwMzhhNDZjNzJlYWIxODYyYzY1YWQ0Mjk2NmQxNzA0MmQ1OWE3MjNkYjg3IiwiY2F0ZWdvcnkiOiJmYTBjNTE2M2I4NDkwYTEyZDk5NWYwOWViYzZjNWNjMzJlYmUzYjNmYzEwNDk1MTgxOWI3Y2ZlZTVkNzQ1NDliIiwiZmVlQnBzIjoiOW4iLCJtaW5GZWUiOiIxMDBuIiwibWF4RXhwb3N1cmUiOiIxMDAwMDBuIiwib3duZXJQa2giOiIxNmNlMGFjNDBmNjg0ZjUyNWY3ZDJmZDU4YWU3OTdkMzBmOTE0ZGQzIiwicmVxdWlyZWRSZXR1cm4iOiIzMDUwMG4ifSwicm91dGUiOm51bGx9LCJndWFyZGlhbiI6eyJsZXZlbCI6IlBBU1MiLCJvayI6dHJ1ZSwiY2hlY2tzIjpbIm9rOmNvdmVuYW50IHNpbXVsYXRpb24iLCJvazpubyBoaWRkZW4gdHJhbnNmZXJzIiwib2s6bWluZXIgZmVlIHdpdGhpbiBjYXAiLCJvazp5b3VyIG5ldCBjb3N0Iiwib2s6dmF1bHQgcmVwYWlkIGluIHRoZSBzYW1lIHR4Iiwib2s6bm8gdG9rZW4gc2lkZSBlZmZlY3RzIG9uIHlvdXIgd2FsbGV0Iiwib2s6eW91ciBjb2lucyBhcmUgY29uZmlybWVkIl19LCJhdWN0aW9uIjpudWxsfQ",
+     "authHash": "6c425ced7fb1951304543fb542650c1376455f75ed980a9c2af9cba3fa8de9ad",
+     "serverPubkey": "037e044ab06145cc82956a836cb712f0f422a5bc05371e49eabd4936592419401f",
+     "serverSig": "e96e6b428abc9c33eb3f25116f3829b97f62124ab805cdb81f490512f3b267a242e1229859d33dc8ca1b0490a074b2b10cd4f61e284fae29d81f526695af1ad7"
+    },
+    "userSignature": null,
+    "vault": "fuse-live-1",
+    "explorer": "https://bchexplorer.cash/tx/9df5dcede4a6e3a7d14f738a0a340d9f806c2317bedb33238d081a21d6bee8d0",
+    "vaultStateBefore": {
+     "flashCount": "4n",
+     "cumulativeFees": "400n",
+     "paused": false
+    },
+    "vaultStateAfter": {
+     "flashCount": "5n",
+     "cumulativeFees": "500n",
+     "paused": false
+    },
+    "routing": [],
+    "certificate": {
+     "schema": "fuse.certificate/v1",
+     "certificateId": "cert_9df5dcede4a6e3a7d14f738a",
+     "intentId": "mainnet_flash_use_9df5dcede4a6",
+     "intentCommitment": "5555e3ff2c98606ce02662187bcf824d74d173944e6d6847c44636f3015ae419",
+     "policyCommitment": null,
+     "network": "mainnet",
+     "executionClass": "ATOMIC_SINGLE_TX",
+     "solverId": "fuse-live",
+     "quoteCommitment": "6b5d28fdae0a8e29cb63236c3f89ddebd927cfd76a49d308ea5e83142fd8c05e",
+     "contracts": [
+      {
+       "role": "vault",
+       "name": "FlashVaultBCH",
+       "lockingBytecode": "aa2014fa3605d51dd8c9cf29878038a46c72eab1862c65ad42966d17042d59a723db87"
+      }
+     ],
+     "transactions": [
+      {
+       "txid": "9df5dcede4a6e3a7d14f738a0a340d9f806c2317bedb33238d081a21d6bee8d0",
+       "blockHeight": 978239,
+       "blockHash": "0000000000000000011311bc962b217e40df2147805241937a8d38b2944bfbc9"
+      }
+     ],
+     "inputs": [
+      {
+       "txid": "9df5dcede4a6e3a7d14f738a0a340d9f806c2317bedb33238d081a21d6bee8d0",
+       "outpoint": "cb003c5645ec52aea77b896e7f29fba22a751ad937a8a44f4d1649f954733c3c:0"
+      },
+      {
+       "txid": "9df5dcede4a6e3a7d14f738a0a340d9f806c2317bedb33238d081a21d6bee8d0",
+       "outpoint": "5584a8b0aabba5c7d250c70a6f72a5323cba6cf2d55cf283073aa93cb87af5e0:0"
+      }
+     ],
+     "outputs": [
+      {
+       "txid": "9df5dcede4a6e3a7d14f738a0a340d9f806c2317bedb33238d081a21d6bee8d0",
+       "vout": 0,
+       "lockingBytecode": "aa2014fa3605d51dd8c9cf29878038a46c72eab1862c65ad42966d17042d59a723db87",
+       "satoshis": "30500n",
+       "token": {
+        "category": "fa0c5163b8490a12d995f09ebc6c5cc32ebe3b3fc104951819b7cfee5d74549b",
+        "amount": "0n",
+        "nft": {
+         "capability": "mutable",
+         "commitment": "0500000000000000f40100000000000000"
+        }
+       },
+       "role": "vault-continuation"
+      },
+      {
+       "txid": "9df5dcede4a6e3a7d14f738a0a340d9f806c2317bedb33238d081a21d6bee8d0",
+       "vout": 1,
+       "lockingBytecode": "76a9147501a419ad434b19fbf62b63d467b4f32a619f7188ac",
+       "satoshis": "18814n",
+       "role": "owner"
+      }
+     ],
+     "vaultContinuations": [
+      {
+       "txid": "9df5dcede4a6e3a7d14f738a0a340d9f806c2317bedb33238d081a21d6bee8d0",
+       "inputIndex": 0,
+       "minReturn": "30500n",
+       "asset": "BCH"
+      }
+     ],
+     "fees": {
+      "minerFeeSats": "1086n",
+      "liquidityFee": "100n",
+      "solverFee": "0n"
+     },
+     "outcome": {
+      "ownerLockingBytecode": "76a9147501a419ad434b19fbf62b63d467b4f32a619f7188ac",
+      "ownerReceives": [
+       {
+        "asset": "BCH",
+        "amount": "18814n"
+       }
+      ]
+     },
+     "checks": [
+      {
+       "name": "chain-derived",
+       "ok": true
+      },
+      {
+       "name": "vault-repayment",
+       "ok": true
+      },
+      {
+       "name": "vault-state-transition",
+       "ok": true
+      },
+      {
+       "name": "fee-accounting",
+       "ok": true
+      }
+     ],
+     "confirmation": "CONFIRMED",
+     "simulated": false,
+     "issuedAt": 1795231403,
+     "issuer": "fuse-live-api",
+     "commitment": "6aedc6257a5b4db3a4523c5314a73e9dff551c76ff7c2854b208275be975039b"
+    },
+    "verification": {
+     "status": "VERIFIED",
+     "checks": [
+      {
+       "name": "schema",
+       "ok": true
+      },
+      {
+       "name": "certificate-commitment",
+       "ok": true
+      },
+      {
+       "name": "tx-hash:9df5dcede4a6",
+       "ok": true
+      },
+      {
+       "name": "confirmations:9df5dcede4a6",
+       "ok": true,
+       "detail": "1"
+      },
+      {
+       "name": "input:cb003c5645ec",
+       "ok": true
+      },
+      {
+       "name": "input:5584a8b0aabb",
+       "ok": true
+      },
+      {
+       "name": "output:9df5dced:0",
+       "ok": true,
+       "detail": "vault-continuation"
+      },
+      {
+       "name": "output:9df5dced:1",
+       "ok": true,
+       "detail": "owner"
+      },
+      {
+       "name": "vault-continuation:0",
+       "ok": true,
+       "detail": "returned 30500, required 30500"
+      },
+      {
+       "name": "owner-receives:BCH",
+       "ok": true,
+       "detail": "chain shows 18814, claimed 18814"
+      },
+      {
+       "name": "rederived:vault-params",
+       "ok": true,
+       "detail": "script rebuilt from fuse-live-1 params (feeBps 9, minFee 100) equals the claimed vault contract"
+      },
+      {
+       "name": "rederived:vault-input",
+       "ok": true,
+       "detail": "input 0 spends the vault identity NFT fa0c5163\u2026"
+      },
+      {
+       "name": "rederived:vault-repayment",
+       "ok": true,
+       "detail": "vault in 30400, out 30500, required \u2265 30500 (fee = max(100, \u230830400\u00b79/10\u2074\u2309) = 100)"
+      },
+      {
+       "name": "rederived:vault-state-transition",
+       "ok": true,
+       "detail": "flashCount 4\u21925, cumulativeFees 400\u2192500 (+100)"
+      },
+      {
+       "name": "rederived:fee-accounting",
+       "ok": true,
+       "detail": "miner fee 1086 (claimed 1086), liquidity fee 100 (claimed 100)"
+      },
+      {
+       "name": "intent-binding",
+       "ok": true,
+       "detail": "tx matches authorization int_8e66bc9092a32f90b5cfc780 (attestation key 037e044ab0\u2026, Guardian PASS); no user wallet signature over the auth hash"
+      }
+     ],
+     "level": "INTENT_BOUND",
+     "levels": {
+      "INCLUDED": {
+       "ok": true,
+       "detail": "1 tx(s) found, re-hashed and confirmed"
+      },
+      "STRUCTURE_VERIFIED": {
+       "ok": true,
+       "detail": "2 inputs, 2 outputs, 1 vault continuation(s) and the owner outcome match chain data"
+      },
+      "OUTCOME_VERIFIED": {
+       "ok": true,
+       "detail": "5 contract-specific facts re-derived from chain data"
+      },
+      "INTENT_BOUND": {
+       "ok": true,
+       "detail": "tx matches authorization int_8e66bc9092a32f90b5cfc780 (attestation key 037e044ab0\u2026, Guardian PASS); no user wallet signature over the auth hash"
+      }
+     },
+     "note": "Verified against independent chain data. This is execution verification, not a security audit. Highest level: INTENT_BOUND."
+    }
+   }
+  }
+ },
+ "signedTxChecks": {
+  "txid": "9df5dcede4a6e3a7d14f738a0a340d9f806c2317bedb33238d081a21d6bee8d0",
+  "inputPaths": [
+   [
+    1,
+    "receive",
+    0
+   ]
+  ],
+  "userInputs": [
+   1
+  ],
+  "input0_covenant_unlock_unchanged": true,
+  "input0_source_token": {
+   "category": "fa0c5163b8490a12d995f09ebc6c5cc32ebe3b3fc104951819b7cfee5d74549b",
+   "amount": "0",
+   "nft": {
+    "capability": "mutable",
+    "commitment": "0400000000000000900100000000000000"
+   }
+  },
+  "input1_sig_len": 65,
+  "input1_sighash": "0x61",
+  "input1_pubkey": "021b7db5fcbae0dc9888204f2de01cbe493c942d2fe97ee42e67d8706c293efda6",
+  "pubkey_is_m44_145_0_0_0": true,
+  "outputs_unchanged": true,
+  "inputs_outpoints_unchanged": true,
+  "local_vm": true,
+  "broadcast_request_has_userSignature": false,
+  "broadcast_has_authorization": true,
+  "broadcast_response": {
+   "txid": "9df5dcede4a6e3a7d14f738a0a340d9f806c2317bedb33238d081a21d6bee8d0",
+   "vmValid": true,
+   "vmDetail": "all inputs valid in the BCH 2026 VM against chain-derived source outputs",
+   "minerFee": "1086n",
+   "sizeBytes": 541,
+   "inputs": 2,
+   "outputs": 2,
+   "broadcast": true,
+   "intentId": "int_8e66bc9092a32f90b5cfc780",
+   "authHash": "6c425ced7fb1951304543fb542650c1376455f75ed980a9c2af9cba3fa8de9ad",
+   "intentBound": true,
+   "userSignature": {
+    "present": false,
+    "ok": false,
+    "detail": "no user signature over the authorization hash"
+   },
+   "constraintChecks": [
+    {
+     "name": "fresh source outputs match the template",
+     "ok": true,
+     "detail": "value, script and token of every spent output re-read from chain"
+    },
+    {
+     "name": "recipients authorized",
+     "ok": true,
+     "detail": "2 authorized scripts"
+    },
+    {
+     "name": "miner fee within the authorized cap",
+     "ok": true,
+     "detail": "1086 \u2264 5000"
+    },
+    {
+     "name": "user net cost within the authorized limit",
+     "ok": true,
+     "detail": "1186 \u2264 1186"
+    },
+    {
+     "name": "vault repaid as authorized",
+     "ok": true,
+     "detail": "30500 \u2265 30500"
+    },
+    {
+     "name": "Guardian re-run at broadcast",
+     "ok": true,
+     "detail": "level PASS"
+    }
+   ],
+   "guardianAtBroadcast": "PASS",
+   "relayedVia": "bchexplorer.cash (POST /api/tx \u2192 Fulcrum/BCHN)",
+   "explorer": "https://bchexplorer.cash/tx/9df5dcede4a6e3a7d14f738a0a340d9f806c2317bedb33238d081a21d6bee8d0"
+  }
+ },
+ "propagationIncident": "bchexplorer.cash returned the txid for the flash at 03:05:21 UTC but the tx was not in the cashnode.bch.ninja (BCHN/Fulcrum) mempool ~15 min later and missed at least one block (978244, 03:17 UTC). The identical signed hex re-sent to cashnode.bch.ninja (blockchain.transaction.broadcast) was accepted and confirmed in the next block. Fix: the hosted relay now fans out to a second node (services/api/src/live/chain.ts fulcrumBroadcast).",
+ "txs": {
+  "fund (box test wallet \u2192 Cashonize m/0/0, box-only script)": "5584a8b0aabba5c7d250c70a6f72a5323cba6cf2d55cf283073aa93cb87af5e0",
+  "flash (signed by Cashonize, relayed by hosted FUSE)": "9df5dcede4a6e3a7d14f738a0a340d9f806c2317bedb33238d081a21d6bee8d0",
+  "sweep (Cashonize Send max \u2192 box test wallet)": "18a327a3f530092f4fa269372a0e17a6f4918556a36ac6e2e2c0c895e2bc79c4"
+ }
+}

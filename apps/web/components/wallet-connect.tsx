@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import QRCode from 'qrcode';
 import { Button, Badge, Mono } from './ui';
 import { MainnetPreflight, type WalletHandle } from './preflight';
+import { wizSignPayload } from '@/lib/wiz-wire';
 
 type State = { kind: 'idle' } | { kind: 'pairing'; uri: string; qr: string; relay: string } | { kind: 'connected'; wallet: string; address: string | null; protocol: string | null; handle: WalletHandle | null } | { kind: 'error'; message: string };
 
@@ -27,12 +28,7 @@ export function WalletConnect({ onHandle }: { onHandle?: (h: WalletHandle | null
         const handle: WalletHandle | null = address ? {
           address,
           sign: async (req, inputPaths) => {
-            const transaction = lib.decodeTransactionUnsafe(lib.hexToBin(req.transactionHex));
-            const h = (v: unknown) => lib.hexToBin(String(v));
-            type Tok = { category: string; amount: string | number; nft?: { capability: 'none' | 'mutable' | 'minting'; commitment: string } };
-            const token = (t: unknown) => { if (!t) return {}; const k = t as Tok; return { token: { category: h(k.category), amount: BigInt(k.amount), ...(k.nft ? { nft: { capability: k.nft.capability, commitment: h(k.nft.commitment) } } : {}) } }; };
-            const sourceOutputs = req.sourceOutputs.map((s) => ({ outpointIndex: Number(s.outpointIndex), outpointTransactionHash: h(s.outpointTransactionHash), sequenceNumber: Number(s.sequenceNumber), unlockingBytecode: h(s.unlockingBytecode), lockingBytecode: h(s.lockingBytecode), valueSatoshis: BigInt(String(s.valueSatoshis)), ...token(s.token) }));
-            const res = await mgr.signTransaction({ transaction: { transaction, sourceOutputs, broadcast: false, userPrompt: req.userPrompt }, inputPaths });
+            const res = await mgr.signTransaction({ transaction: wizSignPayload(req) as never, inputPaths });
             if (res.error) throw new Error(res.error);
             return res.signedTransaction;
           },

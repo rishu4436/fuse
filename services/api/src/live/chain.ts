@@ -56,16 +56,37 @@ export async function get(path: string, tries = 6): Promise<string> {
 export const getJson = async <T>(path: string) => JSON.parse(await get(path)) as T;
 
 /** Relay an already-signed transaction. Returns the txid reported by the node (or throws with the node error). */
+// Second broadcast path: a Fulcrum/BCHN node over WSS on port 443 (the only Electrum transport reachable from
+// every host we run on). Round 6 found bchexplorer.cash accepting a valid tx into its own mempool without
+// propagating it (its node lagged ~8 blocks); the same hex re-sent to this node reached the network at once.
+const FULCRUM_WSS = process.env.FUSE_FULCRUM_WSS ?? 'wss://cashnode.bch.ninja';
+export async function fulcrumBroadcast(rawHex: string, url = FULCRUM_WSS, timeoutMs = 6000): Promise<string> {
+  const WS = (globalThis as { WebSocket?: new (u: string) => WebSocket }).WebSocket;
+  if (!WS || process.env.FUSE_NO_FANOUT === '1') throw new Error('fan-out disabled');
+  return new Promise((resolve, reject) => {
+    const ws = new WS(url); const t = setTimeout(() => { try { ws.close(); } catch { /* closed */ } reject(new Error('fulcrum timeout')); }, timeoutMs);
+    ws.onopen = () => ws.send(JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'blockchain.transaction.broadcast', params: [rawHex] }));
+    ws.onmessage = (m) => { clearTimeout(t); try { ws.close(); } catch { /* closed */ } const d = JSON.parse(String(m.data)) as { result?: string; error?: { message?: string } }; if (typeof d.result === 'string') resolve(d.result); else reject(new Error(d.error?.message ?? 'fulcrum rejected')); };
+    ws.onerror = () => { clearTimeout(t); reject(new Error('fulcrum connection failed')); };
+  });
+}
+/** txid → which broadcast paths accepted it (for the broadcast receipt). */
+export const relayPaths = new Map<string, string[]>();
 export async function relay(rawHex: string): Promise<string> {
-  let last = '';
+  let last = ''; let txid: string | null = null; const paths: string[] = [];
   for (let i = 0; i < 3; i++) {
     const r = await request('/tx', rawHex).catch((e) => ({ ok: false, status: 0, text: String((e as Error).message) }));
-    if (r.ok) return r.text.trim();
+    if (r.ok) { txid = r.text.trim(); paths.push('bchexplorer.cash POST /api/tx'); break; }
     last = r.text.slice(0, 300);
     if (r.status >= 400 && r.status < 500) break; // node rejected it: do not retry
     await new Promise((s) => setTimeout(s, 700));
   }
-  throw Object.assign(new Error(`node rejected or relay failed: ${last}`), { statusCode: 422 });
+  // fan out to a second node; it can also rescue a relay failure, but never overrides a node rejection
+  const f = await fulcrumBroadcast(rawHex).then((id) => ({ ok: true as const, id }), (e: Error) => ({ ok: false as const, e: e.message }));
+  if (f.ok) { paths.push(`Fulcrum ${FULCRUM_WSS} blockchain.transaction.broadcast`); txid ??= f.id; }
+  if (!txid) throw Object.assign(new Error(`node rejected or relay failed: ${last}${f.ok ? '' : ` · fulcrum: ${f.e}`}`), { statusCode: 422 });
+  relayPaths.set(txid, paths); if (relayPaths.size > 200) relayPaths.delete(relayPaths.keys().next().value!);
+  return txid;
 }
 
 const rawCache = new Map<string, string>();
