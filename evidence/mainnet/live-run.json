@@ -99,6 +99,31 @@
    "guardian": "PASS",
    "route": null,
    "at": "2026-11-21T01:22:12.244Z"
+  },
+  {
+   "action": "auction",
+   "txid": "cb003c5645ec52aea77b896e7f29fba22a751ad937a8a44f4d1649f954733c3c",
+   "intentId": "int_92ac5b65a8228e12bec96f7a",
+   "intentBound": true,
+   "explorer": "https://bchexplorer.cash/tx/cb003c5645ec52aea77b896e7f29fba22a751ad937a8a44f4d1649f954733c3c",
+   "minerFee": "1858",
+   "netCost": "1991",
+   "relayedBy": "https://fuse-rust-eight.vercel.app/api/broadcast",
+   "serverVmCheck": "all inputs valid in the BCH 2026 VM against chain-derived source outputs",
+   "guardian": "PASS",
+   "route": {
+    "units": "1",
+    "buyPool": "fac5a4a69f7c7459f751f43495cbee3821cbc478165d83e78db66a82cc697b0c",
+    "sellPool": "a9a2d6220736536d621bb8d514f49904451fe55acf776bb15a0e7ec4c27cf9e5",
+    "buyOutpoint": "9d55f1d1f30f7cbb1d62ab0890fad99c720e95e387a1f9b2f89ee4c8ca6cea23:0",
+    "sellOutpoint": "9d55f1d1f30f7cbb1d62ab0890fad99c720e95e387a1f9b2f89ee4c8ca6cea23:1",
+    "satsIn": "5182",
+    "satsOut": "5149",
+    "roundTripLoss": "33",
+    "financedByFlash": true,
+    "note": "The borrowed principal pays the buy on pool A; the sell on pool B returns sats that repay the vault in the same transaction. The PUSD never leaves the two pools. This proves atomic routing; it is not a profitable arbitrage unless the pools diverge by more than 2×0.3% + fees."
+   },
+   "at": "2026-11-21T01:52:34.087Z"
   }
  ]
 }

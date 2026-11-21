@@ -1,0 +1,122 @@
+{
+ "txid": "cb003c5645ec52aea77b896e7f29fba22a751ad937a8a44f4d1649f954733c3c",
+ "transcript": {
+  "v": 1,
+  "kind": "fuse.auction-transcript/v1",
+  "rfq": {
+   "v": 1,
+   "kind": "fuse.rfq/v1",
+   "network": "mainnet",
+   "action": "flash-cauldron",
+   "address": "bitcoincash:qqtvuzkypa5y75jl05hatzh8jlfsly2d6v28mh8ge9",
+   "vaultId": null,
+   "units": "1",
+   "issuedAt": 1795225947,
+   "expiresAt": 1795226127,
+   "auctionId": "lauc_48599487f2e7e5bc1549"
+  },
+  "rfqHash": "134c2df79b2a49378ccc1ade469e860313db6ca97559f7a5a439dfe694d67203",
+  "rfqSig": "39e2456172ec24b1aed0427a71d52ad8014f9dbf731063275256aacbc150a0b12b4ac46cff7ff2b1526e97ba8658fd0a89dd9163c2bf6d0919ddc4cbaeb4fe24",
+  "quotes": [
+   {
+    "quote": {
+     "v": 1,
+     "kind": "fuse.solver-quote/v1",
+     "auctionId": "lauc_48599487f2e7e5bc1549",
+     "rfqHash": "134c2df79b2a49378ccc1ade469e860313db6ca97559f7a5a439dfe694d67203",
+     "solverPubkey": "03ef45762fb5a7c781f16a28a2f9dda73e1f0dfd6efc73b87e6ed2650c907e658c",
+     "strategy": "direct",
+     "route": {
+      "units": "1",
+      "buyOutpoint": "9d55f1d1f30f7cbb1d62ab0890fad99c720e95e387a1f9b2f89ee4c8ca6cea23:0",
+      "sellOutpoint": "9d55f1d1f30f7cbb1d62ab0890fad99c720e95e387a1f9b2f89ee4c8ca6cea23:1",
+      "satsIn": "5182",
+      "satsOut": "5149",
+      "loss": "33"
+     },
+     "quotedAt": 1795225949,
+     "expiresAt": 1795226069
+    },
+    "sig": "c07d154494f2c017ad5faddcd6c653153d34362c26b7c521393a269afae19580cfdb429603df2c8196f27712bdaa50a39f807c8046ef11b1dfbb0d6d17cfecac"
+   },
+   {
+    "quote": {
+     "v": 1,
+     "kind": "fuse.solver-quote/v1",
+     "auctionId": "lauc_48599487f2e7e5bc1549",
+     "rfqHash": "134c2df79b2a49378ccc1ade469e860313db6ca97559f7a5a439dfe694d67203",
+     "solverPubkey": "038acc0988e412ec4dc88f15f1540018e83b05e48f6e70e521a3989ee7b9e3ace6",
+     "strategy": "deep-pair",
+     "route": {
+      "units": "1",
+      "buyOutpoint": "9d55f1d1f30f7cbb1d62ab0890fad99c720e95e387a1f9b2f89ee4c8ca6cea23:0",
+      "sellOutpoint": "9d55f1d1f30f7cbb1d62ab0890fad99c720e95e387a1f9b2f89ee4c8ca6cea23:1",
+      "satsIn": "5182",
+      "satsOut": "5149",
+      "loss": "33"
+     },
+     "quotedAt": 1795225949,
+     "expiresAt": 1795226069
+    },
+    "sig": "7eadb8529ee2687a789eb124da4798d96bd8e0a480a3496974a6f1d6762b6482d29be2927d15d3c715dbc5b9ee9ecd85f1d25566542650224d72e62f31b79bed"
+   }
+  ],
+  "verdicts": [
+   {
+    "solverId": "lsol_e9cca4f7068bcf64",
+    "strategy": "direct",
+    "quoteHash": "6af0d5a783eb0f713ae711f46915b9c4f32dfc5281ae1c78e610d2a248b0842f",
+    "valid": true,
+    "reasons": [],
+    "recomputed": {
+     "satsIn": "5182",
+     "satsOut": "5149",
+     "loss": "33",
+     "expectedUserCost": "1991",
+     "minerFee": "1858",
+     "guardian": "PASS"
+    },
+    "rank": 1,
+    "score": "1991"
+   },
+   {
+    "solverId": "lsol_fff44b9d40cd8a2e",
+    "strategy": "deep-pair",
+    "quoteHash": "efb875d9d33e5a8677add7fd2749b8110cbd974d56d09e3131fb44566c76ab2d",
+    "valid": true,
+    "reasons": [],
+    "recomputed": {
+     "satsIn": "5182",
+     "satsOut": "5149",
+     "loss": "33",
+     "expectedUserCost": "1991",
+     "minerFee": "1858",
+     "guardian": "PASS"
+    },
+    "rank": 2,
+    "score": "1991"
+   }
+  ],
+  "scoring": "lowest recomputed total user cost (flash fee + round-trip pool loss + miner fee); ties by quote hash",
+  "winner": "lsol_e9cca4f7068bcf64",
+  "settledAt": 1795225950
+ },
+ "transcriptHash": "fce7d7af0fbdd98fe9ebcc579463383625cb99fbe007a661a1c0764d1bc813e4",
+ "winner": {
+  "solverId": "lsol_e9cca4f7068bcf64",
+  "strategy": "direct",
+  "quoteHash": "6af0d5a783eb0f713ae711f46915b9c4f32dfc5281ae1c78e610d2a248b0842f",
+  "valid": true,
+  "reasons": [],
+  "recomputed": {
+   "satsIn": "5182",
+   "satsOut": "5149",
+   "loss": "33",
+   "expectedUserCost": "1991",
+   "minerFee": "1858",
+   "guardian": "PASS"
+  },
+  "rank": 1,
+  "score": "1991"
+ }
+}
