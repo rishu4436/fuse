@@ -16,7 +16,7 @@ export default function Guardian() {
   const { mode } = useMode();
   const { data, error } = usePoll<P>(mode === 'live' ? '/api/live/paryon-view' : '/api/mainnet/paryon', 0);
   const [shock, setShock] = useState(0);
-  const sentinel = usePoll<{ overall: string; signals: Array<{ name: string; status: string; detail: string }> }>(mode === 'live' ? '/api/live/guardian/sentinel' : '/api/guardian/sentinel', 0);
+  const sentinel = usePoll<{ overall: string; signals: Array<{ name: string; status: string; detail: string }> }>(mode === 'live' ? '/api/live/guardian/sentinel' : '/api/guardian/sentinel', 30_000);
   const price = data?.live.latestPrice ? Number(data.live.latestPrice.priceRaw) : 0;
   const active = useMemo(() => (data?.live.loans ?? []).filter((l) => Number(l.periodsBehind) <= 1 && l.debtCents !== '0' && l.collateralRatioBps), [data]);
   const shocked = price * (1 - shock / 100);
@@ -35,6 +35,7 @@ export default function Guardian() {
         <div className="flex flex-col gap-5">
           <Panel title="Protocol health sentinel" kicker={`Overall: ${sentinel.data?.overall ?? '—'}`} mode="READ-ONLY" actions={<span className="flex gap-3 text-[12px]"><Link href="/app/guardian/rates" className="text-volt-300">Rates →</Link><Link href="/app/guardian/policies" className="text-volt-300">Policies →</Link><Link href="/app/guardian/alerts" className="text-volt-300">Alerts →</Link></span>}>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5" data-testid="sentinel">
+              {!sentinel.data && <div className="text-[12px] text-fog-400 sm:col-span-2 lg:col-span-5">{sentinel.error ? `Sentinel unavailable: ${sentinel.error} (retrying every 30 s)` : 'Reading protocol health from mainnet…'}</div>}
               {(sentinel.data?.signals ?? []).map((x) => (
                 <div key={x.name} className="rounded-lg border hairline p-3">
                   <div className="flex items-center justify-between gap-2"><span className="text-[12px] text-fog-200">{x.name}</span><span className={clsx('num text-[10.5px]', x.status === 'OK' ? 'text-volt-300' : x.status === 'WARN' ? 'text-amber-sim' : x.status === 'ALERT' ? 'text-rose-bad' : 'text-fog-400')}>{x.status}</span></div>
