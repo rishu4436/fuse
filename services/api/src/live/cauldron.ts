@@ -28,6 +28,11 @@ export async function livePools(maxVerify = 5): Promise<{ pools: LivePool[]; ind
   return { pools, indexerCount: active.length, checkedAt: new Date().toISOString(), source: 'indexer.cauldron.quest + bchexplorer.cash raw txs' };
 }
 
+/** Round trip through a GIVEN pool pair (buy `units` on A, sell them on B); null when out of range. */
+export function roundTripVia(a: LivePool, b: LivePool, units: bigint) {
+  if (a === b || a.txid + a.vout === b.txid + b.vout || units >= a.tokens) return null;
+  try { const buy = cauldronBuyQuote(a.satoshis, a.tokens, units); const sell = cauldronSellQuote(b.satoshis, b.tokens, units); return { a, b, satsIn: buy.satsIn, satsOut: sell.satsOut, loss: buy.satsIn - sell.satsOut, buy, sell }; } catch { return null; }
+}
 /** Best round trip (buy `units` on A, sell the same units on B) — the cheapest atomic route through two pools. */
 export function bestRoundTrip(pools: LivePool[], units: bigint) {
   let best: { a: LivePool; b: LivePool; satsIn: bigint; satsOut: bigint; loss: bigint; buy: ReturnType<typeof cauldronBuyQuote>; sell: ReturnType<typeof cauldronSellQuote> } | null = null;

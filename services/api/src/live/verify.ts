@@ -75,6 +75,7 @@ export function intentBinder(a: { authorization?: Authorization | null; userSign
     if (diff) return { present: true, ok: false, detail: `on-chain tx differs from the authorization: ${diff}` };
     const h = binToHex(sha256.hash(strippedStructure(tx)));
     if (h !== p.structureHash || h !== structureHashOfTemplate(p.template)) return { present: true, ok: false, detail: 'structure hash mismatch' };
+    if (p.auction && p.auction.transcriptHash !== cert.quoteCommitment) return { present: true, ok: false, detail: `certificate quote commitment does not match the authorized auction transcript ${p.auction.transcriptHash.slice(0, 12)}…` };
     const us = verifyUserSignature(a.authorization.authHash, a.userSignature ?? undefined, p.constraints.userLockingBytecode);
     if (us.present && !us.ok) return { present: true, ok: false, detail: us.detail };
     return { present: true, ok: true, detail: `tx matches authorization ${p.intentId} (attestation key ${a.trustedPubkey.slice(0, 10)}…, Guardian ${p.guardian.level})${us.present ? `; ${us.detail}` : '; no user wallet signature over the auth hash'}${p.auction ? `; auction ${p.auction.auctionId} winner ${p.auction.winner}` : ''}` };

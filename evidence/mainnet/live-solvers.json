@@ -1,0 +1,7 @@
+{
+  "note": "Registered mainnet solver quote keys (public keys only). Each runs as its own process on the operator box (scripts/solvers/live-solver.ts); the private keys stay in /home/box/secrets and control no funds — they only sign quotes.",
+  "solvers": [
+    { "solverId": "lsol_e9cca4f7068bcf64", "pubkey": "03ef45762fb5a7c781f16a28a2f9dda73e1f0dfd6efc73b87e6ed2650c907e658c", "strategy": "direct", "operator": "box process (Cauldron-direct)" },
+    { "solverId": "lsol_fff44b9d40cd8a2e", "pubkey": "038acc0988e412ec4dc88f15f1540018e83b05e48f6e70e521a3989ee7b9e3ace6", "strategy": "deep-pair", "operator": "box process (alternative deepest-pool pair)" }
+  ]
+}

@@ -12,6 +12,7 @@ import { issueAuthorization, serverKey } from './authz.js';
 import { liveCertificate, esploraReader } from './certificate.js';
 import { liveRederiver, intentBinder } from './verify.js';
 import { verifyCertificate } from '@fuse/proof-verifier';
+import { openRfq, settleAuction, loadSolverRegistry } from './auction.js';
 import { radar, sentinel } from '@fuse/risk-engine';
 import { parseLoan } from '@fuse/risk-engine';
 
@@ -56,6 +57,15 @@ export function registerLive(app: FastifyInstance, ctx: { root: string; paryonSn
   const PrepareZ = z.object({ action: z.enum(['flash', 'flash-cauldron', 'deposit', 'withdraw', 'deploy-vault', 'consolidate']), address: z.string().min(20).max(120), vaultId: z.string().max(40).optional(), amount: z.coerce.bigint().positive().optional(), principal: z.coerce.bigint().positive().optional(), units: z.coerce.bigint().min(1n).max(5n).optional(), maxUserCost: z.coerce.bigint().positive().optional() });
   app.post('/api/live/prepare', async (req) => withAuthorization(await prepare(configs(), PrepareZ.parse(req.body))));
   app.post('/api/live/verify-signed', async (req) => { const { tx: _t, src: _s, ...v } = await verifySigned(z.object({ rawHex: z.string() }).parse(req.body).rawHex); return v; });
+  // D: mainnet solver auction — signed RFQ → signed solver quotes → verify + recompute + score → authorized winner
+  app.post('/api/live/auction/rfq', async (req) => { const b = z.object({ address: z.string().min(20).max(120), units: z.coerce.bigint().min(1n).max(5n).default(1n), vaultId: z.string().max(40).optional() }).parse(req.body); return { ...openRfq(b), solvers: loadSolverRegistry(ctx.root) }; });
+  app.post('/api/live/auction/settle', async (req) => {
+    const b = req.body as Parameters<typeof settleAuction>[2];
+    if (!b?.rfq || !b.rfqSig || !Array.isArray(b.quotes)) throw Object.assign(new Error('rfq, rfqSig and quotes are required'), { statusCode: 400 });
+    const r = await settleAuction(configs(), loadSolverRegistry(ctx.root), b);
+    return { ...withAuthorization(r.prepared, { auctionId: r.transcript.rfq.auctionId, transcriptHash: r.transcriptHash, winner: r.winner.solverId }), auction: { transcript: r.transcript, transcriptHash: r.transcriptHash, winner: r.winner } };
+  });
+  app.get('/api/live/auction/solvers', async () => loadSolverRegistry(ctx.root));
   const AuthZ = z.object({ payload: z.string().max(200_000), authHash: z.string(), serverPubkey: z.string(), serverSig: z.string() });
   app.post('/api/broadcast', async (req) => {
     rateLimit(String(req.headers['x-forwarded-for'] ?? req.ip).split(',')[0]);

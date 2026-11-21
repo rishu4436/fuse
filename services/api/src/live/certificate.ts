@@ -10,6 +10,7 @@ import { paramsOfConfig, vaultLb, type VaultConfig } from './vault.js';
 import { flashFee } from './execute.js';
 import { PUSD } from './cauldron.js';
 import { liveRederiver, intentBinder } from './verify.js';
+import { transcriptHashOf } from './auction.js';
 import type { Authorization } from './authz.js';
 
 export const esploraReader: ChainReader = {
@@ -18,6 +19,8 @@ export const esploraReader: ChainReader = {
 };
 
 export async function liveCertificate(configs: VaultConfig[], txid: string, bind: { authorization?: Authorization | null; userSignature?: { pubkey: string; sig: string } | null; trustedPubkey?: string | null; auction?: unknown } = {}) {
+  const auc = bind.auction as { transcript?: unknown; transcriptHash?: string; winner?: { solverId: string } } | undefined;
+  if (auc?.transcriptHash && auc.transcript && transcriptHashOf(auc.transcript) !== auc.transcriptHash) throw Object.assign(new Error('auction transcript does not hash to transcriptHash'), { statusCode: 400 });
   const tx = await decoded(txid);
   const src = await Promise.all(tx.inputs.map((i) => outputAt(binToHex(i.outpointTransactionHash), i.outpointIndex)));
   const vi = src.findIndex((o) => o.token?.nft && configs.some((c) => c.category === o.token!.category));
@@ -38,7 +41,8 @@ export async function liveCertificate(configs: VaultConfig[], txid: string, bind
   const cert = sealCertificate({
     schema: 'fuse.certificate/v1', certificateId: 'cert_' + txid.slice(0, 24), intentId: `mainnet_${kind.toLowerCase()}_${txid.slice(0, 12)}`,
     intentCommitment: commitment('intent/v1', { kind, vault: lb, principal: src[vi].satoshis, owner }), policyCommitment: null, network: 'mainnet', executionClass: 'ATOMIC_SINGLE_TX',
-    solverId: 'fuse-live', quoteCommitment: commitment('quote/v1', { txid, fee }),
+    // a solver-auction execution commits the winner and the auction transcript hash into the sealed certificate
+    solverId: auc?.winner?.solverId ?? 'fuse-live', quoteCommitment: auc?.transcriptHash ?? commitment('quote/v1', { txid, fee }),
     contracts: [{ role: 'vault', name: 'FlashVaultBCH', lockingBytecode: lb }, ...pools.map(({ o }) => ({ role: 'pool', name: 'Cauldron V0 (unmodified)', lockingBytecode: o.lockingBytecode }))],
     transactions: [{ txid, blockHeight: s.block_height ?? null, blockHash: s.block_hash ?? null }],
     inputs: src.map((o) => ({ txid, outpoint: `${o.txid}:${o.vout}` })),

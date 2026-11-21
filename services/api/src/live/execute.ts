@@ -7,7 +7,7 @@ import { encodeVaultState, decodeVaultState, type BchVaultParams } from '@fuse/c
 import { contractUnlocks, toUnsignedTransaction, sourceOutputsOf, templateHash, type TxTemplate, type TemplateInput, type TemplateOutput } from '@fuse/transaction-composer';
 import { addressUtxos, type LiveUtxo } from './chain.js';
 import { trackVault, paramsOfConfig, vaultLb, type VaultConfig } from './vault.js';
-import { livePools, bestRoundTrip, assertPoolsUnspent, PUSD } from './cauldron.js';
+import { livePools, bestRoundTrip, roundTripVia, assertPoolsUnspent, PUSD } from './cauldron.js';
 
 export const LIVE_CAPS = { maxMinerFee: 5_000n, feeRate: 2n, minPrincipal: 10_000n, maxPrincipal: 50_000n, dust: 546n };
 export type Action = 'flash' | 'flash-cauldron' | 'deposit' | 'withdraw' | 'deploy-vault' | 'consolidate';
@@ -62,7 +62,7 @@ function pickCoins(coins: LiveUtxo[], need: bigint) {
   return { coins: out, total };
 }
 
-export interface PrepareInput { action: Action; address: string; vaultId?: string; amount?: bigint; principal?: bigint; units?: bigint; maxUserCost?: bigint }
+export interface PrepareInput { action: Action; address: string; vaultId?: string; amount?: bigint; principal?: bigint; units?: bigint; maxUserCost?: bigint; /** solver-auction winner: compose exactly this pool pair */ route?: { buyOutpoint: string; sellOutpoint: string } }
 export async function prepare(configs: VaultConfig[], req: PrepareInput) {
   const user = userLockingBytecode(req.address);
   const coins = await addressUtxos(req.address);
@@ -105,7 +105,9 @@ export async function prepare(configs: VaultConfig[], req: PrepareInput) {
       } else {
         const units = req.units ?? 1n;
         const { pools } = await livePools();
-        const rt = bestRoundTrip(pools, units) ?? fail('no two verified live Cauldron pools available for a round trip', 503);
+        const byOp = (o: string) => pools.find((x) => `${x.txid}:${x.vout}` === o) ?? fail(`pool ${o} is not a verified, live Cauldron PUSD pool right now`, 409);
+        const rt = req.route ? (roundTripVia(byOp(req.route.buyOutpoint), byOp(req.route.sellOutpoint), units) ?? fail('the quoted route is out of range for the current pool state', 409))
+          : (bestRoundTrip(pools, units) ?? fail('no two verified live Cauldron pools available for a round trip', 503));
         await assertPoolsUnspent([rt.a, rt.b]);
         if (rt.satsIn > v.satoshis) fail(`the buy leg (${rt.satsIn} sats) exceeds the vault principal (${v.satoshis}); choose fewer units`, 422);
         const loss = rt.loss;

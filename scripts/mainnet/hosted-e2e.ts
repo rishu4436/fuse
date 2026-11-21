@@ -50,7 +50,19 @@ async function main() {
   const w = loadTestWallet();
   const body: Record<string, unknown> = { action, address: w.address };
   for (const k of ['units', 'amount', 'principal', 'vaultId']) if (flag(k)) body[k] = flag(k);
-  const p = await call<Prepared & { simulation: Array<{ inputIndex: number; kind: string; ok: boolean; detail: string }>; risk: { ok: boolean; level: string; checks: Array<{ name: string; ok: boolean; detail: string }>; netUserCost: bigint }; route: unknown; template: Prepared['template'] }>('POST', '/api/live/prepare', body);
+  type P = Prepared & { simulation: Array<{ inputIndex: number; kind: string; ok: boolean; detail: string }>; risk: { ok: boolean; level: string; checks: Array<{ name: string; ok: boolean; detail: string }>; netUserCost: bigint }; route: unknown; template: Prepared['template']; auction?: { transcript: unknown; transcriptHash: string; winner: { solverId: string; strategy: string } } };
+  let p: P;
+  if (action === 'auction') {
+    // D: hosted RFQ → independent solver PROCESSES (127.0.0.1:4701/4702) → hosted verify + recompute + score + authorize
+    const r = await call<{ rfq: { auctionId: string }; rfqSig: string; attestationPubkey: string }>('POST', '/api/live/auction/rfq', { address: w.address, units: flag('units') ?? '1' });
+    const ports = (flag('solvers') ?? '4701,4702').split(',');
+    const quotes = (await Promise.all(ports.map(async (port) => { const x = await fetch(`http://127.0.0.1:${port}/quote`, { method: 'POST', body: toJson(r) }); const t = await x.text(); if (!x.ok) { console.log(`  solver :${port} declined: ${t}`); return null; } return fromJson<unknown>(t); }))).filter(Boolean);
+    console.log(`── auction ${r.rfq.auctionId}: ${quotes.length} signed quote(s) ──`);
+    p = await call<P>('POST', '/api/live/auction/settle', { rfq: r.rfq, rfqSig: r.rfqSig, quotes });
+    const tr = p.auction!.transcript as { verdicts: Array<{ strategy: string; valid: boolean; rank?: number; reasons: string[]; recomputed?: { expectedUserCost: string; loss: string } }> };
+    for (const v of tr.verdicts) console.log(`  ${v.valid ? `#${v.rank}` : '✕'} ${v.strategy}: cost ${v.recomputed?.expectedUserCost ?? '—'} (loss ${v.recomputed?.loss ?? '—'}) ${v.reasons.join('; ')}`);
+    console.log(`  winner ${p.auction!.winner.strategy} ${p.auction!.winner.solverId} · transcript ${p.auction!.transcriptHash}`);
+  } else p = await call<P>('POST', '/api/live/prepare', body);
   console.log(`── hosted preflight: ${action} @ ${BASE} ──`);
   console.log(`miner fee ${p.minerFee} sats · expected user cost ${p.expectedUserCost} sats · Guardian ${p.risk.level}`);
   for (const s of p.simulation) console.log(`  sim input ${s.inputIndex} ${s.kind}: ${s.ok ? 'ok' : 'FAIL'} — ${s.detail}`);
@@ -67,9 +79,10 @@ async function main() {
   if (ap.structureHash !== structureHashOfTemplate(p.template)) throw new Error('authorization is not for the template the signer reviewed');
   const userSignature = signAuthAsUser(authz.authHash, w.priv); // the wallet key also signs the authorization hash
   const b = await call<{ txid: string; explorer: string; vmDetail: string; minerFee: bigint; intentId: string; intentBound: boolean; constraintChecks: unknown; userSignature: unknown }>('POST', '/api/broadcast', { rawHex: s.raw, authorization: authz, userSignature });
-  writeFileSync(new URL(`../../evidence/mainnet/authorizations/${b.txid}.json`, import.meta.url), JSON.stringify({ txid: b.txid, authorization: authz, userSignature, broadcastResult: { intentId: b.intentId, intentBound: b.intentBound, constraintChecks: b.constraintChecks, userSignature: b.userSignature } }, (_k, v) => (typeof v === 'bigint' ? v.toString() : v), 1));
+  if (p.auction) { mkdirSync(new URL('../../evidence/mainnet/auctions/', import.meta.url), { recursive: true }); writeFileSync(new URL(`../../evidence/mainnet/auctions/${b.txid}.json`, import.meta.url), JSON.stringify({ txid: b.txid, ...p.auction }, (_k, v) => (typeof v === 'bigint' ? v.toString() : v), 1)); }
+  writeFileSync(new URL(`../../evidence/mainnet/authorizations/${b.txid}.json`, import.meta.url), JSON.stringify({ txid: b.txid, authorization: authz, userSignature, auction: p.auction ?? undefined, broadcastResult: { intentId: b.intentId, intentBound: b.intentBound, constraintChecks: b.constraintChecks, userSignature: b.userSignature } }, (_k, v) => (typeof v === 'bigint' ? v.toString() : v), 1));
   if (b.txid !== s.txid) throw new Error('broadcast txid mismatch');
-  ledger.spent = String(BigInt(ledger.spent) + s.cost); ledger.txs.push({ action, txid: b.txid, minerFee: String(b.minerFee), cost: String(s.cost), at: new Date().toISOString() });
+  ledger.spent = String(BigInt(ledger.spent) + s.cost); ledger.txs.push({ action: action === 'auction' ? 'auction(flash-cauldron)' : action, txid: b.txid, minerFee: String(b.minerFee), cost: String(s.cost), at: new Date().toISOString() });
   writeFileSync(LEDGER, JSON.stringify(ledger, null, 1), { mode: 0o600 });
   record({ action, txid: b.txid, intentId: b.intentId, intentBound: b.intentBound, explorer: b.explorer, minerFee: b.minerFee, netCost: s.cost, relayedBy: `${BASE}/api/broadcast`, serverVmCheck: b.vmDetail, guardian: p.risk.level, route: p.route, at: new Date().toISOString() });
   console.log(`BROADCAST via hosted /api/broadcast OK ${b.txid}\n  ${b.explorer}`);
