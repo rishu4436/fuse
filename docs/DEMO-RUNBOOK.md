@@ -14,6 +14,58 @@
    **Certificates** (`/app/certificates`): verify any vault txid.
 5. Operator e2e from the build box (owner-authorized only): `npx tsx scripts/mainnet/hosted-e2e.ts <flash|flash-cauldron|deposit|withdraw|deploy-vault|consolidate> [--broadcast]`, then `… certificate <txid>`.
 
+## Owner test: real WizardConnect wallet (NOT yet proven)
+
+Status: **untested with a real wallet.** The pairing QR is generated in the browser (Playwright), and the signing request
+is built to the bch-wc2 / hdwalletv1 spec, but no real WizardConnect wallet has signed a FUSE transaction yet. Do not
+claim it works until this checklist passes. It costs ≈ 1,200 sats from the owner's own wallet; nothing else is at risk.
+
+Before you start: a WizardConnect-capable BCH wallet with ≥ 5,000 sats in **plain (non-token) coins on receive address
+index 0** (`m/44'/145'/0'/0/0`). FUSE only asks for and signs with that one path.
+
+1. Open https://fuse-rust-eight.vercel.app/app/execute/live in **Live mainnet** mode. Choose **Flash loan** (cheapest).
+2. Press **Connect WizardConnect**, scan the QR with the wallet, approve the pairing.
+   - [ ] The address FUSE shows equals the wallet's *first receive address* (index 0). FUSE derives it from the shared
+         xpub with `getPubkey(0, 0n)`: path name `receive` = `m/44'/145'/0'/0`, address index 0. If it differs, stop: the
+         wallet uses another account or derivation, and the request would ask it to sign for coins it doesn't own.
+3. Press **Compose + preflight**.
+   - [ ] Guardian shows **PASS**; the *Execution authorization* panel shows an `int_…` intent id, a structure hash and an
+         expiry about 5 minutes out. (No authorization → no sign button; that is the A gate.)
+   - [ ] Outputs: out 0 = the vault `fuse-live-1` receiving principal + 100-sat flash fee; out 1 = change to **your**
+         address. Nothing else.
+4. Press **Sign with WizardConnect**. In the wallet's confirmation screen check:
+   - [ ] The prompt reads `FUSE flash on BCH mainnet — you pay ≈ … sats`, and the wallet says it will **not broadcast**
+         (`broadcast: false`).
+   - [ ] **Token source outputs:** input 0 (the vault) shows a source output that carries the vault identity NFT
+         (category `fuse-live-1`'s category, capability `mutable`). The wallet must NOT be asked to sign input 0. It signs
+         only the inputs listed in `inputPaths` (each `[inputIndex, 'receive', 0]`), which are your plain coins.
+   - [ ] The total you lose equals the preflight's *your net cost* (miner fee + 100 sats).
+   Approve.
+5. FUSE receives the **signed transaction hex** from the wallet (the page shows *Server VM check*).
+   - [ ] *Server VM check* = valid; the txid shown matches the template the preflight composed (same inputs and outputs).
+   - [ ] The owner signature: every input at an index in `inputPaths` now has a 65-byte Schnorr signature with
+         `SIGHASH_ALL|UTXOS|FORKID` (`0x61`) plus your pubkey; the vault input keeps the covenant unlock that FUSE composed.
+         Check it in **Export package** → paste the signed hex into any decoder, or `/app/explorer`.
+6. Press **Broadcast**. The hosted relay accepts it only because the hex matches the authorization (A): the same
+   structure, unexpired, not used, inputs unspent, constraints re-checked on fresh chain state.
+   - [ ] The response shows `intentBound: true`. (A wallet signature over the authorization hash is optional and
+         WizardConnect hdwalletv1 has no message-signing call, so `userSignature` will be absent. The certificate then
+         reaches INTENT_BOUND through the server attestation only, and says so.)
+7. After 1 confirmation press **Verify certificate**: expect **VERIFIED**, level **INTENT_BOUND**, with
+   `rederived:vault-repayment`, `vault-state-transition` and `fee-accounting` green.
+8. Send the txid to the developer. Only then may the docs move WizardConnect from IMPLEMENTED to TESTED.
+
+If any box fails, stop and report the exact step and what the wallet showed. Do not retry with a different wallet path.
+
+## Mainnet solver auction (operator, D)
+
+```bash
+npx tsx scripts/solvers/live-solver.ts --strategy direct    &   # 127.0.0.1:4701, own quote key
+npx tsx scripts/solvers/live-solver.ts --strategy deep-pair &   # 127.0.0.1:4702, own quote key
+FUSE_ROUND_CAP=56697 npx tsx scripts/mainnet/hosted-e2e.ts auction --units 1 [--broadcast]
+npx tsx scripts/mainnet/hosted-e2e.ts certificate <txid>        # certificate carries the auction transcript hash
+```
+
 # Sandbox demo (LOCAL, no real funds)
 
 ```bash
