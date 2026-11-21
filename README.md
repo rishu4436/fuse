@@ -9,9 +9,17 @@ consolidation. Every transaction goes through one pipeline:
 **compose from live chain state → simulate every covenant in the BCH 2026 VM → Guardian risk pre-flight → sign in your
 wallet → broadcast → confirmation tracking → certificate verified against mainnet.**
 
-The server never holds a key. `/api/broadcast` only relays already-signed hex, after re-deriving every spent output from
-chain and running the full BCH 2026 VM over it (fee guard, rate limit, and it is off unless the deployment sets
-`FUSE_BROADCAST=1`).
+The server never holds a fund key. `/api/broadcast` only relays already-signed hex **that matches an execution
+authorization issued by preflight**: a Schnorr-signed, 5-minute, single-use attestation of the exact transaction
+structure the user reviewed, its constraints (fee cap, recipients, vault parameters, route minimum out) and the Guardian
+verdict. The relay strips scriptSigs and compares the structure byte-for-byte, re-runs the constraints and Guardian on
+fresh chain state, runs the full BCH 2026 VM, and only then relays (fee guard, rate limit, off unless `FUSE_BROADCAST=1`).
+The attestation public key is published at `/api/live/status`, so anyone can check an authorization.
+
+> **Round 5 (security review, 21 Nov 2026 IST).** Intent-bound mainnet executions through the hosted path:
+> * flash [`f78074a7…`](https://bchexplorer.cash/tx/f78074a7addca74462f3d2dc8e08eb66ca14370cf5dfed1a52ed8e37d0003518): broadcast under an execution authorization + wallet signature over its hash. Certificate **INTENT_BOUND**
+> * **mainnet solver auction** [`cb003c56…`](https://bchexplorer.cash/tx/cb003c5645ec52aea77b896e7f29fba22a751ad937a8a44f4d1649f954733c3c) (block 978237): two independent solver processes answered a signed RFQ with signed quotes; the hosted API recomputed both routes on live Cauldron pools, scored them, composed the winner's route and authorized it with the auction transcript hash. Certificate FLASH_VIA_CAULDRON **INTENT_BOUND**, transcript committed in the certificate
+> * Certificates are graded **INCLUDED → STRUCTURE_VERIFIED → OUTCOME_VERIFIED → INTENT_BOUND**. Contract claims (vault repayment, state transition, LP math, Cauldron k-invariant, fees) are re-derived from chain data, never trusted. The four round-4 certificates re-verify as OUTCOME_VERIFIED and are **not** intent-bound (they predate authorizations)
 
 > **Proof (round 4, 21 Nov 2026 IST).** Executed through the **hosted app's** live path (`/api/live/prepare` → a box-only
 > test signer that plays the wallet → the deployed `/api/broadcast`), all in block 978214 unless noted:
@@ -24,9 +32,10 @@ chain and running the full BCH 2026 VM over it (fee guard, rate limit, and it is
 > The vault stays live with 30,200 sats, so anyone can flash-borrow from it in the app. Round 3's script-driven mainnet
 > run (block 978191, vault `fuse-r4`, now closed) is in [docs/DEMO-RUNBOOK.md](docs/DEMO-RUNBOOK.md).
 >
-> **Still sandbox-only or blocked:** intent auctions with solver processes, Parallel Worlds, Replay, the strategy builder
-> and the recipe marketplace run on the local BCH VM with simulated coins (labelled SANDBOX). Signing with a real
-> WizardConnect wallet is wired but untested. WalletConnect v2 (Paytaca/Cashonize) needs a Reown project ID. Paryon
+> **Still sandbox-only or blocked:** the full multi-strategy intent auction (4 solvers incl. an adversary), Parallel Worlds, Replay, the strategy builder
+> and the recipe marketplace run on the local BCH VM with simulated coins (labelled SANDBOX); the mainnet auction covers the
+> flash → Cauldron route only and is operator-driven. Signing with a real WizardConnect wallet is wired (and bound by the
+> execution authorization) but **not proven**: the owner checklist is in docs/DEMO-RUNBOOK.md. WalletConnect v2 (Paytaca/Cashonize) needs a Reown project ID. Paryon
 > write paths are blocked (builders are unpublished). Moria V1 is disabled and shown as history only. See [docs/STATUS.md](docs/STATUS.md).
 
 ## What is real
@@ -56,8 +65,10 @@ chain and running the full BCH 2026 VM over it (fee guard, rate limit, and it is
   through public indexers (raw txs re-hashed); VM simulation and Guardian before signing; WizardConnect signing
   (token-aware source outputs) or an exported raw-hex signing package with paste-back; signed-hex relay; confirmation
   tracking; mainnet certificates.
-* **WizardConnect**: pairing, plus signing requests with `broadcast:false` (FUSE relays the signed hex itself). Signing
-  with a real wallet app is not yet tested.
+* **WizardConnect**: pairing, plus signing requests with `broadcast:false` (FUSE relays the signed hex itself, only under
+  an execution authorization). Signing with a real wallet app is not yet tested.
+* **CI**: `scripts/ci/local-ci.sh` (install, contract reproducibility, lint, typecheck, vitest, hosted build, Playwright
+  against `next start`). The GitHub Actions workflow is staged at `ci/github-actions-ci.yml` (see ci/README.md).
 * **Studio** (Next.js 15): every spec §16 route under `/app/*`, with an animated transaction graph, certificates,
   replay, explorer, strategy builder and developer docs.
 
