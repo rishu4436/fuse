@@ -1,18 +1,19 @@
 # Test report
 
 Environment: Linux build box, Node v24.22.1, pnpm 9.15.4, cashc/cashscript 0.14.0, libauth 3.1.0-next.8,
-Next.js 15.5.29, Playwright 1.65.1 (Chrome). Latest run: 21 Nov 2026 (IST), round 5 (security review), branch `feat/phase-0-1-foundation`.
+Next.js 15.5.29, Playwright 1.65.1 (Chrome). Latest run: 21 Nov 2026 (IST), round 6 (real third-party wallet), branch `feat/phase-0-1-foundation`.
 Every number below comes from an actual run. Nothing is estimated.
 
 | # | Command | Result |
 |---|---|---|
 | 1 | `npx tsc --noEmit -p .` and `apps/web: npx tsc --noEmit -p .` | **0 errors** |
 | 2 | `npx eslint .` | **0 problems** |
-| 3 | `npx vitest run` | **38 files, 181 tests passed, 0 failed** (round 5 new: authz.test.ts (15), verifier-levels.test.ts (12), live-auction.test.ts (3), embedded.test.ts (+2: cross-instance replay, forged journal)) |
+| 3 | `npx vitest run` | **40 files, 187 tests passed, 0 failed** (round 6 new: tests/wiz-wire.test.ts (3), services/api/test/relay-fanout.test.ts (3); round 5 new: authz.test.ts (15), verifier-levels.test.ts (12), live-auction.test.ts (3), embedded.test.ts (+2)) |
 | 4 | `pnpm --filter @fuse/web build` and `FUSE_HOSTED=1 vercel build --prod` | **Compiled successfully** |
-| 5 | `FUSE_WEB=https://fuse-rust-eight.vercel.app npx playwright test --workers=1` (against the **deployed** app) | **81 passed, 0 failed, 13 skipped (94), 5.6 min, run 02:09–02:15 UTC (7:39–7:45 AM IST)**. The 13 skips are tests marked desktop-only (feature flows and live execute), skipped on the mobile project by design. The sandbox LP-deposit → explorer flow that failed in round 4 now passes: sandbox state is replayed from a signed client-carried journal on any instance |
+| 5 | `FUSE_WEB=https://fuse-rust-eight.vercel.app npx playwright test --workers=1` (against the **deployed** app) | **81 passed, 0 failed, 13 skipped (94), 5.3 min**, round 6 run after the final deploy, about 03:28–03:33 UTC (8:58–9:03 AM IST). Round 5: 81 / 0 / 13 |
 | 5b | `bash scripts/ci/local-ci.sh` (same steps as the staged GitHub workflow: install, contract reproducibility, lint, typecheck, vitest, hosted build, Playwright vs local `next start`) | **exit 0**: vitest 181/181, Playwright **81 passed, 0 failed, 13 skipped** (log: `evidence/ci/local-ci.log`, 02:04–02:07 UTC = 7:34–7:37 AM IST). No GitHub Actions run: the token lacks the `workflow` scope |
 | 6 | Hosted mainnet e2e (`scripts/mainnet/hosted-e2e.ts`, box-only signer, deployed `/api/broadcast`) | Round 4: 6 txs. Round 5: 2 intent-bound txs (flash f78074a7…, auction cb003c56…). `scripts/mainnet/reverify-certificates.ts`: 6 vault certificates VERIFIED; levels: 4 OUTCOME_VERIFIED, 2 INTENT_BOUND (`evidence/mainnet/reverification.json`) |
+| 7 | Round 6 real-wallet e2e: `scripts/wallet/cashonize-wizardconnect-e2e.mjs` (Cashonize on cashonize.com in headless Chrome, fresh seed, paired with the deployed app) | Flash [`9df5dced…`](https://bchexplorer.cash/tx/9df5dcede4a6e3a7d14f738a0a340d9f806c2317bedb33238d081a21d6bee8d0): Cashonize dialog −1,186 sats = FUSE quote; server VM check valid; `/api/broadcast` 200 `intentBound: true`, Guardian PASS at broadcast, 6/6 constraints; certificate VERIFIED · INTENT_BOUND (16/16 checks). `check-wizard-signed.ts`: inputPaths `[[1,'receive',0]]`, input 0 covenant unlock unchanged, token source output (mutable NFT) passed, input 1 Schnorr 65 B `0x61`, pubkey = m/44'/145'/0'/0/0, outputs and outpoints unchanged, local VM valid. First attempt failed with `Do not know how to serialize a BigInt` (fixed, then redeployed). bchexplorer.cash accepted the tx without propagating it; it was re-sent from the box to cashnode.bch.ninja and confirmed in the next block (relay fan-out added). Fund 5584a8b0… (box-only script), sweep 18a327a3… (Cashonize Send → max) |
 
 ## Unit / integration tests (vitest) per file
 
@@ -30,6 +31,8 @@ Every number below comes from an actual run. Nothing is estimated.
 | services/api/test/authz.test.ts | 15 | Review issue A. Valid authorization + wallet signature relays. Refused: no authorization, forged/tampered/other-key signature, expired, replayed (409 used / 409 spent), six VM-valid variants (different output script, changed amount, extra output, extra input, swapped recipients, different input) → 403, Guardian BLOCK authorization, moved chain state (422), non-owner wallet signature, relay disabled (503) |
 | services/api/test/verifier-levels.test.ts | 12 | Review issue B, on real mainnet txs (fixture `services/api/test/fixtures/mainnet-txs.json`). Real Cauldron flash → OUTCOME_VERIFIED, without rederiver → STRUCTURE_VERIFIED. Forged pool drain (claim `cauldron-invariant` ok:true) → FAILED; forged vault short-change with lowered minReturn → FAILED; under-reported liquidity fee → FAILED; declared ok:false claim → FAILED; unknown custom claim → stays STRUCTURE_VERIFIED; tampered commitment → FAILED. INTENT_BOUND: real f78074a7 + authorization + wallet sig → INTENT_BOUND; other attestation key, authorization for another tx, forged wallet signature → FAILED |
 | services/api/test/live-auction.test.ts | 3 | Review issue D. Two signed quotes recomputed, lowest user cost wins, transcript hash commits to everything; forged quote signature, unregistered solver, quote for another RFQ, misquote, non-composable route all rejected; RFQ not signed by the deployment or expired refused |
+| tests/wiz-wire.test.ts | 3 | The WizardConnect sign request is JSON-serializable and uses the reference wire encoding Cashonize validates (hex bytes, `<bigint: Xn>` values, hex tx, token NFT kept); non-hex fields are refused |
+| services/api/test/relay-fanout.test.ts | 3 | Second broadcast path (Fulcrum WSS): returns the node txid for the exact hex, surfaces a node rejection, times out instead of hanging |
 | services/api/test/wallet-api.test.ts | 1 | Preflight → wallet signs → independent verification over HTTP. A tampered response is rejected. **No route containing "broadcast" exists** |
 | packages/compiler/test/compiler.test.ts | 4 | All 10 stages run. The adversarial template is rejected, and the cheapest verified route (flash) is selected. Fee accounting conserves value exactly for every candidate and detects a leaking template. Precise stops: unsupported type (RESOLVE), Moria V1 (RESOLVE), monitor-only (AUTHORIZE), impossible bounds (CONSTRAIN), past deadline (PARSE) |
 | packages/compiler/test/netting.test.ts | 1 | X01: a buy and a sell intent are netted in one transaction that is valid in the BCH VM, with both signers, conservation, and the buyer better off than the pool |
@@ -95,8 +98,8 @@ npx playwright test
 ## Not tested (and why)
 
 * No chipnet or mainnet transaction was sent. Broadcast is not authorized, Electrum ports are blocked, and no funds were used.
-* WizardConnect: pairing and signing with a real wallet were not tested (no wallet available). The signing request,
-  preflight and verification are unit-tested with a local key standing in for the wallet.
+* WizardConnect with wallets other than Cashonize (Selene, Paytaca), and live actions other than the flash, were not
+  tried with a real wallet. The hosted relay fan-out to the second node is unit-tested; no hosted broadcast has used it yet.
 * Fulcrum WSS coin listing for the preflight runs in the user's browser and could not be reached from the build box
   (non-443 ports blocked).
 * Paryon write paths: BLOCKED (see INTEGRATION-FEASIBILITY.md).

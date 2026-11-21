@@ -26,7 +26,7 @@ vault principal 10,000–50,000 sats.
 |---|---|---|---|
 | A. Broadcast not bound to the reviewed intent (critical) | **Fixed** | `services/api/src/live/authz.ts` + `relay.ts`: preflight issues a Schnorr-signed authorization (intent id, unsigned-template hash, structure hash, constraints, Guardian verdict, 5-min expiry, optional auction). `/api/broadcast` refuses without a valid, unexpired, unused one; strips scriptSigs and compares the whole structure; checks covenant unlocks; verifies an optional wallet signature over the auth hash; VM-verifies; re-runs fee, recipient, user-cost, vault-repayment, pool-invariant and route-min-out constraints and Guardian on fresh chain state | authz.test.ts (15 adversarial); hosted: no auth → 403; mainnet f78074a7…, cb003c56… relayed with authorization |
 | B. Certificates trust declared checks | **Fixed** | Levels INCLUDED / STRUCTURE_VERIFIED / OUTCOME_VERIFIED / INTENT_BOUND in `packages/proof-verifier`; live rederivers in `services/api/src/live/verify.ts` (vault params rebuild the script, repayment + fee, commitment transition, LP share math, Cauldron k-invariant per pool, fee accounting); failed or unsubstantiated claims never pass; INTENT_BOUND checks the authorization signature, structure equality, wallet signature and auction transcript hash; `POST /api/live/verify-certificate` | verifier-levels.test.ts (12); `evidence/mainnet/reverification.json`: 4 round-4 certs OUTCOME_VERIFIED (NOT intent-bound: no authorization existed), f78074a7… and cb003c56… INTENT_BOUND |
-| C. Real WizardConnect untested | **Open (not proven)** | Wallet path uses the same authorization (no authorization → no sign button; mismatching signed tx refused). Owner checklist in docs/DEMO-RUNBOOK.md | — |
+| C. Real WizardConnect untested | **Fixed (round 6: one wallet, one action)** | Third-party wallet Cashonize (fresh seed on the box) paired with the deployed app and signed a mainnet flash. Two bugs found and fixed on the way: the sign request was not JSON-serializable (`apps/web/lib/wiz-wire.ts`), and the hosted relay now fans out to a second node | [`9df5dced…`](https://bchexplorer.cash/tx/9df5dcede4a6e3a7d14f738a0a340d9f806c2317bedb33238d081a21d6bee8d0) INTENT_BOUND; `evidence/mainnet/wizardconnect-cashonize/`; wiz-wire.test.ts (3), relay-fanout.test.ts (3) |
 | D. No mainnet solver auction | **Fixed (operator-driven, flash → Cauldron)** | `services/api/src/live/auction.ts`: signed RFQ → signed quotes from two solver processes (`scripts/solvers/live-solver.ts --strategy direct / deep-pair`, own keys, registry `evidence/mainnet/live-solvers.json`) → verify, recompute on live pools, score by user cost → winner composed and authorized with the transcript hash → broadcast → certificate commits the transcript | live-auction.test.ts (3); auction `lauc_48599487f2e7e5bc1549` → [`cb003c56…`](https://bchexplorer.cash/tx/cb003c5645ec52aea77b896e7f29fba22a751ad937a8a44f4d1649f954733c3c), block 978237; transcript `evidence/mainnet/auctions/` |
 | Hosted sandbox loses state | **Fixed** | Signed client-carried journal (`x-fuse-sandbox`) replayed on any instance with a frozen clock per op and deterministic solver nonces | embedded.test.ts (cross-instance replay, forged journal); Playwright vs deployed URL: 81 passed, 0 failed, 13 skipped (94), 5.6 min, run 02:09–02:15 UTC (7:39–7:45 AM IST) |
 | GitHub CI absent | **Partly fixed** | `scripts/ci/local-ci.sh` green on the box (`evidence/ci/local-ci.log`); the Actions workflow is staged at `ci/github-actions-ci.yml` because the box token lacks the `workflow` scope (see ci/README.md) | no GitHub run URL yet |
@@ -75,8 +75,8 @@ Round 5: vitest 181/181 (38 files), tsc 0 errors (root + web), eslint 0 problems
 
 ## Open problems / blockers
 
-1. **Real-wallet signing untested (review issue C).** WizardConnect signing is wired (token-aware source outputs) and
-   bound by the execution authorization, but no real wallet has signed. Owner checklist: docs/DEMO-RUNBOOK.md.
+1. **Real-wallet coverage is one wallet, one action.** Cashonize signed a mainnet flash over WizardConnect (round 6).
+   Selene and Paytaca (also WizardConnect) and the other live actions were not tried with a real wallet.
 1b. **GitHub Actions not active.** The workflow is staged at `ci/github-actions-ci.yml`; enabling it needs a GitHub token
    with the `workflow` scope (`gh auth refresh -h github.com -s workflow`, owner only).
 1c. **Auction scope.** The mainnet auction is operator-driven (two solver processes on the build box) and covers only the
@@ -86,6 +86,9 @@ Round 5: vitest 181/181 (38 files), tsc 0 errors (root + web), eslint 0 problems
 2. **WalletConnect v2 (Paytaca / Cashonize)** is not wired: it needs a Reown project ID from an owner account.
 3. **Indexer lag.** bchexplorer.cash backends sometimes lag the mempool by tens of seconds. Composing right after a
    broadcast can use a stale outpoint; the node rejects that (no loss). The UI says to wait for the previous tx to show.
+   In round 6 bchexplorer.cash also returned a txid without propagating the tx (it missed a block until the same hex
+   was re-sent to cashnode.bch.ninja). The hosted relay now also broadcasts to that Fulcrum node; its UTXO index was
+   also seen stale (a spent coin still listed), which FUSE already guards with an outspend re-check.
 4. **Live Paryon coverage** is partial on a cold serverless instance (it decodes up to 160 moved loans per request;
    coverage is reported in the response). The oracle price is always live.
 5. **Deposit/withdraw are owner-only** (FlashVaultBCH v1 has one owner key). Users can deploy their own vault.

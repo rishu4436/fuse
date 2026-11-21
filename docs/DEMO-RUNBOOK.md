@@ -14,11 +14,18 @@
    **Certificates** (`/app/certificates`): verify any vault txid.
 5. Operator e2e from the build box (owner-authorized only): `npx tsx scripts/mainnet/hosted-e2e.ts <flash|flash-cauldron|deposit|withdraw|deploy-vault|consolidate> [--broadcast]`, then `… certificate <txid>`.
 
-## Owner test: real WizardConnect wallet (NOT yet proven)
+## Real WizardConnect wallet checklist (passed once with Cashonize, round 6)
 
-Status: **untested with a real wallet.** The pairing QR is generated in the browser (Playwright), and the signing request
-is built to the bch-wc2 / hdwalletv1 spec, but no real WizardConnect wallet has signed a FUSE transaction yet. Do not
-claim it works until this checklist passes. It costs ≈ 1,200 sats from the owner's own wallet; nothing else is at risk.
+Status: **passed with Cashonize v0.16.0** (https://cashonize.com) on 21 Nov 2026, 8:35 AM IST: flash [`9df5dced…`](https://bchexplorer.cash/tx/9df5dcede4a6e3a7d14f738a0a340d9f806c2317bedb33238d081a21d6bee8d0), certificate
+VERIFIED · INTENT_BOUND, every box below checked (`evidence/mainnet/wizardconnect-cashonize/run.json`,
+`scripts/wallet/check-wizard-signed.ts`). Selene and Paytaca are untried. Repeat it with any other wallet before claiming
+that wallet works. It costs ≈ 1,200 sats from your own wallet; nothing else is at risk.
+
+**With Cashonize (desktop browser):** create or import an *HD* wallet (Settings → derivation *standard*
+m/44'/145'/0'). Fund its receive address index 0 (Cashonize → *Addresses* lists it first). In FUSE press **Copy link**
+under the QR (or scan it), then in Cashonize open the **Connect** tab, paste the `wiz://…` link, press **Connect** and
+approve *Share wallet addresses with this dApp?*. The FUSE wallet panel then shows `Cashonize · LIVE` and your index-0
+address. Cashonize's front page may show a later, unused address (gap-limit display): that is normal.
 
 Before you start: a WizardConnect-capable BCH wallet with ≥ 5,000 sats in **plain (non-token) coins on receive address
 index 0** (`m/44'/145'/0'/0/0`). FUSE only asks for and signs with that one path.

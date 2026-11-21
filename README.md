@@ -34,8 +34,8 @@ The attestation public key is published at `/api/live/status`, so anyone can che
 >
 > **Still sandbox-only or blocked:** the full multi-strategy intent auction (4 solvers incl. an adversary), Parallel Worlds, Replay, the strategy builder
 > and the recipe marketplace run on the local BCH VM with simulated coins (labelled SANDBOX); the mainnet auction covers the
-> flash → Cauldron route only and is operator-driven. Signing with a real WizardConnect wallet is wired (and bound by the
-> execution authorization) but **not proven**: the owner checklist is in docs/DEMO-RUNBOOK.md. WalletConnect v2 (Paytaca/Cashonize) needs a Reown project ID. Paryon
+> flash → Cauldron route only and is operator-driven. A real third-party wallet, **Cashonize**, has signed a FUSE-composed
+> mainnet flash over WizardConnect (round 6, [`9df5dced…`](https://bchexplorer.cash/tx/9df5dcede4a6e3a7d14f738a0a340d9f806c2317bedb33238d081a21d6bee8d0), INTENT_BOUND); other wallets and actions are untried. WalletConnect v2 (Paytaca/Cashonize) needs a Reown project ID. Paryon
 > write paths are blocked (builders are unpublished). Moria V1 is disabled and shown as history only. See [docs/STATUS.md](docs/STATUS.md).
 
 ## What is real

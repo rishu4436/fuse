@@ -24,7 +24,7 @@ Status labels. Each one has a single meaning, and the categories are never merge
 | ParyonUSD | Manage / change interest / liquidate | BLOCKED | `@paryonusd/library` builders not published. Needs owner-approved live tests |
 | ParyonUSD | V2 | UNSUPPORTED | Not deployed |
 | Moria | V1 as a live venue | UNSUPPORTED | Disabled 23 Apr 2026 |
-| Wallet | WizardConnect pairing (hdwalletv1) in the Studio | IMPLEMENTED | Pairing QR is generated and the relay reports `connected` from the browser (Playwright). Address derivation after `wallet_ready` is untested because no real wallet was paired. A signing request (`broadcast:false`) with a mainnet preflight is implemented and unit-tested with a local key, but has not been tried with a real wallet |
+| Wallet | WizardConnect pairing (hdwalletv1) in the Studio | VERIFIED (one wallet) | Round 6: Cashonize paired with the deployed app; FUSE derived its m/44'/145'/0'/0/0 address from the shared xpub; Cashonize signed a FUSE-composed mainnet flash ([`9df5dced…`](https://bchexplorer.cash/tx/9df5dcede4a6e3a7d14f738a0a340d9f806c2317bedb33238d081a21d6bee8d0), INTENT_BOUND) with `broadcast:false` |
 | Execution | Composer and independent verifier | TESTED | `composer.test.ts` |
 | Execution | FEP-1 policy engine | TESTED | `policy.test.ts` |
 | Execution | Auction, fallback, anti-replay, rate limit | TESTED | `auction.test.ts`, `network.e2e.test.ts` |
@@ -37,8 +37,7 @@ Status labels. Each one has a single meaning, and the categories are never merge
 
 These items have been researched but have no code yet, so they carry no status label:
 
-* **WizardConnect signing with a real wallet.** The code path exists (`signTransaction` with `broadcast:false`, preflight,
-  independent 0x61 verification) and is unit-tested with a local key. It has not been tried with a real wallet.
+* **WizardConnect with other wallets.** Proven with Cashonize only (round 6). Selene and Paytaca also implement it but were not tried.
 * **XO** templates and invitations. Bounty feedback must be written by the developer personally.
 * **Moria V1 historical replay** (READ-ONLY fixtures).
 * Cross-intent netting, health sentinel and rescue bounties.
