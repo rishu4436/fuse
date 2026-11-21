@@ -305,7 +305,7 @@ export function registerExtra(app: FastifyInstance, state: FuseState) {
   });
   // ---- F50 READ-ONLY mainnet explorer (raw re-hashed locally) ----
   app.get('/api/explorer/mainnet/:txid', async (req, reply) => {
-    try { return await fetchMainnetTx((req.params as { txid: string }).txid); } catch (e) { const code = (e as { code?: string }).code ?? 'ERROR'; return reply.status(code === 'BAD_TXID' ? 400 : code === 'HASH_MISMATCH' ? 502 : 404).send({ error: code, message: (e as Error).message }); }
+    try { return await fetchMainnetTx((req.params as { txid: string }).txid); } catch (e) { const code = (e as { code?: string }).code ?? 'ERROR'; return reply.status(code === 'BAD_TXID' ? 400 : code === 'HASH_MISMATCH' ? 502 : code === 'CHAIN_UNAVAILABLE' ? 503 : 404).send({ error: code, message: (e as Error).message }); }
   });
   // ---- F40 LP risk history: vault health snapshot persisted on every accepted tx / LP op / reset ----
   const snapVault = async (event: string) => { const sh = await mgr(); const h = vaultHealth(sh.all(), sh.leased().map((l) => l.outpoint), m().vaultParams.maxExposure); store.putVaultSnapshot(event, h); };

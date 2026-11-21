@@ -22,6 +22,21 @@ for (const r of routes) {
 
 const sandbox = (page: import('@playwright/test').Page) => page.addInitScript(() => localStorage.setItem('fuse-mode', 'sandbox'));
 
+test('dashboard replays recorded settlement and switches to the sandbox', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/app');
+  const replay = page.getByRole('region', { name: 'Atomic settlement' });
+  await expect(replay).toContainText('Recorded · block 978214');
+  await expect(replay).toContainText('1,991 sats');
+  await replay.getByRole('button', { name: 'Repay' }).click();
+  await expect(replay).toContainText('30,200 sats');
+  await replay.getByRole('button', { name: 'Replay route' }).click();
+  await expect(replay).toContainText('30,100 sats');
+  await replay.getByRole('button', { name: 'Pause replay' }).click();
+  await page.getByRole('button', { name: 'Open sandbox' }).click();
+  await expect(page.getByRole('heading', { name: 'Sandbox execution world' })).toBeVisible();
+});
+
 test('LIVE is the default mode: mainnet pages are labeled LIVE; sandbox pages SANDBOX after the toggle', async ({ page }) => {
   await page.goto('/app/opportunities'); await expect(page.getByText('LIVE', { exact: true }).filter({ visible: true }).first()).toBeVisible();
   await expect(page.getByTestId('live-pools')).toBeVisible({ timeout: 45_000 });

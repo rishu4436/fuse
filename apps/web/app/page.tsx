@@ -34,7 +34,7 @@ export default function Home() {
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <Link href="/app/execute/live"><Button>Execute on mainnet →</Button></Link>
-            <Link href="/app/certificates"><Button variant="ghost">Verify a certificate</Button></Link>
+            <Link href="/app" className="inline-flex h-9 items-center rounded-[10px] border hairline bg-ink-800 px-4 text-[13px] font-medium hover:bg-ink-700">Open dashboard ↗</Link>
             <span className="ml-1 text-[12px] text-fog-400">A local sandbox (simulated coins) is available from the mode switch.</span>
           </div>
           <nav aria-label="Recorded mainnet evidence" className="mt-4 flex flex-wrap gap-4 text-sm underline">
@@ -80,7 +80,7 @@ export default function Home() {
       </section>
 
       <section className="mt-16 grid gap-4 text-[12.5px] text-fog-400 md:grid-cols-3">
-        <div className="flex items-start gap-2"><Badge mode="LIVE" /> <span>Execute, FlashVault, Cauldron pools, Guardian and certificates read and write BCH mainnet. The server holds no keys.</span></div>
+        <div className="flex items-start gap-2"><Badge mode="LIVE" /> <span>Live execution reads BCH mainnet and relays wallet-signed transactions. Cauldron pool data, Guardian and certificates can be inspected without a wallet.</span></div>
         <div className="flex items-start gap-2"><Badge mode="SIMULATION" /> <span>Sandbox: intent auctions, solvers, Parallel Worlds and Replay run on a local BCH 2026 VM with simulated coins.</span></div>
         <div className="flex items-start gap-2"><Badge mode="BLOCKED" /> <span>Moria V1 is disabled and shown as historical only. Paryon V2 is not deployed. WalletConnect v2 is not wired.</span></div>
       </section>

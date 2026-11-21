@@ -2,16 +2,12 @@
 // esplora-compatible API) and re-hashed locally: if hash256(raw) != txid the result is rejected, so the indexer
 // cannot forge contents. Outputs are labelled only by exact matches against locally reconstructed Paryon V1
 // contract scripts and known token categories. Nothing is built, signed or broadcast.
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
+import { ESPLORA, rawTx, status, tip } from './live/chain.js';
 import { inspectRaw } from '@fuse/transaction-composer';
 import { PARYON_MAINNET_V1, paryonContracts, decodeLoanCommitment, decodePriceCommitment } from '@fuse/protocol-adapters';
 
-const run = promisify(execFile);
-const ESPLORA = process.env.FUSE_ESPLORA ?? 'https://bchexplorer.cash/api';
 export interface MainnetTxStatus { confirmed: boolean; block_height?: number; block_hash?: string; block_time?: number }
 export type Fetcher = (path: string) => Promise<string>;
-export const curlFetcher: Fetcher = async (path) => (await run('curl', ['-sS', '--fail', '-m', '25', ESPLORA + path], { maxBuffer: 16 * 1024 * 1024 })).stdout.trim();
 
 let known: Map<string, string> | undefined;
 function knownScripts() {
@@ -38,17 +34,16 @@ export function decodeMainnet(txid: string, rawHex: string, status: MainnetTxSta
     }
     return { ...o, label: contract ?? (o.lockingBytecode.startsWith('6a') ? 'OP_RETURN' : null), asset, state };
   });
-  const confirmations = status?.confirmed && status.block_height && tipHeight ? tipHeight - status.block_height + 1 : 0;
-  return { network: 'mainnet' as const, status: 'READ-ONLY' as const, txidVerifiedLocally: true, source: ESPLORA, confirmed: !!status?.confirmed, blockHeight: status?.block_height ?? null, blockHash: status?.block_hash ?? null, confirmations, ...i, outputs, protocols: [...new Set(outputs.map((o) => o.label).filter((x): x is string => !!x && x.startsWith('Paryon')))] };
+  const confirmations = status?.confirmed && status.block_height && tipHeight ? Math.max(0, tipHeight - status.block_height + 1) : 0;
+  return { network: 'mainnet' as const, status: 'READ-ONLY' as const, txidVerifiedLocally: true, source: ESPLORA, confirmationKnown: status !== null, confirmed: !!status?.confirmed, blockHeight: status?.block_height ?? null, blockHash: status?.block_hash ?? null, confirmations, ...i, outputs, protocols: [...new Set(outputs.map((o) => o.label).filter((x): x is string => !!x && x.startsWith('Paryon')))] };
 }
 
-const cache = new Map<string, ReturnType<typeof decodeMainnet>>();
-export async function fetchMainnetTx(txid: string, f: Fetcher = curlFetcher) {
+export async function fetchMainnetTx(txid: string, fetcher?: Fetcher) {
   if (!/^[0-9a-f]{64}$/.test(txid)) throw Object.assign(new Error('txid must be 64 lowercase hex chars'), { code: 'BAD_TXID' });
-  const c = cache.get(txid); if (c?.confirmed) return c;
-  const raw = await f(`/tx/${txid}/hex`).catch((e) => { throw Object.assign(new Error(`indexer: ${String(e.stderr ?? e.message).trim().slice(0, 160)}`), { code: 'NOT_FOUND' }); });
-  const [status, tip] = await Promise.all([f(`/tx/${txid}/status`).then((s) => JSON.parse(s) as MainnetTxStatus).catch(() => null), f('/blocks/tip/height').then(Number).catch(() => null)]);
-  const r = decodeMainnet(txid, raw, status, tip);
-  cache.set(txid, r);
-  return r;
+  const [raw, block, height] = await Promise.all([
+    fetcher ? fetcher(`/tx/${txid}/hex`) : rawTx(txid),
+    (fetcher ? fetcher(`/tx/${txid}/status`).then((text) => JSON.parse(text) as MainnetTxStatus) : status(txid)).catch(() => null),
+    (fetcher ? fetcher('/blocks/tip/height').then(Number) : tip()).catch(() => null),
+  ]);
+  return decodeMainnet(txid, raw, block, height);
 }

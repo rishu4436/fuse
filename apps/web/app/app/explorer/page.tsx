@@ -23,7 +23,7 @@ function Detail({ txid }: { txid: string }) {
   );
 }
 
-interface MTx extends Tx { network: 'mainnet'; status: 'READ-ONLY'; txidVerifiedLocally: boolean; source: string; confirmed: boolean; blockHeight: number | null; confirmations: number; protocols: string[]; outputs: Array<Tx['outputs'][number] & { label: string | null; asset: string | null; state: Record<string, unknown> | null }> }
+interface MTx extends Tx { network: 'mainnet'; status: 'READ-ONLY'; txidVerifiedLocally: boolean; source: string; confirmationKnown: boolean; confirmed: boolean; blockHeight: number | null; confirmations: number; protocols: string[]; outputs: Array<Tx['outputs'][number] & { label: string | null; asset: string | null; state: Record<string, unknown> | null }> }
 const EXAMPLE = '5ab3f4aa4c43c49ab66516333033e87b0babb5dde313bdac0534b092b3f20362';
 function MainnetLookup() {
   const [txid, setTxid] = useState(EXAMPLE); const [res, setRes] = useState<MTx>(); const [err, setErr] = useState<string>(); const [busy, setBusy] = useState(false);
@@ -40,7 +40,7 @@ function MainnetLookup() {
         <div className="mt-4 grid gap-4" data-testid="mainnet-tx">
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] text-fog-300">
             <span className="text-volt-300">✓ hash256(raw) = txid</span>
-            <span>{res.confirmed ? `block ${res.blockHeight} · ${res.confirmations} conf` : 'unconfirmed'}</span>
+            <span>{res.confirmed ? `block ${res.blockHeight} · ${res.confirmations} conf` : res.confirmationKnown ? 'unconfirmed' : 'confirmation status unavailable'}</span>
             <span>{res.sizeBytes} bytes</span>
             {res.protocols.map((p) => <span key={p} className="rounded-full border border-sky-ro/30 px-2 py-0.5 text-[11px] text-sky-ro">{p}</span>)}
           </div>
