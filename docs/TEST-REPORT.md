@@ -10,7 +10,7 @@ Every number below comes from an actual run. Nothing is estimated.
 | 2 | `npx eslint .` | **0 problems** |
 | 3 | `npx vitest run` | **40 files, 187 tests passed, 0 failed** (round 6 new: tests/wiz-wire.test.ts (3), services/api/test/relay-fanout.test.ts (3); round 5 new: authz.test.ts (15), verifier-levels.test.ts (12), live-auction.test.ts (3), embedded.test.ts (+2)) |
 | 4 | `pnpm --filter @fuse/web build` and `FUSE_HOSTED=1 vercel build --prod` | **Compiled successfully** |
-| 5 | `FUSE_WEB=https://fuse-rust-eight.vercel.app npx playwright test --workers=1` (against the **deployed** app) | **81 passed, 0 failed, 13 skipped (94), 5.3 min**, round 6 run after the final deploy, about 03:28–03:33 UTC (8:58–9:03 AM IST). Round 5: 81 / 0 / 13 |
+| 5 | `FUSE_WEB=https://fusebch.vercel.app npx playwright test --workers=1` (against the **deployed** app) | **81 passed, 0 failed, 13 skipped (94), 5.3 min**, round 6 run after the final deploy, about 03:28–03:33 UTC (8:58–9:03 AM IST). Round 5: 81 / 0 / 13 |
 | 5b | `bash scripts/ci/local-ci.sh` (same steps as the staged GitHub workflow: install, contract reproducibility, lint, typecheck, vitest, hosted build, Playwright vs local `next start`) | **exit 0**: vitest 181/181, Playwright **81 passed, 0 failed, 13 skipped** (log: `evidence/ci/local-ci.log`, 02:04–02:07 UTC = 7:34–7:37 AM IST). No GitHub Actions run: the token lacks the `workflow` scope |
 | 6 | Hosted mainnet e2e (`scripts/mainnet/hosted-e2e.ts`, box-only signer, deployed `/api/broadcast`) | Round 4: 6 txs. Round 5: 2 intent-bound txs (flash f78074a7…, auction cb003c56…). `scripts/mainnet/reverify-certificates.ts`: 6 vault certificates VERIFIED; levels: 4 OUTCOME_VERIFIED, 2 INTENT_BOUND (`evidence/mainnet/reverification.json`) |
 | 7 | Round 6 real-wallet e2e: `scripts/wallet/cashonize-wizardconnect-e2e.mjs` (Cashonize on cashonize.com in headless Chrome, fresh seed, paired with the deployed app) | Flash [`9df5dced…`](https://bchexplorer.cash/tx/9df5dcede4a6e3a7d14f738a0a340d9f806c2317bedb33238d081a21d6bee8d0): Cashonize dialog −1,186 sats = FUSE quote; server VM check valid; `/api/broadcast` 200 `intentBound: true`, Guardian PASS at broadcast, 6/6 constraints; certificate VERIFIED · INTENT_BOUND (16/16 checks). `check-wizard-signed.ts`: inputPaths `[[1,'receive',0]]`, input 0 covenant unlock unchanged, token source output (mutable NFT) passed, input 1 Schnorr 65 B `0x61`, pubkey = m/44'/145'/0'/0/0, outputs and outpoints unchanged, local VM valid. First attempt failed with `Do not know how to serialize a BigInt` (fixed, then redeployed). bchexplorer.cash accepted the tx without propagating it; it was re-sent from the box to cashnode.bch.ninja and confirmed in the next block (relay fan-out added). Fund 5584a8b0… (box-only script), sweep 18a327a3… (Cashonize Send → max) |
@@ -116,7 +116,7 @@ npx playwright test
     rebuilt purely from chain raws) → sweep. It also checks the cap refusals.
   * `services/api/test/embedded.test.ts` (1). Hosted mode labels itself, settles an auction lazily through the
     in-process solvers, and offers no broadcasting.
-* **Playwright against https://fuse-rust-eight.vercel.app with `--workers=1`: 78 passed, 12 skipped.**
+* **Playwright against https://fusebch.vercel.app with `--workers=1`: 78 passed, 12 skipped.**
   * A first run with parallel workers gave 77 passed and 1 failed (the replay pick).
   * The cause was parallel clients landing on different serverless instances, which do not share state. This is a
     documented hosted-mode limitation.
@@ -129,9 +129,9 @@ npx playwright test
 
 ## Round 4 (21 Nov 2026 IST): live mainnet execution through the hosted app
 
-Path: `POST https://fuse-rust-eight.vercel.app/api/live/prepare` (compose from live UTXOs, VM simulation, Guardian) →
+Path: `POST https://fusebch.vercel.app/api/live/prepare` (compose from live UTXOs, VM simulation, Guardian) →
 `scripts/mainnet/test-signer.ts` on the build box (checks template hash, Guardian, byte-for-byte unsigned hex, own
-inputs, cost caps; signs; VM-verifies locally) → `POST https://fuse-rust-eight.vercel.app/api/broadcast` (re-derives
+inputs, cost caps; signs; VM-verifies locally) → `POST https://fusebch.vercel.app/api/broadcast` (re-derives
 source outputs from chain, full VM verify, relays) → `GET /api/live/tx/:txid` → `POST /api/live/certificate`.
 
 | Action | txid | Block | Fee | Certificate |

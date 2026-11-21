@@ -19,7 +19,7 @@ const config: NextConfig = {
     ].map(([source, destination]) => ({ source, destination, permanent: false }));
   },
   async rewrites() { return hosted ? [] : [{ source: '/api/:path*', destination: `${api}/api/:path*` }]; },
-  env: { NEXT_PUBLIC_FUSE_HOSTED: hosted ? '1' : '', NEXT_PUBLIC_LIVE_URL: process.env.NEXT_PUBLIC_LIVE_URL ?? 'https://fuse-rust-eight.vercel.app' },
+  env: { NEXT_PUBLIC_FUSE_HOSTED: hosted ? '1' : '', NEXT_PUBLIC_LIVE_URL: process.env.NEXT_PUBLIC_LIVE_URL ?? 'https://fusebch.vercel.app' },
   outputFileTracingIncludes: { '/api/[...path]': ['./embedded/**/*'] },
   async headers() {
     return [{ source: '/(.*)', headers: [

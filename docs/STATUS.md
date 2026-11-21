@@ -1,7 +1,7 @@
 # Status: 21 Nov 2026 (IST), round 5 (security review)
 
 **Product:** FUSE is a **live BCH DeFi execution platform** with an integrated simulation and risk-analysis engine.
-The hosted app (https://fuse-rust-eight.vercel.app) opens in **LIVE mainnet** mode. The local BCH-VM sandbox is an
+The hosted app (https://fusebch.vercel.app) opens in **LIVE mainnet** mode. The local BCH-VM sandbox is an
 explicit opt-in toggle (sidebar "Live mainnet / Sandbox", stored in `localStorage['fuse-mode']`, or `?mode=sandbox`).
 
 ## Live on BCH mainnet (real chain reads, real execution)

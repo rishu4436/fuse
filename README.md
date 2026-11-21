@@ -1,6 +1,6 @@
 # FUSE: live BCH DeFi execution, with an integrated simulation and risk engine
 
-**Live app: https://fuse-rust-eight.vercel.app** (opens in **LIVE mainnet** mode; the local sandbox is an explicit opt-in toggle).
+**Live app: https://fusebch.vercel.app** (opens in **LIVE mainnet** mode; the local sandbox is an explicit opt-in toggle).
 
 FUSE executes DeFi transactions on **Bitcoin Cash mainnet**: FlashVault flash loans, flash loans routed through live
 **Cauldron** pools and repaid in the same transaction, FlashVault LP deposits/withdrawals, vault deployment and wallet

@@ -2,7 +2,7 @@
 
 ## LIVE mainnet demo (default)
 
-1. Open https://fuse-rust-eight.vercel.app. The sidebar switch shows **Live mainnet** (sandbox is opt-in).
+1. Open https://fusebch.vercel.app. The sidebar switch shows **Live mainnet** (sandbox is opt-in).
 2. **Overview** (`/app`): chain tip, the live vault `fuse-live-1`, flash count and fees, Cauldron pools, sentinel, and broadcast ON.
 3. **Execute** (`/app/execute/live`): pick *Flash loan* or *Flash → Cauldron route*, connect WizardConnect or paste
    your BCH address, then press **Compose + preflight**. The tx is built from live UTXOs, every covenant is simulated in the BCH
@@ -30,7 +30,7 @@ address. Cashonize's front page may show a later, unused address (gap-limit disp
 Before you start: a WizardConnect-capable BCH wallet with ≥ 5,000 sats in **plain (non-token) coins on receive address
 index 0** (`m/44'/145'/0'/0/0`). FUSE only asks for and signs with that one path.
 
-1. Open https://fuse-rust-eight.vercel.app/app/execute/live in **Live mainnet** mode. Choose **Flash loan** (cheapest).
+1. Open https://fusebch.vercel.app/app/execute/live in **Live mainnet** mode. Choose **Flash loan** (cheapest).
 2. Press **Connect WizardConnect**, scan the QR with the wallet, approve the pairing.
    - [ ] The address FUSE shows equals the wallet's *first receive address* (index 0). FUSE derives it from the shared
          xpub with `getPubkey(0, 0n)`: path name `receive` = `m/44'/145'/0'/0`, address index 0. If it differs, stop: the
@@ -105,7 +105,7 @@ Click "Reset local world" in the Studio to replay.
 
 ## Hosted demo (Vercel)
 
-**Live: https://fuse-rust-eight.vercel.app**. This is the same app, with the FUSE API running **in-process** in a
+**Live: https://fusebch.vercel.app**. This is the same app, with the FUSE API running **in-process** in a
 serverless route handler (`apps/web/app/api/[...path]/route.ts` → `services/api/src/embedded.ts`, bundled by
 `scripts/hosted/build-embedded.mjs`).
 

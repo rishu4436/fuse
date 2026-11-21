@@ -7,7 +7,7 @@ import { writeFileSync } from 'node:fs';
 const OUT = '/workspace/r6/run.json'; const rec = { startedAt: new Date().toISOString(), events: [] };
 const save = () => writeFileSync(OUT, JSON.stringify(rec, null, 1));
 const log = (m) => { console.log(new Date().toISOString(), m); rec.events.push([new Date().toISOString(), m]); save(); };
-const FUSE = 'https://fuse-rust-eight.vercel.app';
+const FUSE = 'https://fusebch.vercel.app';
 const b = await chromium.launch({ channel: 'chrome', headless: true });
 const fctx = await b.newContext({ viewport: { width: 1400, height: 1000 } });
 await fctx.addInitScript(() => { window.__wiz = null; Object.defineProperty(navigator, 'clipboard', { value: { writeText: async (t) => { window.__wiz = t; }, readText: async () => window.__wiz } }); });

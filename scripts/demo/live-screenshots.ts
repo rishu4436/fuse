@@ -1,7 +1,7 @@
 // Captures the LIVE (mainnet) screens of the hosted app at 1440x900 into evidence/screenshots/live-*.png.
 // Read-only: composes a flash loan preflight (no signing, no broadcast) and verifies an existing certificate.
 import { chromium } from '@playwright/test';
-const WEB = process.env.FUSE_WEB ?? 'https://fuse-rust-eight.vercel.app';
+const WEB = process.env.FUSE_WEB ?? 'https://fusebch.vercel.app';
 const ADDR = process.env.FUSE_E2E_ADDRESS ?? 'bitcoincash:qqtvuzkypa5y75jl05hatzh8jlfsly2d6v28mh8ge9';
 const CERT = process.argv[2];
 const out = new URL('../../evidence/screenshots/', import.meta.url).pathname;

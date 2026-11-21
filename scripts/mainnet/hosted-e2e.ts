@@ -11,7 +11,7 @@ import { signAuthAsUser, structureHashOfTemplate, type Authorization } from '../
 
 const args = process.argv.slice(2); const [action] = args;
 const flag = (k: string) => { const i = args.indexOf(`--${k}`); return i >= 0 ? args[i + 1] : undefined; };
-const BASE = flag('base') ?? process.env.FUSE_WEB ?? 'https://fuse-rust-eight.vercel.app';
+const BASE = flag('base') ?? process.env.FUSE_WEB ?? 'https://fusebch.vercel.app';
 const BROADCAST = args.includes('--broadcast');
 const LEDGER = '/home/box/secrets/fuse-live-ledger.json';
 const EVIDENCE = new URL('../../evidence/mainnet/live-run.json', import.meta.url).pathname;
