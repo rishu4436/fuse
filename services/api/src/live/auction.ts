@@ -48,6 +48,7 @@ export interface QuoteVerdict { solverId: string; strategy: string; quoteHash: s
 
 export async function settleAuction(configs: VaultConfig[], registry: RegisteredSolver[], body: { rfq: Rfq; rfqSig: string; quotes: SignedQuote[] }, now = Math.floor(Date.now() / 1000)) {
   const key = serverKey() ?? fail('auctions need the attestation key (FUSE_AUTH_KEY)', 503);
+  const started = Date.now();
   const rh = rfqHash(body.rfq);
   if (!verifySchnorr(body.rfqSig, key.pub, rh)) fail('RFQ signature invalid (not issued by this deployment)', 403);
   if (body.rfq.expiresAt < now) fail('RFQ expired', 410);
@@ -75,6 +76,9 @@ export async function settleAuction(configs: VaultConfig[], registry: Registered
     }
     v.valid = reasons.length === 0; verdicts.push(v);
   }
+  const finished = now + Math.floor((Date.now() - started) / 1000);
+  if (body.rfq.expiresAt <= finished) fail('RFQ expired during repricing', 410);
+  verdicts.forEach((v,i) => { if (body.quotes[i].quote.expiresAt <= finished) { v.valid = false; v.reasons.push('quote expired before settlement'); } });
   const ranked = verdicts.filter((v) => v.valid).sort((a, b) => { const d = BigInt(a.recomputed!.expectedUserCost) - BigInt(b.recomputed!.expectedUserCost); return d !== 0n ? (d < 0n ? -1 : 1) : a.quoteHash < b.quoteHash ? -1 : 1; });
   ranked.forEach((v, i) => { v.rank = i + 1; v.score = v.recomputed!.expectedUserCost; });
   const winner = ranked[0] ?? fail(`no valid quote: ${verdicts.map((v) => `${v.strategy}: ${v.reasons.join('; ')}`).join(' | ') || 'none submitted'}`, 409);

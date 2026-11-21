@@ -13,9 +13,9 @@ const post = async <T>(p: string, b: unknown) => fromJson<T>(await (await fetch(
 const waitFor = async <T>(f: () => Promise<T | undefined>, ms: number) => { const end = Date.now() + ms; for (;;) { const v = await f().catch(() => undefined); if (v) return v; if (Date.now() > end) throw new Error('timeout'); await new Promise((r) => setTimeout(r, 300)); } };
 
 beforeAll(async () => {
-  procs.push(spawn('npx', ['tsx', 'services/api/src/server.ts'], { env: { ...process.env, PORT: String(PORT), FUSE_AUCTION_WINDOW: '6' }, stdio: 'ignore' }));
+  procs.push(spawn(process.execPath, ['--import', 'tsx', 'services/api/src/server.ts'], { env: { ...process.env, PORT: String(PORT), FUSE_AUCTION_WINDOW: '6' }, stdio: 'ignore' }));
   await waitFor(() => get<{ ok: boolean }>('/api/health').then((h) => h.ok || undefined), 30_000);
-  for (const k of ['direct', 'routing', 'flash', 'rogue']) procs.push(spawn('npx', ['tsx', 'services/solver-reference/src/worker.ts', k], { env: { ...process.env, FUSE_API: API }, stdio: 'ignore' }));
+  for (const k of ['direct', 'routing', 'flash', 'rogue']) procs.push(spawn(process.execPath, ['--import', 'tsx', 'services/solver-reference/src/worker.ts', k], { env: { ...process.env, FUSE_API: API }, stdio: 'ignore' }));
   await waitFor(() => get<unknown[]>('/api/solvers').then((s) => s.length === 4 || undefined), 40_000);
 }, 90_000);
 afterAll(() => { for (const p of procs) p.kill('SIGTERM'); });

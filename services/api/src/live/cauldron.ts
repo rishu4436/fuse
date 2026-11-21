@@ -3,6 +3,7 @@
 // value/tokens taken from the decoded output, and the outpoint must still be unspent.
 import { cauldronBuyQuote, cauldronSellQuote } from '@fuse/contracts';
 import { contractLockingBytecode, type TokenSpec } from '@fuse/transaction-composer';
+import { readSource } from './source.js';
 import { outputAt, outspend, pool } from './chain.js';
 
 export const PUSD = '2469acc5afa4b10cb5b5c04afb89c3a3ffd61c5da9c01e26d00951cae2a02544';
@@ -11,17 +12,19 @@ let cache: { at: number; pools: LivePool[]; indexerCount: number } | null = null
 
 export async function livePools(maxVerify = 5): Promise<{ pools: LivePool[]; indexerCount: number; checkedAt: string; source: string }> {
   if (cache && Date.now() - cache.at < 20_000) return { pools: cache.pools, indexerCount: cache.indexerCount, checkedAt: new Date(cache.at).toISOString(), source: 'indexer.cauldron.quest + bchexplorer.cash raw txs' };
-  const res = await fetch(`https://indexer.cauldron.quest/cauldron/pool/active?token=${PUSD}`, { signal: AbortSignal.timeout(15_000) });
-  if (!res.ok) throw Object.assign(new Error(`cauldron indexer HTTP ${res.status}`), { statusCode: 502 });
-  const { active } = (await res.json()) as { active: Array<{ owner_pkh: string; txid: string; tx_pos: number; sats: number; tokens: number; pool_id: string }> };
+  const base = process.env.FUSE_CAULDRON_INDEXER ?? 'https://indexer.cauldron.quest';
+  const active = await readSource(base, async () => {
+    const res = await fetch(base + '/cauldron/pool/active?token=' + PUSD, { signal: AbortSignal.timeout(6000), cache: 'no-store' });
+    if (!res.ok) throw Object.assign(new Error('Cauldron indexer HTTP ' + res.status), { statusCode: 503 });
+    const { active } = (await res.json()) as { active: Array<{ owner_pkh: string; txid: string; tx_pos: number; sats: number; tokens: number; pool_id: string }> };
+    return active;
+  });
   const cand = active.filter((a) => a.sats >= 200_000 && a.tokens >= 10).sort((a, b) => b.sats - a.sats).slice(0, maxVerify);
   const verified = await pool(cand, 4, async (a) => {
-    try {
-      const o = await outputAt(a.txid, a.tx_pos); const sp = { spent: false }; // spent-ness re-checked for the chosen pools at prepare time
+      const [o, sp] = await Promise.all([outputAt(a.txid, a.tx_pos), outspend(a.txid, a.tx_pos)]);
       const expected = contractLockingBytecode({ kind: 'cauldron-pool', ownerPkh: a.owner_pkh });
       if (sp.spent || o.lockingBytecode !== expected || o.token?.category !== PUSD || o.token.nft) return null;
       return { poolId: a.pool_id, ownerPkh: a.owner_pkh, txid: a.txid, vout: a.tx_pos, satoshis: o.satoshis, tokens: o.token.amount, lockingBytecode: o.lockingBytecode, token: o.token, satsPerUnit: Number(o.satoshis) / Number(o.token.amount) } as LivePool;
-    } catch { return null; }
   });
   const pools = verified.filter((x): x is LivePool => x !== null);
   cache = { at: Date.now(), pools, indexerCount: active.length };

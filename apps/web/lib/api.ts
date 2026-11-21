@@ -9,7 +9,7 @@ export const sandboxToken = () => { try { return typeof window === 'undefined' ?
 const keepToken = (res: Response) => { const t = res.headers.get('x-fuse-sandbox'); if (t && typeof window !== 'undefined') try { window.sessionStorage.setItem(SBX, t); } catch { /* storage disabled */ } };
 export async function api<T>(path: string, init?: RequestInit & { json?: unknown }): Promise<T> {
   const tok = path.startsWith('/api/live') || path === '/api/broadcast' ? null : sandboxToken();
-  const res = await fetch(path, { ...init, headers: { 'content-type': 'application/json', ...(tok ? { 'x-fuse-sandbox': tok } : {}), ...(init?.headers ?? {}) }, body: init?.json !== undefined ? toJson(init.json) : init?.body, cache: 'no-store' });
+  const res = await fetch(path, { ...init, signal: init?.signal ?? AbortSignal.timeout(40_000), headers: { 'content-type': 'application/json', ...(tok ? { 'x-fuse-sandbox': tok } : {}), ...(init?.headers ?? {}) }, body: init?.json !== undefined ? toJson(init.json) : init?.body, cache: 'no-store' });
   keepToken(res);
   const text = await res.text();
   if (!res.ok) { let m = text; try { m = JSON.parse(text).message ?? text; } catch { /* plain text */ } throw new ApiError(res.status, m); }

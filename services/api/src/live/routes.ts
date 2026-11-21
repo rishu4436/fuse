@@ -2,13 +2,14 @@
 // transactions; /api/broadcast relays already-signed hex after a full VM check. The server holds no keys.
 import { z } from 'zod';
 import type { FastifyInstance } from 'fastify';
-import { confirmations, tip, addressUtxos, ESPLORA, EXPLORER_TX } from './chain.js';
+import { sourceHealth } from './source.js';
+import { freshTip, confirmations, tip, addressUtxos, ESPLORA, EXPLORER_TX } from './chain.js';
 import { loadVaultConfigs, trackVault } from './vault.js';
 import { livePools, bestRoundTrip } from './cauldron.js';
 import { liveParyon } from './paryon.js';
-import { prepare, LIVE_CAPS } from './execute.js';
+import { assertInputsUnspent, prepare, LIVE_CAPS } from './execute.js';
 import { broadcast, verifySigned, rateLimit } from './relay.js';
-import { issueAuthorization, serverKey } from './authz.js';
+import { openAuthorization, issueAuthorization, serverKey } from './authz.js';
 import { liveCertificate, esploraReader } from './certificate.js';
 import { liveRederiver, intentBinder } from './verify.js';
 import { verifyCertificate } from '@fuse/proof-verifier';
@@ -30,7 +31,7 @@ export function registerLive(app: FastifyInstance, ctx: { root: string; paryonSn
   app.get('/api/live/status', async () => {
     const t0 = Date.now(); let tipHeight: number | null = null; let err: string | null = null;
     try { tipHeight = await tip(); } catch (e) { err = (e as Error).message; }
-    return { mode: 'LIVE', network: 'mainnet', tipHeight, chainSource: ESPLORA, latencyMs: Date.now() - t0, error: err, broadcast: broadcastEnabled() && serverKey() ? 'ENABLED (relays only signed txs that match an unexpired, single-use execution authorization from preflight; full VM + constraint re-check; server holds no fund keys)' : 'DISABLED', authorization: serverKey() ? { scheme: 'Schnorr secp256k1 over sha256("fuse-authz/v1:" + payload)', attestationPubkey: serverKey()!.pub, ttlSeconds: 300, singleUse: 'per-instance used-set + exact input outpoints re-checked unspent' } : null, vaults: configs().map((c) => ({ id: c.id, status: c.status, category: c.category })), caps: LIVE_CAPS, sandbox: 'opt-in local BCH VM (toggle in the app)' };
+    return { mode: 'LIVE', network: 'mainnet', tipHeight, sources: sourceHealth(), checkedAt: new Date().toISOString(), chainSource: new URL(ESPLORA).hostname, latencyMs: Date.now() - t0, error: err, broadcast: broadcastEnabled() && serverKey() ? 'ENABLED (relays only signed txs that match an unexpired, single-use execution authorization from preflight; full VM + constraint re-check; server holds no fund keys)' : 'DISABLED', authorization: serverKey() ? { scheme: 'Schnorr secp256k1 over sha256("fuse-authz/v1:" + payload)', attestationPubkey: serverKey()!.pub, ttlSeconds: 300, singleUse: 'per-instance used-set + exact input outpoints re-checked unspent' } : null, vaults: configs().map((c) => ({ id: c.id, status: c.status, category: c.category })), caps: LIVE_CAPS, sandbox: 'opt-in local BCH VM (toggle in the app)' };
   });
   app.get('/api/live/vaults', async () => Promise.all(configs().map((c) => trackVault(c).catch((e: Error) => ({ id: c.id, error: e.message })))));
   app.get('/api/live/vault/:id', async (req, reply) => { const c = configs().find((x) => x.id === (req.params as { id: string }).id); return c ? trackVault(c) : reply.status(404).send({ error: 'NOT_FOUND' }); });
@@ -67,6 +68,13 @@ export function registerLive(app: FastifyInstance, ctx: { root: string; paryonSn
   });
   app.get('/api/live/auction/solvers', async () => loadSolverRegistry(ctx.root));
   const AuthZ = z.object({ payload: z.string().max(200_000), authHash: z.string(), serverPubkey: z.string(), serverSig: z.string() });
+  app.post('/api/live/check-authorization', async (req) => {
+    const p = openAuthorization(AuthZ.parse(req.body), serverKey()?.pub ?? '');
+    const chainTip = await freshTip();
+    await assertInputsUnspent(p.template.inputs);
+    if (Date.now() >= p.expiresAt * 1000) throw Object.assign(new Error('Authorization expired. Run preflight again.'), {statusCode: 409});
+    return { chainTip, intentId: p.intentId };
+  });
   app.post('/api/broadcast', async (req) => {
     rateLimit(String(req.headers['x-forwarded-for'] ?? req.ip).split(',')[0]);
     const b = z.object({ rawHex: z.string(), authorization: AuthZ.optional(), userSignature: z.object({ pubkey: z.string(), sig: z.string() }).optional() }).parse(req.body);
@@ -78,6 +86,6 @@ export function registerLive(app: FastifyInstance, ctx: { root: string; paryonSn
   // third-party re-verification of a submitted certificate (+ optional authorization) under the four levels
   app.post('/api/live/verify-certificate', async (req) => {
     const b = z.object({ certificate: z.unknown(), authorization: CertReq.shape.authorization, userSignature: CertReq.shape.userSignature, attestationPubkey: z.string().regex(/^0[23][0-9a-f]{64}$/).optional() }).parse(req.body);
-    return verifyCertificate(b.certificate, esploraReader, { rederive: liveRederiver(configs()), intent: intentBinder({ authorization: b.authorization, userSignature: b.userSignature, trustedPubkey: b.attestationPubkey ?? serverKey()?.pub ?? null }) });
+    return verifyCertificate(b.certificate, esploraReader, { rederive: liveRederiver(configs()), intent: intentBinder({ authorization: b.authorization, userSignature: b.userSignature, trustedPubkey: serverKey()?.pub ?? null }) });
   });
 }

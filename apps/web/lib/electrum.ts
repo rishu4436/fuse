@@ -1,6 +1,6 @@
 // Minimal Fulcrum/Electrum Cash JSON-RPC over WebSocket, run in the USER'S browser (READ-ONLY).
 // Used only to list the connected wallet's own UTXOs for the mainnet preflight. No broadcast method is exposed.
-export const ELECTRUM_SERVERS = (process.env.NEXT_PUBLIC_ELECTRUM_WSS ?? 'wss://bch.imaginary.cash:50004,wss://electrum.imaginary.cash:50004').split(',');
+export const ELECTRUM_SERVERS = (process.env.NEXT_PUBLIC_ELECTRUM_WSS ?? 'wss://cashnode.bch.ninja,wss://bch.imaginary.cash:50004,wss://electrum.imaginary.cash:50004').split(',');
 export interface ElectrumUtxo { tx_hash: string; tx_pos: number; height: number; value: number; token_data?: unknown }
 
 export async function listUnspent(address: string, servers = ELECTRUM_SERVERS, timeoutMs = 8000): Promise<{ server: string; utxos: ElectrumUtxo[] }> {

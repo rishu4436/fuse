@@ -16,6 +16,8 @@ export function WalletConnect({ onHandle }: { onHandle?: (h: WalletHandle | null
   useEffect(() => () => ref.current.cleanup?.(), []);
 
   const connect = async () => {
+    ref.current.cleanup?.();
+    onHandle?.(null);
     try {
       const [{ initiateDappRelay }, { DappConnectionManager }, lib] = await Promise.all([import('@wizardconnect/core'), import('@wizardconnect/dapp'), import('@bitauth/libauth')]);
       const mgr = new DappConnectionManager('FUSE Studio', `${location.origin}/icon.svg`, { session: false });
@@ -28,7 +30,9 @@ export function WalletConnect({ onHandle }: { onHandle?: (h: WalletHandle | null
         const handle: WalletHandle | null = address ? {
           address,
           sign: async (req, inputPaths) => {
-            const res = await mgr.signTransaction({ transaction: wizSignPayload(req) as never, inputPaths });
+            let timer: ReturnType<typeof setTimeout> | undefined;
+            const res = await Promise.race([mgr.signTransaction({ transaction: wizSignPayload(req) as never, inputPaths }),
+              new Promise<never>((_, reject) => { timer = setTimeout(() => reject(new Error('Wallet approval timed out. Run preflight again.')), 90_000); })]).finally(() => clearTimeout(timer));
             if (res.error) throw new Error(res.error);
             return res.signedTransaction;
           },
@@ -36,7 +40,7 @@ export function WalletConnect({ onHandle }: { onHandle?: (h: WalletHandle | null
         setSt({ kind: 'connected', wallet: mgr.walletName ?? 'Wallet', address, protocol: mgr.protocol, handle });
         onHandle?.(handle);
       });
-      mgr.on('disconnect', (_r, m) => setSt({ kind: 'error', message: `Wallet disconnected${m ? `: ${m}` : ''}` }));
+      mgr.on('disconnect', (_r, m) => { onHandle?.(null); setSt({ kind: 'error', message: m || 'Wallet disconnected' }); });
       ref.current = { cleanup: () => relay.cleanup(), disconnect: async () => { await mgr.sendDisconnect('FUSE Studio closed the session').catch(() => undefined); relay.cleanup(); } };
       const qr = await QRCode.toDataURL(relay.qrUri, { margin: 1, width: 220, color: { dark: '#e3e9ef', light: '#0b0f15' } });
       setSt({ kind: 'pairing', uri: relay.uri, qr, relay: relayState });
@@ -59,6 +63,7 @@ export function WalletConnect({ onHandle }: { onHandle?: (h: WalletHandle | null
             <img src={st.qr} alt="WizardConnect pairing QR code" className="size-[180px] rounded-lg border hairline" data-testid="wc-qr" />
             <div className="text-center text-[11.5px] text-fog-400">Scan with a WizardConnect wallet · relay <span className="text-fog-200">{st.relay}</span></div>
             <div className="flex gap-2">
+              <a className="underline" href={st.uri}>Open wallet</a>
               <Button variant="ghost" onClick={() => navigator.clipboard?.writeText(st.uri)}>Copy link</Button>
               <Button variant="quiet" onClick={disconnect}>Cancel</Button>
             </div>

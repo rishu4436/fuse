@@ -1,0 +1,218 @@
+{
+  "certificate": {
+    "schema": "fuse.certificate/v1",
+    "certificateId": "cert_9df5dcede4a6e3a7d14f738a",
+    "intentId": "mainnet_flash_use_9df5dcede4a6",
+    "intentCommitment": "5555e3ff2c98606ce02662187bcf824d74d173944e6d6847c44636f3015ae419",
+    "policyCommitment": null,
+    "network": "mainnet",
+    "executionClass": "ATOMIC_SINGLE_TX",
+    "solverId": "fuse-live",
+    "quoteCommitment": "6b5d28fdae0a8e29cb63236c3f89ddebd927cfd76a49d308ea5e83142fd8c05e",
+    "contracts": [
+      {
+        "role": "vault",
+        "name": "FlashVaultBCH",
+        "lockingBytecode": "aa2014fa3605d51dd8c9cf29878038a46c72eab1862c65ad42966d17042d59a723db87"
+      }
+    ],
+    "transactions": [
+      {
+        "txid": "9df5dcede4a6e3a7d14f738a0a340d9f806c2317bedb33238d081a21d6bee8d0",
+        "blockHeight": 978246,
+        "blockHash": "0000000000000000011311bc962b217e40df2147805241937a8d38b2944bfbc9"
+      }
+    ],
+    "inputs": [
+      {
+        "txid": "9df5dcede4a6e3a7d14f738a0a340d9f806c2317bedb33238d081a21d6bee8d0",
+        "outpoint": "cb003c5645ec52aea77b896e7f29fba22a751ad937a8a44f4d1649f954733c3c:0"
+      },
+      {
+        "txid": "9df5dcede4a6e3a7d14f738a0a340d9f806c2317bedb33238d081a21d6bee8d0",
+        "outpoint": "5584a8b0aabba5c7d250c70a6f72a5323cba6cf2d55cf283073aa93cb87af5e0:0"
+      }
+    ],
+    "outputs": [
+      {
+        "txid": "9df5dcede4a6e3a7d14f738a0a340d9f806c2317bedb33238d081a21d6bee8d0",
+        "vout": 0,
+        "lockingBytecode": "aa2014fa3605d51dd8c9cf29878038a46c72eab1862c65ad42966d17042d59a723db87",
+        "satoshis": "30500",
+        "token": {
+          "category": "fa0c5163b8490a12d995f09ebc6c5cc32ebe3b3fc104951819b7cfee5d74549b",
+          "amount": "0",
+          "nft": {
+            "capability": "mutable",
+            "commitment": "0500000000000000f40100000000000000"
+          }
+        },
+        "role": "vault-continuation"
+      },
+      {
+        "txid": "9df5dcede4a6e3a7d14f738a0a340d9f806c2317bedb33238d081a21d6bee8d0",
+        "vout": 1,
+        "lockingBytecode": "76a9147501a419ad434b19fbf62b63d467b4f32a619f7188ac",
+        "satoshis": "18814",
+        "role": "owner"
+      }
+    ],
+    "vaultContinuations": [
+      {
+        "txid": "9df5dcede4a6e3a7d14f738a0a340d9f806c2317bedb33238d081a21d6bee8d0",
+        "inputIndex": 0,
+        "minReturn": "30500",
+        "asset": "BCH"
+      }
+    ],
+    "fees": {
+      "minerFeeSats": "1086",
+      "liquidityFee": "100",
+      "solverFee": "0"
+    },
+    "outcome": {
+      "ownerLockingBytecode": "76a9147501a419ad434b19fbf62b63d467b4f32a619f7188ac",
+      "ownerReceives": [
+        {
+          "asset": "BCH",
+          "amount": "18814"
+        }
+      ]
+    },
+    "checks": [
+      {
+        "name": "chain-derived",
+        "ok": true
+      },
+      {
+        "name": "vault-repayment",
+        "ok": true
+      },
+      {
+        "name": "vault-state-transition",
+        "ok": true
+      },
+      {
+        "name": "fee-accounting",
+        "ok": true
+      }
+    ],
+    "confirmation": "CONFIRMED",
+    "simulated": false,
+    "issuedAt": 1795231403,
+    "issuer": "fuse-live-api",
+    "commitment": "fdeb57ffa2c11cccef9b6fdb9c914451549ba8ad4edcbb33b8cf9cb2f1e5f2a5"
+  },
+  "authorization": {
+    "payload": "eyJ2IjoxLCJraW5kIjoiZnVzZS5leGVjdXRpb24tYXV0aG9yaXphdGlvbi92MSIsImludGVudElkIjoiaW50XzhlNjZiYzkwOTJhMzJmOTBiNWNmYzc4MCIsIm5ldHdvcmsiOiJtYWlubmV0IiwiaXNzdWVkQXQiOjE3OTUyMzAzMTMsImV4cGlyZXNBdCI6MTc5NTIzMDYxMywic3RydWN0dXJlSGFzaCI6IjgxNzJhZDYzNjA4ZDViMzBhNTIzMGI2ODMxNmY0OTU4MThjNGFhOGQ2YWI0MjFjYzM3MTQwMTgwYTg1YmZmZGMiLCJhY3Rpb24iOiJmbGFzaCIsImFkZHJlc3MiOiJiaXRjb2luY2FzaDpxcDZzcmZxZTQ0cDVreDBtN2M0azg0cjhrbmVqNWN2bHd5ZGV1dGE1dGEiLCJ0ZW1wbGF0ZUhhc2giOiJhOTU0MDJiMTAwOGUzOWViZTVkMTRiZjg0NWEzNzU3ZTY2MWU4NWRkMzdlMzEyODYwYzBmMTcxYTk3OGZkY2M3IiwidGVtcGxhdGUiOnsidmVyc2lvbiI6MiwibG9ja3RpbWUiOjAsImlucHV0cyI6W3sidHhpZCI6ImNiMDAzYzU2NDVlYzUyYWVhNzdiODk2ZTdmMjlmYmEyMmE3NTFhZDkzN2E4YTQ0ZjRkMTY0OWY5NTQ3MzNjM2MiLCJ2b3V0IjowLCJzYXRvc2hpcyI6IjMwNDAwbiIsImxvY2tpbmdCeXRlY29kZSI6ImFhMjAxNGZhMzYwNWQ1MWRkOGM5Y2YyOTg3ODAzOGE0NmM3MmVhYjE4NjJjNjVhZDQyOTY2ZDE3MDQyZDU5YTcyM2RiODciLCJ0b2tlbiI6eyJjYXRlZ29yeSI6ImZhMGM1MTYzYjg0OTBhMTJkOTk1ZjA5ZWJjNmM1Y2MzMmViZTNiM2ZjMTA0OTUxODE5YjdjZmVlNWQ3NDU0OWIiLCJhbW91bnQiOiIwbiIsIm5mdCI6eyJjYXBhYmlsaXR5IjoibXV0YWJsZSIsImNvbW1pdG1lbnQiOiIwNDAwMDAwMDAwMDAwMDAwOTAwMTAwMDAwMDAwMDAwMDAwIn19LCJyb2xlIjoidmF1bHQiLCJ1bmxvY2siOnsia2luZCI6ImZsYXNodmF1bHQtYmNoIiwicGFyYW1zIjp7InZhdWx0Q2F0ZWdvcnkiOiJmYTBjNTE2M2I4NDkwYTEyZDk5NWYwOWViYzZjNWNjMzJlYmUzYjNmYzEwNDk1MTgxOWI3Y2ZlZTVkNzQ1NDliIiwiZmVlQnBzIjoiOW4iLCJtaW5GZWUiOiIxMDBuIiwibWF4RXhwb3N1cmUiOiIxMDAwMDBuIiwib3duZXJQa2giOiIxNmNlMGFjNDBmNjg0ZjUyNWY3ZDJmZDU4YWU3OTdkMzBmOTE0ZGQzIn0sImZuIjoiZmxhc2gifX0seyJ0eGlkIjoiNTU4NGE4YjBhYWJiYTVjN2QyNTBjNzBhNmY3MmE1MzIzY2JhNmNmMmQ1NWNmMjgzMDczYWE5M2NiODdhZjVlMCIsInZvdXQiOjAsInNhdG9zaGlzIjoiMjAwMDBuIiwibG9ja2luZ0J5dGVjb2RlIjoiNzZhOTE0NzUwMWE0MTlhZDQzNGIxOWZiZjYyYjYzZDQ2N2I0ZjMyYTYxOWY3MTg4YWMiLCJyb2xlIjoid2FsbGV0IiwidW5sb2NrIjp7ImtpbmQiOiJwMnBraCIsInNpZ25lciI6InVzZXIifX1dLCJvdXRwdXRzIjpbeyJsb2NraW5nQnl0ZWNvZGUiOiJhYTIwMTRmYTM2MDVkNTFkZDhjOWNmMjk4NzgwMzhhNDZjNzJlYWIxODYyYzY1YWQ0Mjk2NmQxNzA0MmQ1OWE3MjNkYjg3Iiwic2F0b3NoaXMiOiIzMDUwMG4iLCJ0b2tlbiI6eyJjYXRlZ29yeSI6ImZhMGM1MTYzYjg0OTBhMTJkOTk1ZjA5ZWJjNmM1Y2MzMmViZTNiM2ZjMTA0OTUxODE5YjdjZmVlNWQ3NDU0OWIiLCJhbW91bnQiOiIwbiIsIm5mdCI6eyJjYXBhYmlsaXR5IjoibXV0YWJsZSIsImNvbW1pdG1lbnQiOiIwNTAwMDAwMDAwMDAwMDAwZjQwMTAwMDAwMDAwMDAwMDAwIn19LCJyb2xlIjoidmF1bHQtY29udGludWF0aW9uIiwibGFiZWwiOiJwcmluY2lwYWwgMzA0MDAgKyBmbGFzaCBmZWUgMTAwIn0seyJsb2NraW5nQnl0ZWNvZGUiOiI3NmE5MTQ3NTAxYTQxOWFkNDM0YjE5ZmJmNjJiNjNkNDY3YjRmMzJhNjE5ZjcxODhhYyIsInNhdG9zaGlzIjoiMTg4MTRuIiwicm9sZSI6ImNoYW5nZSJ9XX0sImNvbnN0cmFpbnRzIjp7InVzZXJMb2NraW5nQnl0ZWNvZGUiOiI3NmE5MTQ3NTAxYTQxOWFkNDM0YjE5ZmJmNjJiNjNkNDY3YjRmMzJhNjE5ZjcxODhhYyIsIm1heE1pbmVyRmVlIjoiNTAwMG4iLCJleHBlY3RlZFVzZXJDb3N0IjoiMTE4Nm4iLCJjYXBpdGFsIjoiMG4iLCJtYXhVc2VyQ29zdCI6IjExODZuIiwiYWxsb3dlZFJlY2lwaWVudHMiOlsiYWEyMDE0ZmEzNjA1ZDUxZGQ4YzljZjI5ODc4MDM4YTQ2YzcyZWFiMTg2MmM2NWFkNDI5NjZkMTcwNDJkNTlhNzIzZGI4NyIsIjc2YTkxNDc1MDFhNDE5YWQ0MzRiMTlmYmY2MmI2M2Q0NjdiNGYzMmE2MTlmNzE4OGFjIl0sInZhdWx0Ijp7ImlkIjoiZnVzZS1saXZlLTEiLCJsb2NraW5nQnl0ZWNvZGUiOiJhYTIwMTRmYTM2MDVkNTFkZDhjOWNmMjk4NzgwMzhhNDZjNzJlYWIxODYyYzY1YWQ0Mjk2NmQxNzA0MmQ1OWE3MjNkYjg3IiwiY2F0ZWdvcnkiOiJmYTBjNTE2M2I4NDkwYTEyZDk5NWYwOWViYzZjNWNjMzJlYmUzYjNmYzEwNDk1MTgxOWI3Y2ZlZTVkNzQ1NDliIiwiZmVlQnBzIjoiOW4iLCJtaW5GZWUiOiIxMDBuIiwibWF4RXhwb3N1cmUiOiIxMDAwMDBuIiwib3duZXJQa2giOiIxNmNlMGFjNDBmNjg0ZjUyNWY3ZDJmZDU4YWU3OTdkMzBmOTE0ZGQzIiwicmVxdWlyZWRSZXR1cm4iOiIzMDUwMG4ifSwicm91dGUiOm51bGx9LCJndWFyZGlhbiI6eyJsZXZlbCI6IlBBU1MiLCJvayI6dHJ1ZSwiY2hlY2tzIjpbIm9rOmNvdmVuYW50IHNpbXVsYXRpb24iLCJvazpubyBoaWRkZW4gdHJhbnNmZXJzIiwib2s6bWluZXIgZmVlIHdpdGhpbiBjYXAiLCJvazp5b3VyIG5ldCBjb3N0Iiwib2s6dmF1bHQgcmVwYWlkIGluIHRoZSBzYW1lIHR4Iiwib2s6bm8gdG9rZW4gc2lkZSBlZmZlY3RzIG9uIHlvdXIgd2FsbGV0Iiwib2s6eW91ciBjb2lucyBhcmUgY29uZmlybWVkIl19LCJhdWN0aW9uIjpudWxsfQ",
+    "authHash": "6c425ced7fb1951304543fb542650c1376455f75ed980a9c2af9cba3fa8de9ad",
+    "serverPubkey": "037e044ab06145cc82956a836cb712f0f422a5bc05371e49eabd4936592419401f",
+    "serverSig": "e96e6b428abc9c33eb3f25116f3829b97f62124ab805cdb81f490512f3b267a242e1229859d33dc8ca1b0490a074b2b10cd4f61e284fae29d81f526695af1ad7"
+  },
+  "userSignature": null,
+  "verification": {
+    "status": "VERIFIED",
+    "checks": [
+      {
+        "name": "schema",
+        "ok": true
+      },
+      {
+        "name": "certificate-commitment",
+        "ok": true
+      },
+      {
+        "name": "tx-hash:9df5dcede4a6",
+        "ok": true
+      },
+      {
+        "name": "claimed-block",
+        "ok": true,
+        "detail": "claimed block compared with chain reader"
+      },
+      {
+        "name": "confirmations:9df5dcede4a6",
+        "ok": true,
+        "detail": "36"
+      },
+      {
+        "name": "input:cb003c5645ec",
+        "ok": true
+      },
+      {
+        "name": "input:5584a8b0aabb",
+        "ok": true
+      },
+      {
+        "name": "output:9df5dced:0",
+        "ok": true,
+        "detail": "vault-continuation"
+      },
+      {
+        "name": "output:9df5dced:1",
+        "ok": true,
+        "detail": "owner"
+      },
+      {
+        "name": "vault-continuation:0",
+        "ok": true,
+        "detail": "returned 30500, required 30500"
+      },
+      {
+        "name": "owner-receives:BCH",
+        "ok": true,
+        "detail": "chain shows 18814, claimed 18814"
+      },
+      {
+        "name": "rederived:vault-params",
+        "ok": true,
+        "detail": "script rebuilt from fuse-live-1 params (feeBps 9, minFee 100) equals the claimed vault contract"
+      },
+      {
+        "name": "rederived:vault-input",
+        "ok": true,
+        "detail": "input 0 spends the vault identity NFT fa0c5163…"
+      },
+      {
+        "name": "rederived:vault-repayment",
+        "ok": true,
+        "detail": "vault in 30400, out 30500, required ≥ 30500 (fee = max(100, ⌈30400·9/10⁴⌉) = 100)"
+      },
+      {
+        "name": "rederived:vault-state-transition",
+        "ok": true,
+        "detail": "flashCount 4→5, cumulativeFees 400→500 (+100)"
+      },
+      {
+        "name": "rederived:fee-accounting",
+        "ok": true,
+        "detail": "miner fee 1086 (claimed 1086), liquidity fee 100 (claimed 100)"
+      },
+      {
+        "name": "intent-binding",
+        "ok": true,
+        "detail": "tx matches authorization int_8e66bc9092a32f90b5cfc780 (attestation key 037e044ab0…, Guardian PASS); no user wallet signature over the auth hash"
+      }
+    ],
+    "level": "INTENT_BOUND",
+    "levels": {
+      "INCLUDED": {
+        "ok": true,
+        "detail": "1 tx(s) found, re-hashed and confirmed"
+      },
+      "STRUCTURE_VERIFIED": {
+        "ok": true,
+        "detail": "2 inputs, 2 outputs, 1 vault continuation(s) and the owner outcome match chain data"
+      },
+      "OUTCOME_VERIFIED": {
+        "ok": true,
+        "detail": "5 contract-specific facts re-derived from chain data"
+      },
+      "INTENT_BOUND": {
+        "ok": true,
+        "detail": "tx matches authorization int_8e66bc9092a32f90b5cfc780 (attestation key 037e044ab0…, Guardian PASS); no user wallet signature over the auth hash"
+      }
+    },
+    "note": "Verified against independent chain data. This is execution verification, not a security audit. Highest level: INTENT_BOUND."
+  }
+}

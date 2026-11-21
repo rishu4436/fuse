@@ -1,0 +1,4 @@
+{
+  "buildCommand": "pnpm run build:hosted",
+  "env": { "FUSE_HOSTED": "1" }
+}

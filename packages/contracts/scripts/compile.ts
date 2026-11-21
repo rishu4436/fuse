@@ -11,6 +11,7 @@ mkdirSync(outDir, { recursive: true });
 const manifest: Record<string, { bytecodeSha256: string; opcodes: number; compiler: string }> = {};
 for (const file of readdirSync(join(root, 'contracts')).filter((f) => f.endsWith('.cash'))) {
   const artifact = compileFile(new URL(`../contracts/${file}`, import.meta.url));
+  artifact.source = artifact.source.replace(/\r\n/g, '\n');
   // updatedAt is the only non-deterministic field; pin it so artifacts are byte-reproducible.
   (artifact as { updatedAt: string }).updatedAt = '1970-01-01T00:00:00.000Z';
   writeFileSync(join(outDir, `${artifact.contractName}.json`), JSON.stringify(artifact, null, 2) + '\n');

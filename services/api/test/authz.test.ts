@@ -54,6 +54,18 @@ describe('broadcast is bound to a reviewed execution authorization', () => {
     await expect(send(sign(T()), a)).rejects.toMatchObject({ statusCode: 409, message: expect.stringMatching(/already spent/) });
     expect(relayed).toHaveLength(1);
   });
+  it('fails closed when the chain reader is unavailable', async () => {
+    const deps = chain();
+    deps.outspend = async () => { throw new Error('source unavailable'); };
+    await expect(broadcast({ rawHex: sign(T()), authorization: auth() }, { enabled: true, trustedPubkey: trusted, deps })).rejects.toThrow('source unavailable');
+    expect(relayed).toHaveLength(0);
+  });
+  it('relays a concurrently submitted authorization only once', async () => {
+    const a = auth();
+    const results = await Promise.allSettled([send(sign(T()), a), send(sign(T()), a)]);
+    expect(results.filter(r => r.status === 'fulfilled')).toHaveLength(1);
+    expect(relayed).toHaveLength(1);
+  });
   const variants: Array<[string, TxTemplate, RegExp]> = [
     ['a different output script', T({ outputs: [{ lockingBytecode: attacker.lb, satoshis: 30_000n, role: 'change' as never }, { lockingBytecode: user.lb, satoshis: 39_400n, role: 'change' as never }] }), /output 0 pays a different recipient/],
     ['a changed amount', T({ outputs: [{ lockingBytecode: vault.lb, satoshis: 29_000n, role: 'vault-continuation' as never }, { lockingBytecode: user.lb, satoshis: 40_400n, role: 'change' as never }] }), /output 0 amount/],

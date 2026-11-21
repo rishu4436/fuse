@@ -5,7 +5,7 @@
 import { binToHex, hexToBin, hash160, encodeTransaction, createVirtualMachineBch2026, decodeCashAddress, cashAddressToLockingBytecode } from '@bitauth/libauth';
 import { encodeVaultState, decodeVaultState, type BchVaultParams } from '@fuse/contracts';
 import { contractUnlocks, toUnsignedTransaction, sourceOutputsOf, templateHash, type TxTemplate, type TemplateInput, type TemplateOutput } from '@fuse/transaction-composer';
-import { addressUtxos, type LiveUtxo } from './chain.js';
+import { independentlyUnspent, outspend, freshTip, pool, addressUtxos, type LiveUtxo } from './chain.js';
 import { trackVault, paramsOfConfig, vaultLb, type VaultConfig } from './vault.js';
 import { livePools, bestRoundTrip, roundTripVia, assertPoolsUnspent, PUSD } from './cauldron.js';
 
@@ -66,6 +66,7 @@ export interface PrepareInput { action: Action; address: string; vaultId?: strin
 export async function prepare(configs: VaultConfig[], req: PrepareInput) {
   const user = userLockingBytecode(req.address);
   const coins = await addressUtxos(req.address);
+  if (coins.some(coin => coin.lockingBytecode !== user.lb)) fail('Chain reader returned a coin for another wallet', 503);
   const notes: string[] = [];
   let built: ReturnType<typeof sized>; let vaultInfo: Awaited<ReturnType<typeof trackVault>> | null = null; let route: Record<string, unknown> | null = null;
   let p: BchVaultParams | null = null; let requiredReturn: bigint | null = null; let expectedUserCost = 0n; let capital = 0n;
@@ -88,6 +89,7 @@ export async function prepare(configs: VaultConfig[], req: PrepareInput) {
     expectedUserCost = built.fee; capital = principal; notes.push(`You become the vault owner (owner PKH ${user.pkh}). Only your key can withdraw.`);
   } else {
     const cfg = configs.find((c) => c.id === req.vaultId) ?? configs.find((c) => c.status === 'active') ?? fail('no live vault configured', 503);
+    if (req.vaultId && cfg.id !== req.vaultId) fail('Unknown vault', 404);
     vaultInfo = await trackVault(cfg); p = paramsOfConfig(cfg);
     const v = vaultInfo.current ?? fail(`vault ${cfg.id} is closed`, 409);
     const pp = p;
@@ -150,8 +152,10 @@ export async function prepare(configs: VaultConfig[], req: PrepareInput) {
   const tok = (x: TemplateInput) => (x.token ? { token: { category: x.token.category, amount: x.token.amount.toString(), ...(x.token.nft ? { nft: { capability: x.token.nft.capability, commitment: x.token.nft.commitment } } : {}) } } : {});
   const sourceOutputs = t.inputs.map((x, i) => ({ outpointIndex: x.vout, outpointTransactionHash: x.txid, sequenceNumber: 0xffffffff, unlockingBytecode: cu.get(i) ?? '', lockingBytecode: x.lockingBytecode, valueSatoshis: src[i].valueSatoshis.toString(), ...tok(x) }));
   const userInputs = t.inputs.map((x, i) => [x, i] as const).filter(([x]) => x.unlock.kind === 'p2pkh' || x.unlock.kind === 'flashvault-bch-owner').map(([, i]) => i);
+  const chainTip = await freshTip();
+  await assertInputsUnspent(t.inputs);
   return {
-    network: 'mainnet' as const, action: req.action, address: req.address, templateHash: templateHash(t), template: t, minerFee: built.fee, estimatedSizeBytes: built.sizeBytes, expectedUserCost,
+    chainTip, network: 'mainnet' as const, action: req.action, address: req.address, templateHash: templateHash(t), template: t, minerFee: built.fee, estimatedSizeBytes: built.sizeBytes, expectedUserCost,
     vault: vaultInfo ? { id: vaultInfo.id, address: vaultInfo.address, current: vaultInfo.current } : p ? { id: 'new', category: p.vaultCategory, ownerPkh: p.ownerPkh, lockingBytecode: vaultLb(p) } : null,
     route, simulation: sim, risk, notes,
     constraints: {
@@ -162,6 +166,12 @@ export async function prepare(configs: VaultConfig[], req: PrepareInput) {
     },
     sign: { transactionHex, sourceOutputs, userPrompt: `FUSE ${req.action} on BCH mainnet — you pay ≈ ${expectedUserCost} sats`, broadcast: false, userInputs, inputPaths: userInputs.map((i) => [i, 'receive', 0] as [number, string, number]) },
   };
+}
+
+export async function assertInputsUnspent(inputs: TxTemplate['inputs']) {
+  await independentlyUnspent(inputs);
+  const states = await pool(inputs, 4, (i) => outspend(i.txid, i.vout));
+  if (states.some(state => state.spent !== false)) fail('An input was spent. Run preflight again.', 409);
 }
 
 export function guardianPreflight(t: TxTemplate, x: { userLb: string; vaultLb: string | null; fee: bigint; expectedUserCost: bigint; capital: bigint; maxUserCost?: bigint; sim: ReturnType<typeof simulate>; requiredReturn: bigint | null; coins: LiveUtxo[] }) {

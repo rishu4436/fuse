@@ -72,8 +72,9 @@ export default function LiveExecute() {
     setPf(await api<Prepared>('/api/live/prepare', { method: 'POST', json: body }));
   });
   const verify = (hex: string) => run('Verifying the signed transaction against mainnet source outputs…', async () => { setSignedHex(hex); setVer(await api<Verified>('/api/live/verify-signed', { method: 'POST', json: { rawHex: hex } })); });
-  const signWallet = () => run('Confirm in your wallet…', async () => { if (!wallet || !pf) return; const hex = await wallet.sign({ transactionHex: pf.sign.transactionHex, sourceOutputs: pf.sign.sourceOutputs, userPrompt: pf.sign.userPrompt }, pf.sign.inputPaths); setSignedHex(hex); setVer(await api<Verified>('/api/live/verify-signed', { method: 'POST', json: { rawHex: hex } })); });
-  const exportPkg = () => { if (!pf) return; const blob = new Blob([toJson({ network: 'mainnet', templateHash: pf.templateHash, ...pf.sign, template: pf.template, authorization: pf.authorization })], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `fuse-${action}-${pf.templateHash.slice(0, 8)}.json`; a.click(); };
+  const signWallet = () => run('Confirm in your wallet…', async () => { if (!wallet || !pf) return; await checkAuthorization(); const hex = await wallet.sign({ transactionHex: pf.sign.transactionHex, sourceOutputs: pf.sign.sourceOutputs, userPrompt: pf.sign.userPrompt }, pf.sign.inputPaths); setSignedHex(hex); setVer(await api<Verified>('/api/live/verify-signed', { method: 'POST', json: { rawHex: hex } })); });
+  const checkAuthorization = () => api('/api/live/check-authorization', { method: 'POST', json: pf?.authorization });
+  const exportPkg = () => run('Checking current inputs…', async () => { if (!pf) return; await checkAuthorization(); const blob = new Blob([toJson({ network: 'mainnet', templateHash: pf.templateHash, ...pf.sign, template: pf.template, authorization: pf.authorization })], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `fuse-${action}-${pf.templateHash.slice(0, 8)}.json`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); });
   const broadcast = () => run('Relaying the signed hex to BCH mainnet…', async () => { setSent(await api<Verified>('/api/broadcast', { method: 'POST', json: { rawHex: signedHex, authorization: pf?.authorization } })); });
   useEffect(() => {
     if (!sent?.txid) return; let stop = false;
@@ -86,6 +87,7 @@ export default function LiveExecute() {
   return (
     <div className="mx-auto max-w-6xl">
       <PageHeader eyebrow="Execute · BCH mainnet" title="Live execution" lede="FUSE composes the transaction from live chain state, simulates every covenant in the BCH 2026 VM and runs Guardian before you sign. Your wallet signs; FUSE only relays the signed hex. No key ever reaches the server." right={<Badge mode="LIVE" />} />
+      {(vaults.error || vaults.data?.some(v => v.error)) && <div role="alert">Current vault data unavailable. <Button onClick={vaults.reload}>Retry chain read</Button></div>}
       <div className="grid gap-5 lg:grid-cols-[300px_1fr]">
         <div className="flex flex-col gap-5">
           <Panel title="Pipeline">
@@ -94,10 +96,10 @@ export default function LiveExecute() {
             </ol>
           </Panel>
           <Panel title="Wallet" kicker="keys stay in your wallet">
-            <WalletConnect onHandle={setWallet} />
+            <WalletConnect onHandle={(handle) => { reset(); setWallet(handle); }} />
             {!wallet && (
               <label className="mt-4 block text-[11.5px] text-fog-400">or paste a BCH address (sign offline with the exported package)
-                <input data-testid="live-address" value={manual} onChange={(e) => setManual(e.target.value)} placeholder="bitcoincash:q…" className="mt-1 w-full rounded-md border hairline bg-ink-900 px-2 py-1.5 font-mono text-[11.5px] text-fog-100" />
+                <input data-testid="live-address" value={manual} onChange={(e) => { reset(); setManual(e.target.value); }} placeholder="bitcoincash:q…" className="mt-1 w-full rounded-md border hairline bg-ink-900 px-2 py-1.5 font-mono text-[11.5px] text-fog-100" />
               </label>
             )}
           </Panel>
@@ -114,14 +116,14 @@ export default function LiveExecute() {
             <div className="mt-4 flex flex-wrap items-end gap-3 text-[12px]">
               {action !== 'deploy-vault' && action !== 'consolidate' && (
                 <label className="text-fog-400">Vault
-                  <select data-testid="live-vault" value={vaultId} onChange={(e) => setVaultId(e.target.value)} className="ml-2 rounded-md border hairline bg-ink-900 px-2 py-1 text-fog-100">
+                  <select data-testid="live-vault" value={vaultId} onChange={(e) => { reset(); setVaultId(e.target.value); }} className="ml-2 rounded-md border hairline bg-ink-900 px-2 py-1 text-fog-100">
                     {open.map((v) => <option key={v.id} value={v.id}>{v.id} · {v.current ? sats(v.current.satoshis) : '—'} sats</option>)}
                     {!open.length && <option value="">{vaults.loading ? 'reading mainnet…' : 'no open vault'}</option>}
                   </select>
                 </label>
               )}
-              {(action === 'deposit' || action === 'withdraw') && <label className="text-fog-400">Amount (sats)<input value={amount} onChange={(e) => setAmount(e.target.value)} className="ml-2 w-28 rounded-md border hairline bg-ink-900 px-2 py-1 font-mono text-fog-100" /></label>}
-              {action === 'deploy-vault' && <label className="text-fog-400">Principal (sats)<input value={principal} onChange={(e) => setPrincipal(e.target.value)} className="ml-2 w-28 rounded-md border hairline bg-ink-900 px-2 py-1 font-mono text-fog-100" /></label>}
+              {(action === 'deposit' || action === 'withdraw') && <label className="text-fog-400">Amount (sats)<input value={amount} onChange={(e) => { reset(); setAmount(e.target.value); }} className="ml-2 w-28 rounded-md border hairline bg-ink-900 px-2 py-1 font-mono text-fog-100" /></label>}
+              {action === 'deploy-vault' && <label className="text-fog-400">Principal (sats)<input value={principal} onChange={(e) => { reset(); setPrincipal(e.target.value); }} className="ml-2 w-28 rounded-md border hairline bg-ink-900 px-2 py-1 font-mono text-fog-100" /></label>}
               <Button onClick={compose} disabled={!address || Boolean(busy)} data-testid="live-compose">Compose + preflight</Button>
             </div>
             {!address && <p className="mt-2 text-[11.5px] text-fog-500">Connect a wallet or paste an address to compose.</p>}
@@ -162,7 +164,7 @@ export default function LiveExecute() {
                 <Button variant="ghost" onClick={exportPkg} data-testid="live-export">Export signing package (.json)</Button>
               </div>
               <p className="mt-2 text-[11.5px] text-fog-400">The package holds the unsigned transaction hex (covenant unlocks already filled), every source output (with tokens) and the input indexes your key must sign with SIGHASH_ALL|FORKID|UTXOS. Sign it with any libauth-compatible signer, then paste the signed hex.</p>
-              <textarea data-testid="live-signed-hex" value={signedHex} onChange={(e) => setSignedHex(e.target.value.trim())} placeholder="signed transaction hex" rows={3} className="mt-3 w-full rounded-md border hairline bg-ink-900 p-2 font-mono text-[11px] text-fog-100" />
+              <textarea data-testid="live-signed-hex" value={signedHex} onChange={(e) => { setVer(undefined); setSignedHex(e.target.value.trim()); }} placeholder="signed transaction hex" rows={3} className="mt-3 w-full rounded-md border hairline bg-ink-900 p-2 font-mono text-[11px] text-fog-100" />
               <Button variant="ghost" onClick={() => verify(signedHex)} disabled={!signedHex || Boolean(busy)} className="mt-2">Verify signed hex</Button>
               {ver && <div className={clsx('mt-3 text-[12px]', ver.vmValid ? 'text-volt-300' : 'text-rose-bad')} data-testid="live-verified">{ver.vmValid ? '✓' : '✗'} {ver.vmDetail} · txid <Mono>{short(ver.txid, 10)}</Mono> · fee {sats(ver.minerFee)} sats · {ver.sizeBytes} B</div>}
             </Panel>

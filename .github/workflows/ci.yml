@@ -31,27 +31,13 @@ jobs:
       - name: Unit / integration / adversarial tests (vitest)
         run: pnpm test
       - name: Build (hosted single-process mode, the same build Vercel ships)
-        run: node scripts/hosted/build-embedded.mjs && FUSE_HOSTED=1 pnpm build
-      - name: Start the app locally
+        run: node scripts/hosted/build-embedded.mjs && NEXT_PUBLIC_FIXTURE_REPLAY=1 FUSE_HOSTED=1 pnpm build
+      - name: Start loopback fixture replay
         run: |
-          # ephemeral attestation key for this run only; FUSE_BROADCAST stays unset, so the relay answers 503
-          export FUSE_AUTH_KEY=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
-          cd apps/web && (FUSE_DEBUG_CHAIN=1 FUSE_HOSTED=1 npx next start -p 3000 > ../../next.log 2>&1 &)
-          for i in $(seq 1 60); do curl -sf http://127.0.0.1:3000/api/health >/dev/null && break; sleep 2; done
-          curl -sf http://127.0.0.1:3000/api/health
-      - name: Probe mainnet data sources from this runner
-        run: |
-          set +e
-          for u in https://bchexplorer.cash/api/blocks/tip/height "https://indexer.cauldron.quest/cauldron/pool/active?token=2469acc5afa4b10cb5b5c04afb89c3a3ffd61c5da9c01e26d00951cae2a02544"; do
-            curl -sS -o /tmp/p.out -m 25 -w "%{http_code} %{time_total}s $u\n" -A 'curl/8.5.0 (fuse-live)' "$u"; head -c 200 /tmp/p.out; echo
-          done
-          for p in /api/live/vaults /api/live/pools; do
-            curl -sS -o /tmp/p.out -m 120 -w "%{http_code} %{time_total}s $p\n" "http://127.0.0.1:3000$p"; head -c 300 /tmp/p.out; echo
-          done
-          tail -n 40 next.log
-      - name: Playwright (desktop + mobile) against the local server
-        # Live-mode specs read BCH mainnet through public explorers; no keys, no broadcasts. Chrome ships on the runner.
-        run: FUSE_WEB=http://127.0.0.1:3000 npx playwright test --workers=1 --reporter=line
+          node scripts/hosted/start-ci.mjs > next.log 2>&1 &
+          curl --retry 30 --retry-connrefused --retry-delay 1 -fsS http://127.0.0.1:3000/api/health
+      - name: Deterministic Playwright on desktop and mobile
+        run: FUSE_FIXTURE_TEST=1 FUSE_WEB=http://127.0.0.1:3000 pnpm exec playwright test --workers=1 --reporter=line
       - if: failure()
         uses: actions/upload-artifact@v4
         with:

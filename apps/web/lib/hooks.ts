@@ -11,7 +11,7 @@ export function usePoll<T>(path: string | null, intervalMs = 1500) {
   const load = useCallback(async () => {
     if (!path) return;
     try { const d = await api<T>(path); if (alive.current) { setData(d); setError(undefined); } }
-    catch (e) { if (alive.current) setError((e as Error).message); }
+    catch (e) { if (alive.current) { setData(undefined); setError((e as Error).message); } }
     finally { if (alive.current) setLoading(false); }
   }, [path]);
   useEffect(() => {

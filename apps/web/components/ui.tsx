@@ -92,7 +92,7 @@ export function ApiOffline({ error }: { error?: string }) {
   if (!error) return null;
   return (
     <div role="alert" className="rounded-xl border border-rose-bad/30 bg-rose-bad/[0.06] px-4 py-3 text-[12.5px] text-fog-200">
-      <span className="font-medium text-rose-bad">FUSE API unreachable.</span> Start it with <code className="num text-fog-100">pnpm dev:api</code> (and <code className="num text-fog-100">pnpm solvers</code>). <span className="text-fog-400">({error})</span>
+      <span className="font-medium text-rose-bad">FUSE API unreachable.</span> {error} <a className="underline" href="">Retry</a>
     </div>
   );
 }

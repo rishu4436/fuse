@@ -64,9 +64,9 @@ export function openAuthorization(a: Authorization | undefined | null, trustedPu
   if (h !== a!.authHash) fail('authorization hash does not match its payload');
   if (!/^[0-9a-f]{128}$/.test(a!.serverSig) || !secp256k1.verifySignatureSchnorr(hexToBin(a!.serverSig), hexToBin(trustedPubkey), hexToBin(h))) fail('authorization signature is invalid (forged or tampered)');
   let p: AuthPayload; try { p = fromJson<AuthPayload>(unb64u(a!.payload)); } catch { return fail('authorization payload is not valid JSON'); }
-  if (p.kind !== 'fuse.execution-authorization/v1' || p.v !== 1) fail('unsupported authorization version');
+  if (p.network !== 'mainnet' || p.kind !== 'fuse.execution-authorization/v1' || p.v !== 1) fail('unsupported authorization version');
   const now = opts.now ?? Math.floor(Date.now() / 1000);
-  if (!opts.ignoreExpiry && now > p.expiresAt) fail(`authorization expired at ${new Date(p.expiresAt * 1000).toISOString()}: run preflight again`);
+  if (!opts.ignoreExpiry && now >= p.expiresAt) fail(`authorization expired at ${new Date(p.expiresAt * 1000).toISOString()}: run preflight again`);
   return p;
 }
 

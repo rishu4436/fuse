@@ -13,6 +13,7 @@ export default function VerifyPage() {
     let parsed: unknown; try { parsed = JSON.parse(text); } catch { setErr('That is not valid JSON.'); return; }
     // a mainnet certificate (or a live result {certificate, authorization, userSignature}) is re-derived from mainnet data
     // with the contract rederivers and, if an authorization is attached, checked for INTENT_BOUND
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) { setErr('Paste a certificate JSON object.'); return; }
     const o = parsed as { network?: string; certificate?: { network?: string }; authorization?: unknown; userSignature?: unknown };
     const cert = o.certificate ?? parsed; const net = (cert as { network?: string }).network;
     try { setV(net === 'mainnet' ? await api<Verification>('/api/live/verify-certificate', { method: 'POST', body: JSON.stringify({ certificate: cert, authorization: o.authorization ?? null, userSignature: o.userSignature ?? null }) }) : await api<Verification>('/api/certificates/verify', { method: 'POST', body: JSON.stringify(parsed) })); } catch (e) { setErr((e as Error).message); }

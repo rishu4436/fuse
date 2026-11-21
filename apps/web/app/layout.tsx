@@ -14,7 +14,7 @@ export const viewport: Viewport = { themeColor: '#05070a', width: 'device-width'
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
-      <body className="font-sans"><ModeProvider><AppShell>{children}</AppShell></ModeProvider></body>
+      <body className="font-sans">{process.env.NEXT_PUBLIC_FIXTURE_REPLAY === '1' && <aside role="status" className="bg-amber-200 p-2 text-center text-black">CI fixture replay · recorded BCH data · offline test only</aside>}<ModeProvider><AppShell>{children}</AppShell></ModeProvider></body>
     </html>
   );
 }

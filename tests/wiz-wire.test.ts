@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { binToHex, decodeTransaction, hexToBin } from '@bitauth/libauth';
 import { wizSignPayload, wireBig } from '../apps/web/lib/wiz-wire';
 
 // Shape of a real /api/live/prepare `sign` block (flash on fuse-live-1, round 6, public chain data)
@@ -12,6 +14,18 @@ const req = {
 };
 
 describe('WizardConnect wire encoding', () => {
+  it('round-trips the recorded Cashonize signing request and preserves its covenant unlock', () => {
+    const run = JSON.parse(readFileSync('evidence/mainnet/wizardconnect-cashonize/run.json', 'utf8'));
+    const prepared = run.exchanges['live/prepare'].response.sign;
+    const wire = JSON.parse(JSON.stringify(wizSignPayload(prepared)));
+    const signed = decodeTransaction(hexToBin(run.exchanges.broadcast.request.rawHex));
+    if (typeof signed === 'string') throw Error(signed);
+    expect(wire.sourceOutputs[0].unlockingBytecode).toBe(binToHex(signed.inputs[0].unlockingBytecode));
+    expect(wire.sourceOutputs[0].token.amount).toBe('<bigint: 0n>');
+    expect(wire.sourceOutputs[1].valueSatoshis).toBe('<bigint: 20000n>');
+    expect(prepared.inputPaths).toEqual([[1, 'receive', 0]]);
+    expect(wire.broadcast).toBe(false);
+  });
   it('is JSON-serializable (the relay JSON.stringifies every message)', () => {
     expect(() => JSON.stringify(wizSignPayload(req))).not.toThrow();
   });

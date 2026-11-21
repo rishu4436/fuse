@@ -90,13 +90,14 @@ export async function verifyCertificate(input: unknown, reader: ChainReader, ctx
     decoded.set(t.txid, tx);
     if (reader.network !== 'local') {
       const conf = got.blockHeight != null && tip != null ? tip - got.blockHeight + 1 : 0;
+      if (t.blockHash != null || t.blockHeight != null) checks.push({ name: 'claimed-block', ok: t.blockHash === got.blockHash && t.blockHeight === got.blockHeight, detail: 'claimed block compared with chain reader' });
       const need = ctx.minConfirmations ?? 1;
       if (conf < need) { insufficient = true; checks.push({ name: `confirmations:${t.txid.slice(0, 12)}`, ok: false, detail: `${conf} < ${need}` }); }
       else checks.push({ name: `confirmations:${t.txid.slice(0, 12)}`, ok: true, detail: `${conf}` });
       if (cert.confirmation === 'CONFIRMED' && got.blockHeight == null) checks.push({ name: 'claimed-confirmed', ok: false, detail: 'certificate claims CONFIRMED but tx is unconfirmed' });
     }
   }
-  const txChecks = checks.filter((c) => /^(tx-exists|tx-hash|tx-decode|confirmations|claimed-confirmed)/.test(c.name));
+  const txChecks = checks.filter((c) => /^(tx-exists|tx-hash|tx-decode|confirmations|claimed-confirmed|claimed-block)/.test(c.name));
   levels.INCLUDED = txChecks.every((c) => c.ok) && decoded.size === cert.transactions.length
     ? { ok: true, detail: reader.network === 'local' ? 'accepted by the LOCAL mock chain (simulation, not on-chain)' : `${cert.transactions.length} tx(s) found, re-hashed and confirmed` }
     : { ok: false, detail: txChecks.filter((c) => !c.ok).map((c) => `${c.name} ${c.detail ?? ''}`).join('; ') || 'transaction missing' };

@@ -9,15 +9,15 @@
 //      and minimum sats out on the route. Guardian BLOCK → refused.
 // No keys that control funds exist on the server; nothing here can sign a spend.
 import { binToHex, hexToBin, decodeTransaction, createVirtualMachineBch2026, type Output } from '@bitauth/libauth';
-import { contractUnlocks, txidOfRaw, type TxTemplate } from '@fuse/transaction-composer';
+import { REQUIRED_SIGHASH_BYTE, contractUnlocks, txidOfRaw, type TxTemplate } from '@fuse/transaction-composer';
 import { cauldronSwapIsValid } from '@fuse/contracts';
-import { outputAt, outspend, pool, relay, relayPaths, EXPLORER_TX, type LiveUtxo } from './chain.js';
+import { independentlyUnspent, freshTip, outputAt, outspend, pool, relay, relayPaths, EXPLORER_TX, type LiveUtxo } from './chain.js';
 import { openAuthorization, structureDiff, verifyUserSignature, type Authorization, type AuthPayload } from './authz.js';
 import { guardianPreflight, simulate } from './execute.js';
 
 type Src = { txid: string; vout: number; satoshis: bigint; lockingBytecode: string; token?: { category: string; amount: bigint; nft?: { capability: string; commitment: string } } };
-export interface ChainDeps { outputAt: (txid: string, vout: number) => Promise<Src>; outspend: (txid: string, vout: number) => Promise<{ spent: boolean; txid?: string }>; relay: (rawHex: string) => Promise<string> }
-export const liveChain: ChainDeps = { outputAt: outputAt as never, outspend, relay };
+export interface ChainDeps { independentlyUnspent?: typeof independentlyUnspent; freshTip?: typeof freshTip; outputAt: (txid: string, vout: number) => Promise<Src>; outspend: (txid: string, vout: number) => Promise<{ spent: boolean; txid?: string }>; relay: (rawHex: string) => Promise<string> }
+export const liveChain: ChainDeps = { independentlyUnspent, freshTip, outputAt: outputAt as never, outspend, relay };
 
 const hits = new Map<string, number[]>();
 export function rateLimit(ip: string, max = 12, windowMs = 60_000) {
@@ -85,6 +85,13 @@ export async function broadcast(req: BroadcastRequest, opts: { enabled: boolean;
   const tx = decodeRaw(req.rawHex);
   const diff = structureDiff(p.template, tx);
   if (diff) refuse(`signed transaction differs from the authorized template: ${diff}`, 403);
+  for (const [i, input] of p.template.inputs.entries()) {
+    if (input.unlock.kind !== 'p2pkh') continue;
+    const unlock = tx.inputs[i].unlockingBytecode;
+    const length = unlock[0];
+    if (length < 9 || length > 73 || unlock[length] !== REQUIRED_SIGHASH_BYTE ||
+        unlock[length + 1] !== 33 || unlock.length !== length + 35) refuse('wallet input must sign ALL | FORKID | UTXOS', 403);
+  }
   const cu = contractUnlocks(p.template);
   for (const [i, u] of cu) if (binToHex(tx.inputs[i].unlockingBytecode) !== u) refuse(`input ${i} covenant unlock differs from the composed one`, 403);
   const us = verifyUserSignature(req.authorization!.authHash, req.userSignature, p.constraints.userLockingBytecode);
@@ -94,11 +101,15 @@ export async function broadcast(req: BroadcastRequest, opts: { enabled: boolean;
   if (!v.vmValid) refuse(v.vmDetail, 422);
   if (v.minerFee > (opts.maxFee ?? 50_000n)) refuse(`miner fee ${v.minerFee} sats looks wrong (guard 50,000)`);
   // 4. fresh chain state: inputs unspent (also enforces single use across instances)
-  const spent = await pool(p.template.inputs, 4, async (x) => (await deps.outspend(x.txid, x.vout).catch(() => ({ spent: false }))).spent);
+  await deps.freshTip?.();
+  await deps.independentlyUnspent?.(p.template.inputs);
+  const spent = await pool(p.template.inputs, 4, async (x) => (await deps.outspend(x.txid, x.vout)).spent !== false);
   if (spent.some(Boolean)) refuse('an authorized input is already spent (authorization used, or state moved): run preflight again', 409);
   // 5. constraints + Guardian on fresh state
   const c = enforceConstraints(p, v.src, v.minerFee);
   if (!c.ok) refuse(`financial constraints failed on fresh chain state: ${c.checks.filter((x) => !x.ok).map((x) => `${x.name} (${x.detail})`).join('; ')}`, 422, c.checks);
+  if (used.has(p.intentId)) refuse('this authorization was already used', 409);
+  if ((opts.now ?? Math.floor(Date.now() / 1000)) >= p.expiresAt) refuse('authorization expired during verification', 403);
   used.set(p.intentId, p.expiresAt);
   for (const [k, e] of used) if (e < Math.floor(Date.now() / 1000) - 3600) used.delete(k);
   const nodeTxid = await deps.relay(req.rawHex);

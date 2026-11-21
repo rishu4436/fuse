@@ -37,11 +37,17 @@ export default function Home() {
             <Link href="/app/certificates"><Button variant="ghost">Verify a certificate</Button></Link>
             <span className="ml-1 text-[12px] text-fog-400">A local sandbox (simulated coins) is available from the mode switch.</span>
           </div>
+          <nav aria-label="Recorded mainnet evidence" className="mt-4 flex flex-wrap gap-4 text-sm underline">
+            <a href="https://bchexplorer.cash/tx/994b63ba75533bb36506a406ac09737fb96812c45e9224ba089f0f3e66a3dd3f">Two-pool transaction</a>
+            <a href="https://bchexplorer.cash/tx/cb003c5645ec52aea77b896e7f29fba22a751ad937a8a44f4d1649f954733c3c">Solver settlement</a>
+            <a href="https://github.com/rishu4436/fuse/tree/feat/phase-0-1-foundation/evidence/mainnet/wizardconnect-cashonize">Cashonize approval</a>
+            <Link href="/developers/sdk">Developer SDK</Link>
+          </nav>
         </motion.div>
       </section>
 
       <div className="grid gap-5 lg:grid-cols-2">
-        <Panel title="FlashVault on mainnet" kicker={v ? v.id : 'reading chain'} mode="LIVE">
+        <Panel title="FlashVault on mainnet" kicker={v ? v.id : vaults.loading ? 'reading chain' : 'current data unavailable'} mode="LIVE">
           <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
             <Stat label="Principal" value={v?.current ? sats(v.current.satoshis) : '—'} unit="sats" accent />
             <Stat label="Flash loans" value={v?.current ? sats(v.current.state.flashCount) : '—'} />

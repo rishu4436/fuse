@@ -15,7 +15,7 @@ const readerWith = (extra: Record<string, string> = {}): ChainReader => ({
   network: 'mainnet', tipHeight: async () => fx.tip,
   getRawTransaction: async (t) => (extra[t] ? { rawHex: extra[t], blockHeight: fx.tip - 5, blockHash: '00'.repeat(32) } : fx.txs[t] ?? null),
 });
-const evidence = (t: string) => JSON.parse(readFileSync(join(root, `evidence/mainnet/certificates/${t}.json`), 'utf8'));
+const evidence = (t: string) => JSON.parse(readFileSync(join(root, `evidence/mainnet/submission/${t}.json`), 'utf8'));
 const CAULDRON = '994b63ba75533bb36506a406ac09737fb96812c45e9224ba089f0f3e66a3dd3f';
 const FLASH = '7d5a261e800dd11f55f56e0756c5f82648d62e79cd4a01d248f222c8d59ebb79';
 const opts = () => ({ rederive: liveRederiver(configs) });
@@ -38,6 +38,12 @@ function forge(txid: string, edit: (outs: any[]) => void, editCert: (c: any) => 
 }
 
 describe('certificate verification levels (issue B)', () => {
+  it('rejects the original receipt with an incorrect claimed inclusion height', async () => {
+    const original = JSON.parse(readFileSync(join(root,'evidence/mainnet/certificates', CAULDRON + '.json'),'utf8'));
+    const result = await verifyCertificate(original.certificate, readerWith(), opts());
+    expect(result.status).toBe('FAILED');
+    expect(result.checks.find(c => c.name === 'claimed-block')?.ok).toBe(false);
+  });
   it('real mainnet Cauldron flash re-derives to OUTCOME_VERIFIED (not INTENT_BOUND: no authorization)', async () => {
     const v = await verifyCertificate(evidence(CAULDRON).certificate, readerWith(), opts());
     expect(v.status).toBe('VERIFIED'); expect(v.level).toBe('OUTCOME_VERIFIED');

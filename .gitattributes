@@ -1,0 +1,4 @@
+tests/fixtures/fulcrum-coins.json text eol=lf
+tests/fixtures/browser-chain.json text eol=lf
+evidence/** text=auto eol=lf
+docs/*.md text eol=lf
