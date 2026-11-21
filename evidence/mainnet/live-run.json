@@ -85,6 +85,20 @@
    "guardian": "PASS",
    "route": null,
    "at": "2026-11-20T21:53:45.438Z"
+  },
+  {
+   "action": "flash",
+   "txid": "f78074a7addca74462f3d2dc8e08eb66ca14370cf5dfed1a52ed8e37d0003518",
+   "intentId": "int_46c37b710cad0192c9b15c1a",
+   "intentBound": true,
+   "explorer": "https://bchexplorer.cash/tx/f78074a7addca74462f3d2dc8e08eb66ca14370cf5dfed1a52ed8e37d0003518",
+   "minerFee": "1086",
+   "netCost": "1186",
+   "relayedBy": "https://fuse-rust-eight.vercel.app/api/broadcast",
+   "serverVmCheck": "all inputs valid in the BCH 2026 VM against chain-derived source outputs",
+   "guardian": "PASS",
+   "route": null,
+   "at": "2026-11-21T01:22:12.244Z"
   }
  ]
 }

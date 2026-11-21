@@ -15,7 +15,7 @@ const BASE = flag('base') ?? process.env.FUSE_WEB ?? 'https://fuse-rust-eight.ve
 const BROADCAST = args.includes('--broadcast');
 const LEDGER = '/home/box/secrets/fuse-live-ledger.json';
 const EVIDENCE = new URL('../../evidence/mainnet/live-run.json', import.meta.url).pathname;
-const ROUND_CAP = 150_000n; const MAX_FEE = 5_000n;
+const ROUND_CAP = BigInt(process.env.FUSE_ROUND_CAP ?? '150000'); const MAX_FEE = 5_000n; // round 5: FUSE_ROUND_CAP=56697 (6,697 already spent before round 5 + 50,000)
 interface Ledger { spent: string; txs: Array<{ action: string; txid: string; minerFee: string; cost: string; at: string }> }
 const ledger: Ledger = existsSync(LEDGER) ? JSON.parse(readFileSync(LEDGER, 'utf8')) : { spent: '0', txs: [] };
 
