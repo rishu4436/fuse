@@ -1,0 +1,310 @@
+
+=== install (02:04:37Z)
+Scope: all 27 workspace projects
+(node:498219) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Lockfile is up to date, resolution step is skipped
+Already up to date
+
+Done in 1.3s
+
+=== contracts (02:04:39Z)
+
+> fuse@0.1.0 compile:contracts /workspace/projects/fuse
+> pnpm --filter @fuse/contracts compile
+
+
+> @fuse/contracts@0.1.0 compile /workspace/projects/fuse/packages/contracts
+> tsx scripts/compile.ts
+
+compiled FlashVaultBCH.cash -> FlashVaultBCH (145 ops)
+compiled FlashVaultToken.cash -> FlashVaultToken (96 ops)
+
+=== lint (02:04:40Z)
+
+> fuse@0.1.0 lint /workspace/projects/fuse
+> eslint .
+
+
+=== typecheck (02:04:43Z)
+
+> fuse@0.1.0 typecheck /workspace/projects/fuse
+> tsc -p tsconfig.json --noEmit
+
+
+=== vitest (02:04:48Z)
+
+> fuse@0.1.0 test /workspace/projects/fuse
+> vitest run
+
+
+ RUN  v3.2.7 /workspace/projects/fuse
+
+ ✓ packages/contracts/test/composition.test.ts (3 tests) 1009ms
+   ✓ Atomic flash arbitrage across two real Cauldron pool scripts > borrows from vault, buys on A, sells on B, repays principal+fee, keeps profit — single tx  817ms
+ ✓ packages/contracts/test/flashvault-token.test.ts (9 tests) 1534ms
+   ✓ FlashVaultToken — BCH VM (real cashc 0.14 bytecode) > accepts valid flash: tokens + fee returned, sats preserved  662ms
+   ✓ FlashVaultToken — BCH VM (real cashc 0.14 bytecode) > owner withdraw works; non-owner withdraw fails  633ms
+ ✓ services/api/test/persistence.test.ts (1 test) 1396ms
+   ✓ API persistence (SQLite) > settles an auction, persists everything, and restores it in a new session  1395ms
+ ✓ packages/risk-engine/test/rates-redemption.test.ts (4 tests) 253ms
+ ✓ services/api/test/round3-api.test.ts (6 tests) 932ms
+   ✓ round 3 API > rate advice and redemption search are READ-ONLY and never executable  359ms
+   ✓ F40 LP history API > persists a vault snapshot per LP op and nets the deposit out of the drawdown  308ms
+ ✓ services/api/test/extra-api.test.ts (4 tests) 200ms
+ ✓ packages/flash-liquidity/test/lp-shards.test.ts (7 tests) 87ms
+ ✓ packages/auction/test/auction.test.ts (5 tests) 79ms
+stdout | tests/mainnet-plan.test.ts > mainnet plan (offline rehearsal) > prep → genesis → flash → underpay(rejected) → deposit → withdraw → certificate → sweep, within caps
+fee 372 size 185
+fee 564 size 281
+fee 1084 size 541
+fee 1288 size 643
+fee 1006 size 502
+
+stdout | tests/mainnet-plan.test.ts > mainnet plan (offline rehearsal) > prep → genesis → flash → underpay(rejected) → deposit → withdraw → certificate → sweep, within caps
+fee 1378 size 688
+
+ ✓ tests/mainnet-plan.test.ts (2 tests) 66ms
+ ✓ services/api/test/wallet-api.test.ts (1 test) 84ms
+ ✓ packages/compiler/test/intent-types.test.ts (3 tests) 61ms
+ ✓ packages/auction/test/leases.test.ts (2 tests) 54ms
+ ✓ services/api/test/verifier-levels.test.ts (12 tests) 54ms
+ ✓ packages/transaction-composer/test/composer.test.ts (7 tests) 53ms
+stderr | packages/compiler/test/staged.test.ts > F11 staged recoverable execution > watch: a vanished stage tx (reorg / eviction) is rebroadcast unchanged; a double-spent one is CONFLICTED
+Transaction with txid 6e152bbbc5ec5badcf308d2a19de642b492f2e9c7b7b4bc9430d10dbd5359568 was already submitted
+
+stderr | packages/compiler/test/staged.test.ts > F11 staged recoverable execution > watch: a vanished stage tx (reorg / eviction) is rebroadcast unchanged; a double-spent one is CONFLICTED
+Transaction with txid c9c00a2f8a72573582ddef07d92e27f929e4846fffe11fc5f7df3068d79fcd0d was already submitted
+
+ ✓ packages/compiler/test/staged.test.ts (6 tests) 52ms
+ ✓ services/api/test/authz.test.ts (15 tests) 51ms
+ ✓ packages/compiler/test/worlds.test.ts (1 test) 44ms
+ ✓ packages/xo/test/xo.test.ts (3 tests) 46ms
+ ✓ packages/compiler/test/compiler.test.ts (4 tests) 51ms
+ ✓ packages/compiler/test/netting.test.ts (1 test) 23ms
+ ✓ packages/store/test/store.test.ts (2 tests) 19ms
+ ✓ services/api/test/mainnet-explorer.test.ts (2 tests) 22ms
+ ✓ packages/wallet/test/wallet.test.ts (8 tests) 21ms
+ ✓ packages/math/test/math.test.ts (4 tests) 11ms
+ ✓ packages/policy-engine/test/policy.test.ts (4 tests) 11ms
+ ✓ services/api/test/live-auction.test.ts (3 tests) 11ms
+ ✓ packages/policy-engine/test/fep1-vectors.test.ts (3 tests) 8ms
+ ✓ packages/notifications/test/adapters.test.ts (4 tests) 7ms
+ ✓ packages/recipes/test/recipes.test.ts (3 tests) 8ms
+ ✓ packages/contracts/test/flashvault-bch.test.ts (27 tests) 5280ms
+   ✓ FlashVaultBCH — BCH VM (MockNetworkProvider, real cashc 0.14 bytecode) > accepts a valid flash: principal + fee returned to same-index continuation with updated state  697ms
+   ✓ FlashVaultBCH — BCH VM (MockNetworkProvider, real cashc 0.14 bytecode) > accepts overpayment and records the actual surplus as fees  683ms
+   ✓ FlashVaultBCH — BCH VM (MockNetworkProvider, real cashc 0.14 bytecode) > prevents double spending the same shard  749ms
+   ✓ FlashVaultBCH — BCH VM (MockNetworkProvider, real cashc 0.14 bytecode) > funds one operation from two shards atomically (multiple covenant inputs)  799ms
+   ✓ FlashVaultBCH — BCH VM (MockNetworkProvider, real cashc 0.14 bytecode) > owner can withdraw with SIGHASH_ALL|FORKID|UTXOS  584ms
+   ✓ FlashVaultBCH — BCH VM (MockNetworkProvider, real cashc 0.14 bytecode) > owner can pause a shard (emergency control) via the owner path  611ms
+ ✓ packages/risk-engine/test/risk.test.ts (6 tests) 5ms
+ ✓ services/api/test/live.test.ts (6 tests) 6ms
+ ✓ packages/risk-engine/test/bounty.test.ts (2 tests) 5ms
+ ✓ packages/solver-sdk/test/scanner.test.ts (1 test) 2ms
+ ✓ packages/flash-liquidity/test/lp-history.test.ts (1 test) 2ms
+ ✓ services/api/test/embedded.test.ts (3 tests) 8147ms
+   ✓ hosted mode: in-process API + reference solvers (no background workers) > labels itself, settles an auction lazily per request, and never offers broadcasting  4097ms
+   ✓ hosted mode: in-process API + reference solvers (no background workers) > deterministic across instances: a fresh instance replays the journal to the identical world  4028ms
+ ✓ packages/contracts/test/properties.test.ts (4 tests) 13387ms
+   ✓ FlashVault property tests (fast-check, BCH VM in the loop) > BCH vault: tx valid  ⇔  returned >= principal + fee  (conservation property)  9071ms
+   ✓ FlashVault property tests (fast-check, BCH VM in the loop) > token vault: tx valid  ⇔  tokens returned >= principal + fee  4300ms
+ ✓ services/api/test/network.e2e.test.ts (2 tests) 20050ms
+   ✓ solver network over HTTP (separate processes) > 4 processes register with distinct keys; auction settles with the best verified bid; certificate verifies  12115ms
+   ✓ solver network over HTTP (separate processes) > F45: the standalone SDK quickstart app runs end-to-end and verifies its certificate client-side  6076ms
+
+ Test Files  38 passed (38)
+      Tests  181 passed (181)
+   Start at  02:04:48
+   Duration  20.72s (transform 873ms, setup 0ms, collect 8.31s, tests 53.13s, environment 5ms, prepare 2.14s)
+
+
+=== build (02:05:09Z)
+embedded API bundle → /workspace/projects/fuse/apps/web/embedded
+embedded bundle smoke-load ok
+
+> fuse@0.1.0 build /workspace/projects/fuse
+> pnpm --filter @fuse/web build
+
+
+> @fuse/web@0.1.0 build /workspace/projects/fuse/apps/web
+> next build
+
+   ▲ Next.js 15.5.29
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 3.5s
+   Linting and checking validity of types ...
+
+ ⚠ The Next.js plugin was not detected in your ESLint configuration. See https://nextjs.org/docs/app/api-reference/config/eslint#migrating-existing-config
+   Collecting page data ...
+   Generating static pages (0/36) ...
+   Generating static pages (9/36) 
+   Generating static pages (18/36) 
+   Generating static pages (27/36) 
+ ✓ Generating static pages (36/36)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                 Size  First Load JS
+┌ ○ /                                    5.32 kB         162 kB
+├ ○ /_not-found                            133 B         104 kB
+├ ƒ /api/[...path]                         133 B         104 kB
+├ ○ /app                                 5.72 kB         163 kB
+├ ○ /app/activity                        4.06 kB         163 kB
+├ ○ /app/certificates                    1.09 kB         164 kB
+├ ƒ /app/certificates/[id]                5.2 kB         162 kB
+├ ○ /app/contracts                       5.28 kB         159 kB
+├ ○ /app/execute                         4.08 kB         161 kB
+├ ƒ /app/execute/[id]                    3.64 kB         168 kB
+├ ○ /app/execute/live                    5.22 kB         177 kB
+├ ○ /app/execute/new                     4.77 kB         184 kB
+├ ○ /app/execute/staged                  4.52 kB         160 kB
+├ ○ /app/explorer                        6.54 kB         160 kB
+├ ○ /app/guardian                         6.4 kB         163 kB
+├ ○ /app/guardian/alerts                 4.21 kB         158 kB
+├ ○ /app/guardian/policies               6.34 kB         160 kB
+├ ○ /app/guardian/rates                  6.76 kB         160 kB
+├ ○ /app/liquidity                       4.03 kB         167 kB
+├ ƒ /app/liquidity/[vault]               4.84 kB         158 kB
+├ ○ /app/liquidity/vaults                5.21 kB         162 kB
+├ ○ /app/opportunities                   2.29 kB         165 kB
+├ ○ /app/parallel-worlds                 5.28 kB         159 kB
+├ ○ /app/portfolio                       2.77 kB         177 kB
+├ ○ /app/replay                          6.05 kB         160 kB
+├ ○ /app/settings                        6.32 kB         160 kB
+├ ○ /app/solvers                         6.06 kB         160 kB
+├ ○ /app/solvers/auctions                5.28 kB         162 kB
+├ ○ /app/strategies                      3.28 kB         160 kB
+├ ○ /app/strategies/builder              10.2 kB         164 kB
+├ ○ /developers                          2.26 kB         159 kB
+├ ○ /developers/api                       3.5 kB         157 kB
+├ ○ /developers/recipes                  6.17 kB         162 kB
+├ ○ /developers/sdk                      2.51 kB         156 kB
+├ ○ /developers/xo                       5.74 kB         159 kB
+├ ○ /icon.svg                                0 B            0 B
+├ ○ /status                              2.25 kB         156 kB
+└ ○ /verify                              4.37 kB         158 kB
++ First Load JS shared by all             104 kB
+  ├ chunks/9062-794ea2616d60e1b9.js      47.2 kB
+  ├ chunks/b31aee0d-f04ae9bc5eb75cc6.js  54.2 kB
+  └ other shared chunks (total)          2.52 kB
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+
+=== start (02:05:27Z)
+
+=== playwright (02:05:29Z)
+
+Running 94 tests using 1 worker
+
+(node:500396) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+[1/94] [desktop] › tests/browser/routes.spec.ts:8:3 › route / renders without errors and is labeled
+[2/94] [desktop] › tests/browser/routes.spec.ts:8:3 › route /app renders without errors and is labeled
+[3/94] [desktop] › tests/browser/routes.spec.ts:8:3 › route /app/portfolio renders without errors and is labeled
+[4/94] [desktop] › tests/browser/routes.spec.ts:8:3 › route /app/guardian renders without errors and is labeled
+[5/94] [desktop] › tests/browser/routes.spec.ts:8:3 › route /app/guardian/policies renders without errors and is labeled
+[6/94] [desktop] › tests/browser/routes.spec.ts:8:3 › route /app/guardian/alerts renders without errors and is labeled
+[7/94] [desktop] › tests/browser/routes.spec.ts:8:3 › route /app/execute renders without errors and is labeled
+[8/94] [desktop] › tests/browser/routes.spec.ts:8:3 › route /app/execute/live renders without errors and is labeled
+[9/94] [desktop] › tests/browser/routes.spec.ts:8:3 › route /app/execute/new renders without errors and is labeled
+[10/94] [desktop] › tests/browser/routes.spec.ts:8:3 › route /app/parallel-worlds renders without errors and is labeled
+[11/94] [desktop] › tests/browser/routes.spec.ts:8:3 › route /app/strategies renders without errors and is labeled
+[12/94] [desktop] › tests/browser/routes.spec.ts:8:3 › route /app/strategies/builder renders without errors and is labeled
+[13/94] [desktop] › tests/browser/routes.spec.ts:8:3 › route /app/liquidity renders without errors and is labeled
+[14/94] [desktop] › tests/browser/routes.spec.ts:8:3 › route /app/liquidity/vaults renders without errors and is labeled
+[15/94] [desktop] › tests/browser/routes.spec.ts:8:3 › route /app/liquidity/flashvault-bch renders without errors and is labeled
+[16/94] [desktop] › tests/browser/routes.spec.ts:8:3 › route /app/solvers renders without errors and is labeled
+[17/94] [desktop] › tests/browser/routes.spec.ts:8:3 › route /app/solvers/auctions renders without errors and is labeled
+[18/94] [desktop] › tests/browser/routes.spec.ts:8:3 › route /app/opportunities renders without errors and is labeled
+[19/94] [desktop] › tests/browser/routes.spec.ts:8:3 › route /app/replay renders without errors and is labeled
+[20/94] [desktop] › tests/browser/routes.spec.ts:8:3 › route /app/explorer renders without errors and is labeled
+[21/94] [desktop] › tests/browser/routes.spec.ts:8:3 › route /app/contracts renders without errors and is labeled
+[22/94] [desktop] › tests/browser/routes.spec.ts:8:3 › route /app/certificates renders without errors and is labeled
+[23/94] [desktop] › tests/browser/routes.spec.ts:8:3 › route /app/activity renders without errors and is labeled
+[24/94] [desktop] › tests/browser/routes.spec.ts:8:3 › route /app/settings renders without errors and is labeled
+[25/94] [desktop] › tests/browser/routes.spec.ts:8:3 › route /developers renders without errors and is labeled
+[26/94] [desktop] › tests/browser/routes.spec.ts:8:3 › route /developers/sdk renders without errors and is labeled
+[27/94] [desktop] › tests/browser/routes.spec.ts:8:3 › route /developers/recipes renders without errors and is labeled
+[28/94] [desktop] › tests/browser/routes.spec.ts:8:3 › route /developers/api renders without errors and is labeled
+[29/94] [desktop] › tests/browser/routes.spec.ts:8:3 › route /developers/xo renders without errors and is labeled
+[30/94] [desktop] › tests/browser/routes.spec.ts:8:3 › route /app/guardian/rates renders without errors and is labeled
+[31/94] [desktop] › tests/browser/routes.spec.ts:8:3 › route /app/execute/staged renders without errors and is labeled
+[32/94] [desktop] › tests/browser/routes.spec.ts:8:3 › route /status renders without errors and is labeled
+[33/94] [desktop] › tests/browser/routes.spec.ts:8:3 › route /verify renders without errors and is labeled
+[34/94] [desktop] › tests/browser/routes.spec.ts:25:1 › LIVE is the default mode: mainnet pages are labeled LIVE; sandbox pages SANDBOX after the toggle
+[35/94] [desktop] › tests/browser/routes.spec.ts:37:1 › LIVE execute: compose a mainnet flash loan, VM simulation + Guardian pass, signing package exported (no key, no broadcast)
+[36/94] [desktop] › tests/browser/routes.spec.ts:56:1 › Demo: run an auction in the Studio, adversary rejected, settlement + certificate verifies, tamper fails
+[37/94] [desktop] › tests/browser/routes.spec.ts:82:1 › WizardConnect: pairing QR is generated in the browser (no wallet needed)
+[38/94] [desktop] › tests/browser/routes.spec.ts:94:3 › feature flows › compiler preview shows all 10 stages and an explanation
+[39/94] [desktop] › tests/browser/routes.spec.ts:101:3 › feature flows › parallel worlds: paused vault avoids the flash route
+[40/94] [desktop] › tests/browser/routes.spec.ts:107:3 › feature flows › guardian policy → proposal (not executable) → in-app alert
+[41/94] [desktop] › tests/browser/routes.spec.ts:116:3 › feature flows › LP deposit is VM-verified and accepted on the local chain; explorer decodes it
+[42/94] [desktop] › tests/browser/routes.spec.ts:129:3 › feature flows › strategy builder rejects an unrepaid borrow and compiles a valid recipe
+[43/94] [desktop] › tests/browser/routes.spec.ts:138:3 › feature flows › settings: broadcast switch is locked off
+[44/94] [desktop] › tests/browser/routes.spec.ts:143:3 › feature flows › staged recovery: competitor forces a rebuild; impossible bound ends RECOVERABLE with unspent owner coins
+[45/94] [desktop] › tests/browser/routes.spec.ts:152:3 › feature flows › recipe marketplace: adversarial recipe rejected; an unrepaid borrow submitted from the composer is rejected
+[46/94] [desktop] › tests/browser/routes.spec.ts:161:3 › feature flows › rate optimizer and redemption search render READ-ONLY and not executable
+[47/94] [desktop] › tests/browser/routes.spec.ts:166:3 › feature flows › XO: payout script compiled by the XO compiler
+(node:503524) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+[48/94] [mobile] › tests/browser/routes.spec.ts:8:3 › route / renders without errors and is labeled
+[49/94] [mobile] › tests/browser/routes.spec.ts:8:3 › route /app renders without errors and is labeled
+[50/94] [mobile] › tests/browser/routes.spec.ts:8:3 › route /app/portfolio renders without errors and is labeled
+[51/94] [mobile] › tests/browser/routes.spec.ts:8:3 › route /app/guardian renders without errors and is labeled
+[52/94] [mobile] › tests/browser/routes.spec.ts:8:3 › route /app/guardian/policies renders without errors and is labeled
+[53/94] [mobile] › tests/browser/routes.spec.ts:8:3 › route /app/guardian/alerts renders without errors and is labeled
+[54/94] [mobile] › tests/browser/routes.spec.ts:8:3 › route /app/execute renders without errors and is labeled
+[55/94] [mobile] › tests/browser/routes.spec.ts:8:3 › route /app/execute/live renders without errors and is labeled
+[56/94] [mobile] › tests/browser/routes.spec.ts:8:3 › route /app/execute/new renders without errors and is labeled
+[57/94] [mobile] › tests/browser/routes.spec.ts:8:3 › route /app/parallel-worlds renders without errors and is labeled
+[58/94] [mobile] › tests/browser/routes.spec.ts:8:3 › route /app/strategies renders without errors and is labeled
+[59/94] [mobile] › tests/browser/routes.spec.ts:8:3 › route /app/strategies/builder renders without errors and is labeled
+[60/94] [mobile] › tests/browser/routes.spec.ts:8:3 › route /app/liquidity renders without errors and is labeled
+[61/94] [mobile] › tests/browser/routes.spec.ts:8:3 › route /app/liquidity/vaults renders without errors and is labeled
+[62/94] [mobile] › tests/browser/routes.spec.ts:8:3 › route /app/liquidity/flashvault-bch renders without errors and is labeled
+[63/94] [mobile] › tests/browser/routes.spec.ts:8:3 › route /app/solvers renders without errors and is labeled
+[64/94] [mobile] › tests/browser/routes.spec.ts:8:3 › route /app/solvers/auctions renders without errors and is labeled
+[65/94] [mobile] › tests/browser/routes.spec.ts:8:3 › route /app/opportunities renders without errors and is labeled
+[66/94] [mobile] › tests/browser/routes.spec.ts:8:3 › route /app/replay renders without errors and is labeled
+[67/94] [mobile] › tests/browser/routes.spec.ts:8:3 › route /app/explorer renders without errors and is labeled
+[68/94] [mobile] › tests/browser/routes.spec.ts:8:3 › route /app/contracts renders without errors and is labeled
+[69/94] [mobile] › tests/browser/routes.spec.ts:8:3 › route /app/certificates renders without errors and is labeled
+[70/94] [mobile] › tests/browser/routes.spec.ts:8:3 › route /app/activity renders without errors and is labeled
+[71/94] [mobile] › tests/browser/routes.spec.ts:8:3 › route /app/settings renders without errors and is labeled
+[72/94] [mobile] › tests/browser/routes.spec.ts:8:3 › route /developers renders without errors and is labeled
+[73/94] [mobile] › tests/browser/routes.spec.ts:8:3 › route /developers/sdk renders without errors and is labeled
+[74/94] [mobile] › tests/browser/routes.spec.ts:8:3 › route /developers/recipes renders without errors and is labeled
+[75/94] [mobile] › tests/browser/routes.spec.ts:8:3 › route /developers/api renders without errors and is labeled
+[76/94] [mobile] › tests/browser/routes.spec.ts:8:3 › route /developers/xo renders without errors and is labeled
+[77/94] [mobile] › tests/browser/routes.spec.ts:8:3 › route /app/guardian/rates renders without errors and is labeled
+[78/94] [mobile] › tests/browser/routes.spec.ts:8:3 › route /app/execute/staged renders without errors and is labeled
+[79/94] [mobile] › tests/browser/routes.spec.ts:8:3 › route /status renders without errors and is labeled
+[80/94] [mobile] › tests/browser/routes.spec.ts:8:3 › route /verify renders without errors and is labeled
+[81/94] [mobile] › tests/browser/routes.spec.ts:25:1 › LIVE is the default mode: mainnet pages are labeled LIVE; sandbox pages SANDBOX after the toggle
+[82/94] [mobile] › tests/browser/routes.spec.ts:37:1 › LIVE execute: compose a mainnet flash loan, VM simulation + Guardian pass, signing package exported (no key, no broadcast)
+[83/94] [mobile] › tests/browser/routes.spec.ts:56:1 › Demo: run an auction in the Studio, adversary rejected, settlement + certificate verifies, tamper fails
+[84/94] [mobile] › tests/browser/routes.spec.ts:82:1 › WizardConnect: pairing QR is generated in the browser (no wallet needed)
+[85/94] [mobile] › tests/browser/routes.spec.ts:94:3 › feature flows › compiler preview shows all 10 stages and an explanation
+[86/94] [mobile] › tests/browser/routes.spec.ts:101:3 › feature flows › parallel worlds: paused vault avoids the flash route
+[87/94] [mobile] › tests/browser/routes.spec.ts:107:3 › feature flows › guardian policy → proposal (not executable) → in-app alert
+[88/94] [mobile] › tests/browser/routes.spec.ts:116:3 › feature flows › LP deposit is VM-verified and accepted on the local chain; explorer decodes it
+[89/94] [mobile] › tests/browser/routes.spec.ts:129:3 › feature flows › strategy builder rejects an unrepaid borrow and compiles a valid recipe
+[90/94] [mobile] › tests/browser/routes.spec.ts:138:3 › feature flows › settings: broadcast switch is locked off
+[91/94] [mobile] › tests/browser/routes.spec.ts:143:3 › feature flows › staged recovery: competitor forces a rebuild; impossible bound ends RECOVERABLE with unspent owner coins
+[92/94] [mobile] › tests/browser/routes.spec.ts:152:3 › feature flows › recipe marketplace: adversarial recipe rejected; an unrepaid borrow submitted from the composer is rejected
+[93/94] [mobile] › tests/browser/routes.spec.ts:161:3 › feature flows › rate optimizer and redemption search render READ-ONLY and not executable
+[94/94] [mobile] › tests/browser/routes.spec.ts:166:3 › feature flows › XO: payout script compiled by the XO compiler
+  13 skipped
+  81 passed (2.3m)
+
+=== done (02:07:48Z)
+Terminated
+exit 0
