@@ -1,4 +1,4 @@
-# Status: 21 Nov 2026 (IST), round 4
+# Status: 21 Nov 2026 (IST), round 5 (security review)
 
 **Product:** FUSE is a **live BCH DeFi execution platform** with an integrated simulation and risk-analysis engine.
 The hosted app (https://fuse-rust-eight.vercel.app) opens in **LIVE mainnet** mode. The local BCH-VM sandbox is an
@@ -19,6 +19,23 @@ explicit opt-in toggle (sidebar "Live mainnet / Sandbox", stored in `localStorag
 (raw parents re-hashed), runs `vm.verify` over the whole tx, refuses fees above 50,000 sats, rate-limits 12/min per
 client, and is disabled (503) unless `FUSE_BROADCAST=1` is set. Live caps for composed txs: miner fee ≤ 5,000 sats at 2 sat/B,
 vault principal 10,000–50,000 sats.
+
+## Round 5: security review fixes
+
+| Review issue | Status | Fix | Evidence |
+|---|---|---|---|
+| A. Broadcast not bound to the reviewed intent (critical) | **Fixed** | `services/api/src/live/authz.ts` + `relay.ts`: preflight issues a Schnorr-signed authorization (intent id, unsigned-template hash, structure hash, constraints, Guardian verdict, 5-min expiry, optional auction). `/api/broadcast` refuses without a valid, unexpired, unused one; strips scriptSigs and compares the whole structure; checks covenant unlocks; verifies an optional wallet signature over the auth hash; VM-verifies; re-runs fee, recipient, user-cost, vault-repayment, pool-invariant and route-min-out constraints and Guardian on fresh chain state | authz.test.ts (15 adversarial); hosted: no auth → 403; mainnet f78074a7…, cb003c56… relayed with authorization |
+| B. Certificates trust declared checks | **Fixed** | Levels INCLUDED / STRUCTURE_VERIFIED / OUTCOME_VERIFIED / INTENT_BOUND in `packages/proof-verifier`; live rederivers in `services/api/src/live/verify.ts` (vault params rebuild the script, repayment + fee, commitment transition, LP share math, Cauldron k-invariant per pool, fee accounting); failed or unsubstantiated claims never pass; INTENT_BOUND checks the authorization signature, structure equality, wallet signature and auction transcript hash; `POST /api/live/verify-certificate` | verifier-levels.test.ts (12); `evidence/mainnet/reverification.json`: 4 round-4 certs OUTCOME_VERIFIED (NOT intent-bound: no authorization existed), f78074a7… and cb003c56… INTENT_BOUND |
+| C. Real WizardConnect untested | **Open (not proven)** | Wallet path uses the same authorization (no authorization → no sign button; mismatching signed tx refused). Owner checklist in docs/DEMO-RUNBOOK.md | — |
+| D. No mainnet solver auction | **Fixed (operator-driven, flash → Cauldron)** | `services/api/src/live/auction.ts`: signed RFQ → signed quotes from two solver processes (`scripts/solvers/live-solver.ts --strategy direct / deep-pair`, own keys, registry `evidence/mainnet/live-solvers.json`) → verify, recompute on live pools, score by user cost → winner composed and authorized with the transcript hash → broadcast → certificate commits the transcript | live-auction.test.ts (3); auction `lauc_48599487f2e7e5bc1549` → [`cb003c56…`](https://bchexplorer.cash/tx/cb003c5645ec52aea77b896e7f29fba22a751ad937a8a44f4d1649f954733c3c), block 978237; transcript `evidence/mainnet/auctions/` |
+| Hosted sandbox loses state | **Fixed** | Signed client-carried journal (`x-fuse-sandbox`) replayed on any instance with a frozen clock per op and deterministic solver nonces | embedded.test.ts (cross-instance replay, forged journal); Playwright vs deployed URL: PW_DEPLOYED |
+| GitHub CI absent | **Partly fixed** | `scripts/ci/local-ci.sh` green on the box (`evidence/ci/local-ci.log`); the Actions workflow is staged at `ci/github-actions-ci.yml` because the box token lacks the `workflow` scope (see ci/README.md) | no GitHub run URL yet |
+| Paryon Guardian execution | **Blocked** | Monitoring is live; repayment / liquidation / rescue need the unpublished `@paryonusd/library` builders | — |
+
+Round 5 mainnet txs (hosted path, box-only test signer, owner-authorized): flash
+[`f78074a7…`](https://bchexplorer.cash/tx/f78074a7addca74462f3d2dc8e08eb66ca14370cf5dfed1a52ed8e37d0003518) (miner fee 1,086 + 100 flash fee to our own vault) and
+auction flash → Cauldron [`cb003c56…`](https://bchexplorer.cash/tx/cb003c5645ec52aea77b896e7f29fba22a751ad937a8a44f4d1649f954733c3c) (miner fee 1,858 + 100 flash fee + 33 pool loss).
+Round 5 cost 3,177 sats, of which 2,977 left the owner's control (cap 50,000). Now: wallet **706,520** + vault `fuse-live-1` **30,400** (flashCount 4) = 736,920.
 
 ## Round 4 mainnet proof (hosted path, box-only test signer)
 
@@ -54,12 +71,18 @@ builder, recipe marketplace, staged recovery, shard leases, SQLite persistence, 
 
 ## Tests
 
-vitest 149/149 (35 files), tsc 0 errors (root + web), eslint 0 problems, next build OK, Playwright against the hosted URL (`--workers=1`): 80 passed, 1 failed, 13 skipped (94). The failure is the SANDBOX LP-deposit → explorer flow: hosted sandbox state is per serverless instance and the explorer request landed on a fresh one; it passes when re-run alone. Every LIVE test passed. Screenshots: `evidence/screenshots/live-*.png` (LIVE) and the round-3 sandbox set. See [TEST-REPORT.md](TEST-REPORT.md).
+Round 5: vitest 181/181 (38 files), tsc 0 errors (root + web), eslint 0 problems, next build OK, local CI (Playwright vs local `next start`): 81 passed, 0 failed, 13 skipped; Playwright against the hosted URL (`--workers=1`): PW_DEPLOYED. The 13 skips are the desktop-only feature flows and the desktop-only live-execute test, skipped on the mobile project by design. Screenshots: `evidence/screenshots/live-*.png` (LIVE) and the round-3 sandbox set. See [TEST-REPORT.md](TEST-REPORT.md).
 
 ## Open problems / blockers
 
-1. **Real-wallet signing untested.** WizardConnect signing is wired (token-aware source outputs) but no WizardConnect
-   wallet was available on the build box. The live path was proven with the box-only test signer and the raw-hex package.
+1. **Real-wallet signing untested (review issue C).** WizardConnect signing is wired (token-aware source outputs) and
+   bound by the execution authorization, but no real wallet has signed. Owner checklist: docs/DEMO-RUNBOOK.md.
+1b. **GitHub Actions not active.** The workflow is staged at `ci/github-actions-ci.yml`; enabling it needs a GitHub token
+   with the `workflow` scope (`gh auth refresh -h github.com -s workflow`, owner only).
+1c. **Auction scope.** The mainnet auction is operator-driven (two solver processes on the build box) and covers only the
+   flash → Cauldron route; both solvers quoted the same route in the recorded run. The sandbox and mainnet auction engines
+   are still separate code paths. Single-use of authorizations across serverless instances relies on input outpoints
+   being spent (plus a per-instance used-set), not a shared store.
 2. **WalletConnect v2 (Paytaca / Cashonize)** is not wired: it needs a Reown project ID from an owner account.
 3. **Indexer lag.** bchexplorer.cash backends sometimes lag the mempool by tens of seconds. Composing right after a
    broadcast can use a stale outpoint; the node rejects that (no loss). The UI says to wait for the previous tx to show.
