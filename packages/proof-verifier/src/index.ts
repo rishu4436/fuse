@@ -102,6 +102,15 @@ export async function verifyCertificate(input: unknown, reader: ChainReader, ctx
     ? { ok: true, detail: reader.network === 'local' ? 'accepted by the LOCAL mock chain (simulation, not on-chain)' : `${cert.transactions.length} tx(s) found, re-hashed and confirmed` }
     : { ok: false, detail: txChecks.filter((c) => !c.ok).map((c) => `${c.name} ${c.detail ?? ''}`).join('; ') || 'transaction missing' };
   const structStart = checks.length;
+  if (reader.network === 'mainnet') {
+    for (const [txid, tx] of decoded) {
+      const inputs = cert.inputs.filter(input => input.txid === txid);
+      const outputs = cert.outputs.filter(output => output.txid === txid);
+      const complete = inputs.length === tx.inputs.length && new Set(inputs.map(input => input.outpoint)).size === inputs.length &&
+        outputs.length === tx.outputs.length && new Set(outputs.map(output => output.vout)).size === outputs.length;
+      checks.push({ name: `complete-inventory:${txid.slice(0, 12)}`, ok: complete, detail: 'every input outpoint and output index must be listed once' });
+    }
+  }
   for (const i of cert.inputs) {
     const tx = decoded.get(i.txid);
     const [h, n] = i.outpoint.split(':');

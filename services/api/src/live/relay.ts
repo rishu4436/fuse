@@ -20,9 +20,18 @@ export interface ChainDeps { independentlyUnspent?: typeof independentlyUnspent;
 export const liveChain: ChainDeps = { independentlyUnspent, freshTip, outputAt: outputAt as never, outspend, relay };
 
 const hits = new Map<string, number[]>();
+let instanceHits: number[] = [];
 export function rateLimit(ip: string, max = 12, windowMs = 60_000) {
-  const now = Date.now(); const h = (hits.get(ip) ?? []).filter((t) => now - t < windowMs); h.push(now); hits.set(ip, h);
-  if (h.length > max) throw Object.assign(new Error('rate limited: too many broadcasts from this client'), { statusCode: 429 });
+  const now = Date.now();
+  instanceHits = instanceHits.filter(t => now - t < windowMs);
+  for (const [key, times] of hits) if (now - times[times.length - 1] >= windowMs) hits.delete(key);
+  const recent = (hits.get(ip) ?? []).filter(t => now - t < windowMs);
+  if (recent.length >= max || instanceHits.length >= 120) {
+    throw Object.assign(new Error('Broadcast rate limited. Retry in one minute.'), { statusCode: 429 });
+  }
+  recent.push(now);
+  hits.set(ip, recent);
+  instanceHits.push(now);
 }
 const refuse = (msg: string, code = 422, details?: unknown): never => { throw Object.assign(new Error(`refused: ${msg}. Nothing was sent.`), { statusCode: code, details }); };
 

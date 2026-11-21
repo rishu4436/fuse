@@ -1,17 +1,5 @@
-# CI
+# Continuous integration
 
-`ci/github-actions-ci.yml` is the GitHub Actions workflow (install → reproducible contract compile → lint → typecheck →
-vitest → hosted build → `next start` → Playwright desktop+mobile against the local server).
+[Core CI](../.github/workflows/ci.yml) installs pinned dependencies, reproduces contract artifacts, checks types, runs the offline tests, builds the hosted application and exercises desktop and mobile browsers against integrity-checked recordings. Run `bash scripts/ci/local-ci.sh` with ports 3000 and 18788 free to repeat the workflow.
 
-**Why it is not in `.github/workflows/` yet:** the box's GitHub token has scopes `repo, gist, read:org, delete_repo` but not
-`workflow`, and GitHub rejects any push that creates a workflow file without it
-(`refusing to allow an OAuth App to create or update workflow .github/workflows/ci.yml without workflow scope`).
-To enable it (owner, one time):
-
-```bash
-gh auth refresh -h github.com -s workflow      # device-code login in the browser
-git mv ci/github-actions-ci.yml .github/workflows/ci.yml && git commit -m "CI: enable workflow" && git push
-gh run watch                                    # wait for green
-```
-
-Until then `scripts/ci/local-ci.sh` runs exactly the same steps on the box; its latest log is `evidence/ci/local-ci.log`.
+[Read-only mainnet smoke](../.github/workflows) probes current external services and the public deployment separately. A red smoke result records a real reachability, data or deployment discrepancy. See the failed step for the affected endpoint.

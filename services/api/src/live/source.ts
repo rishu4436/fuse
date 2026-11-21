@@ -24,7 +24,7 @@ export async function readSource<T>(url: string, read: () => Promise<T>): Promis
     const status = (error as {status?: number}).status;
     if (status !== 404 && status !== 400) {
       health.lastError = status ? `HTTP ${status}` : 'network or invalid response';
-      if (++health.failures >= 3) health.retryAt = Date.now() + 10_000;
+      if (++health.failures >= 3) health.retryAt = Date.now() + Math.min(60_000, 2500 * 2 ** Math.min(health.failures - 3, 5));
     }
     throw error;
   } finally {
@@ -33,7 +33,7 @@ export async function readSource<T>(url: string, read: () => Promise<T>): Promis
   }
 }
 
-export const fulcrumUrl = process.env.FUSE_FULCRUM_WSS ?? 'wss://cashnode.bch.ninja';
+export const fulcrumUrl = process.env.FUSE_FULCRUM_WSS || 'wss://cashnode.bch.ninja';
 export function rpc<T>(url: string, method: string, params: unknown[], timeout = 4500): Promise<T> {
   return new Promise((resolve, reject) => {
     const ws = new WebSocket(url);

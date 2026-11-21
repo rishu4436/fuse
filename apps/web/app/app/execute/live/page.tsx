@@ -54,12 +54,13 @@ export default function LiveExecute() {
   const [signedHex, setSignedHex] = useState('');
   const [ver, setVer] = useState<Verified>();
   const [sent, setSent] = useState<Verified>();
+  const [statusUnavailable, setStatusUnavailable] = useState(false);
   const [st, setSt] = useState<TxStatus>();
   const [cert, setCert] = useState<{ kind: string; verification: Verification; certificate: { id?: string } } & Record<string, unknown>>();
   const address = wallet?.address ?? manual.trim();
   const open = (vaults.data ?? []).filter((v) => v.open && !v.error);
   useEffect(() => { if (!vaultId && open[0]) setVaultId(open[0].id); }, [open, vaultId]);
-  const reset = () => { setPf(undefined); setVer(undefined); setSent(undefined); setSt(undefined); setCert(undefined); setSignedHex(''); setErr(undefined); };
+  const reset = () => { setPf(undefined); setVer(undefined); setSent(undefined); setSt(undefined); setStatusUnavailable(false); setCert(undefined); setSignedHex(''); setErr(undefined); };
   const run = async <T,>(label: string, f: () => Promise<T>) => { setErr(undefined); setBusy(label); try { return await f(); } catch (e) { setErr((e as Error).message); } finally { setBusy(undefined); } };
 
   const compose = () => run('Composing from live chain state, simulating in the BCH 2026 VM, running Guardian…', async () => {
@@ -78,7 +79,7 @@ export default function LiveExecute() {
   const broadcast = () => run('Relaying the signed hex to BCH mainnet…', async () => { setSent(await api<Verified>('/api/broadcast', { method: 'POST', json: { rawHex: signedHex, authorization: pf?.authorization } })); });
   useEffect(() => {
     if (!sent?.txid) return; let stop = false;
-    const tick = async () => { try { const s = await api<TxStatus>(`/api/live/tx/${sent.txid}`); if (!stop) setSt(s); } catch { /* retry */ } };
+    const tick = async () => { try { const s = await api<TxStatus>(`/api/live/tx/${sent.txid}`); if (!stop) { setSt(s); setStatusUnavailable(false); } } catch { if (!stop) { setSt(undefined); setStatusUnavailable(true); } } };
     tick(); const t = setInterval(tick, 15000); return () => { stop = true; clearInterval(t); };
   }, [sent?.txid]);
   const certify = () => run('Building and verifying the certificate against mainnet…', async () => { if (sent) setCert(await api('/api/live/certificate', { method: 'POST', json: { txid: sent.txid, authorization: pf?.authorization ?? null } })); });
@@ -177,7 +178,7 @@ export default function LiveExecute() {
                 <div className="grid gap-2 text-[12px]" data-testid="live-sent">
                   <div className="text-volt-300">Broadcast · txid <a className="underline" href={sent.explorer} target="_blank" rel="noreferrer"><Mono>{sent.txid}</Mono></a></div>
                   <div className="text-[11.5px] text-fog-400">Public indexers can lag the mempool by up to a minute: wait until this tx shows in the vault history before composing another action on the same vault, or the node will reject it as a double-spend (nothing is lost).</div>
-                  <div className="text-fog-300">{st ? (st.confirmations > 0 ? `${st.confirmations} confirmation(s) · block ${st.block_height}` : 'in mempool · waiting for a block (~10 min)') : 'checking…'}</div>
+                  <div className="text-fog-300">{st ? (st.confirmations > 0 ? `${st.confirmations} confirmation(s) · block ${st.block_height}` : 'in mempool · waiting for a block (~10 min)') : statusUnavailable ? 'Current confirmation status unavailable. Checking again in 15 seconds.' : 'checking…'}</div>
                   <Button variant="ghost" onClick={certify} disabled={!st || st.confirmations < 1 || Boolean(busy)} className="self-start" data-testid="live-certify">Verify certificate against mainnet</Button>
                   {cert && <div className={cert.verification.status === 'VERIFIED' ? 'text-volt-300' : 'text-rose-bad'} data-testid="live-cert">{cert.kind} certificate<div className="mt-2"><VerifyResult v={cert.verification as Verification} /></div><pre className="mt-2 max-h-72 overflow-auto rounded-md bg-ink-900 p-2 text-[10.5px] text-fog-400">{JSON.stringify(cert, (_k, v) => (typeof v === 'bigint' ? v.toString() : v), 1)}</pre></div>}
                 </div>

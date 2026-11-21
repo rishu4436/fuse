@@ -31,7 +31,7 @@ export function registerLive(app: FastifyInstance, ctx: { root: string; paryonSn
   app.get('/api/live/status', async () => {
     const t0 = Date.now(); let tipHeight: number | null = null; let err: string | null = null;
     try { tipHeight = await tip(); } catch (e) { err = (e as Error).message; }
-    return { mode: 'LIVE', network: 'mainnet', tipHeight, sources: sourceHealth(), checkedAt: new Date().toISOString(), chainSource: new URL(ESPLORA).hostname, latencyMs: Date.now() - t0, error: err, broadcast: broadcastEnabled() && serverKey() ? 'ENABLED (relays only signed txs that match an unexpired, single-use execution authorization from preflight; full VM + constraint re-check; server holds no fund keys)' : 'DISABLED', authorization: serverKey() ? { scheme: 'Schnorr secp256k1 over sha256("fuse-authz/v1:" + payload)', attestationPubkey: serverKey()!.pub, ttlSeconds: 300, singleUse: 'per-instance used-set + exact input outpoints re-checked unspent' } : null, vaults: configs().map((c) => ({ id: c.id, status: c.status, category: c.category })), caps: LIVE_CAPS, sandbox: 'opt-in local BCH VM (toggle in the app)' };
+    return { mode: 'LIVE', network: 'mainnet', releaseSha: process.env.FUSE_RELEASE_SHA ?? process.env.VERCEL_GIT_COMMIT_SHA ?? null, tipHeight, sources: sourceHealth(), checkedAt: new Date().toISOString(), chainSource: new URL(ESPLORA).hostname, latencyMs: Date.now() - t0, error: err, broadcast: broadcastEnabled() && serverKey() ? 'ENABLED (relays only signed txs that match an unexpired, single-use execution authorization from preflight; full VM + constraint re-check; server holds no fund keys)' : 'DISABLED', authorization: serverKey() ? { scheme: 'Schnorr secp256k1 over sha256("fuse-authz/v1:" + payload)', attestationPubkey: serverKey()!.pub, ttlSeconds: 300, singleUse: 'per-instance used-set + exact input outpoints re-checked unspent' } : null, vaults: configs().map((c) => ({ id: c.id, status: c.status, category: c.category })), caps: LIVE_CAPS, sandbox: 'opt-in local BCH VM (toggle in the app)' };
   });
   app.get('/api/live/vaults', async () => Promise.all(configs().map((c) => trackVault(c).catch((e: Error) => ({ id: c.id, error: e.message })))));
   app.get('/api/live/vault/:id', async (req, reply) => { const c = configs().find((x) => x.id === (req.params as { id: string }).id); return c ? trackVault(c) : reply.status(404).send({ error: 'NOT_FOUND' }); });
@@ -76,7 +76,7 @@ export function registerLive(app: FastifyInstance, ctx: { root: string; paryonSn
     return { chainTip, intentId: p.intentId };
   });
   app.post('/api/broadcast', async (req) => {
-    rateLimit(String(req.headers['x-forwarded-for'] ?? req.ip).split(',')[0]);
+    rateLimit(String((process.env.VERCEL && req.headers['x-vercel-forwarded-for']) || req.ip).split(',')[0].trim());
     const b = z.object({ rawHex: z.string(), authorization: AuthZ.optional(), userSignature: z.object({ pubkey: z.string(), sig: z.string() }).optional() }).parse(req.body);
     return broadcast(b, { enabled: broadcastEnabled(), trustedPubkey: serverKey()?.pub ?? null });
   });

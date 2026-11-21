@@ -30,7 +30,7 @@ export function Logo({ className }: { className?: string }) {
 }
 
 function HackathonBanner() {
-  const pres = process.env.NEXT_PUBLIC_PRESENTATION_URL;
+  const pres = process.env.NEXT_PUBLIC_PRESENTATION_URL || '/judging/FUSE.pdf';
   const donation = process.env.NEXT_PUBLIC_DONATION_ADDRESS;
   const live = process.env.NEXT_PUBLIC_LIVE_URL;
   const hosted = process.env.NEXT_PUBLIC_FUSE_HOSTED === '1';

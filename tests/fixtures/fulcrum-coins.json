@@ -18,38 +18,38 @@
     ],
     "abeb4a77da06ac0efc8cf231c212cc3292b6d84a46a02a33bda371a28279c630": [
       {
-        "height": 0,
+        "height": 978283,
         "token_data": {
-          "amount": "4970781",
+          "amount": "4967611",
           "category": "2469acc5afa4b10cb5b5c04afb89c3a3ffd61c5da9c01e26d00951cae2a02544"
         },
-        "tx_hash": "87f888b5a710624115bc2a01f8d6b0c9022e98117076cedd98c2be4072c1ae49",
-        "tx_pos": 47,
-        "value": 26632365894
+        "tx_hash": "480cbdf59ea11cb693152832a9c2c046fbea6f0417817e21dc6bdaf586e9185d",
+        "tx_pos": 13,
+        "value": 26649412043
       }
     ],
     "3d74cc784eed3369c86028cfccf91470ca433d08e8c26bc609a0746b8cb39ef1": [
       {
-        "height": 0,
+        "height": 978283,
         "token_data": {
-          "amount": "1195390",
+          "amount": "1194628",
           "category": "2469acc5afa4b10cb5b5c04afb89c3a3ffd61c5da9c01e26d00951cae2a02544"
         },
-        "tx_hash": "87f888b5a710624115bc2a01f8d6b0c9022e98117076cedd98c2be4072c1ae49",
-        "tx_pos": 46,
-        "value": 6404642643
+        "tx_hash": "480cbdf59ea11cb693152832a9c2c046fbea6f0417817e21dc6bdaf586e9185d",
+        "tx_pos": 37,
+        "value": 6408740172
       }
     ],
     "208e416764a16030926f8c89a9d4300d4fd9a1782ed44c8a75f8d16111f1c9d4": [
       {
-        "height": 0,
+        "height": 978283,
         "token_data": {
-          "amount": "911283",
+          "amount": "910702",
           "category": "2469acc5afa4b10cb5b5c04afb89c3a3ffd61c5da9c01e26d00951cae2a02544"
         },
-        "tx_hash": "87f888b5a710624115bc2a01f8d6b0c9022e98117076cedd98c2be4072c1ae49",
-        "tx_pos": 45,
-        "value": 4882455103
+        "tx_hash": "480cbdf59ea11cb693152832a9c2c046fbea6f0417817e21dc6bdaf586e9185d",
+        "tx_pos": 29,
+        "value": 4885579332
       }
     ],
     "78a40d5d8c13cac0b175175b2034dfafecd0cad8d6ff7f3c621ad3d56a230426": [
@@ -70,14 +70,14 @@
     ],
     "8579a6d843f14f8a106bb9b5c509aba080bfe3cacf7d36c085213cdf54cb5867": [
       {
-        "height": 0,
+        "height": 978283,
         "token_data": {
-          "amount": "324493",
+          "amount": "324286",
           "category": "2469acc5afa4b10cb5b5c04afb89c3a3ffd61c5da9c01e26d00951cae2a02544"
         },
-        "tx_hash": "87f888b5a710624115bc2a01f8d6b0c9022e98117076cedd98c2be4072c1ae49",
-        "tx_pos": 34,
-        "value": 1738559534
+        "tx_hash": "480cbdf59ea11cb693152832a9c2c046fbea6f0417817e21dc6bdaf586e9185d",
+        "tx_pos": 39,
+        "value": 1739672640
       }
     ],
     "e35d6406e535668b3d2d6b8beb9272ed87ad7deff85019be1e763f700dbc48a1": [
@@ -142,15 +142,16 @@
         "value": 136562195
       },
       {
-        "height": 0,
+        "height": 978283,
         "token_data": {
-          "amount": "488480",
+          "amount": "488169",
           "category": "2469acc5afa4b10cb5b5c04afb89c3a3ffd61c5da9c01e26d00951cae2a02544"
         },
-        "tx_hash": "87f888b5a710624115bc2a01f8d6b0c9022e98117076cedd98c2be4072c1ae49",
-        "tx_pos": 15,
-        "value": 2617168350
+        "tx_hash": "480cbdf59ea11cb693152832a9c2c046fbea6f0417817e21dc6bdaf586e9185d",
+        "tx_pos": 24,
+        "value": 2618840699
       }
     ]
-  }
+  },
+  "poolReadAt": "2026-11-21T08:46:10.066Z"
 }

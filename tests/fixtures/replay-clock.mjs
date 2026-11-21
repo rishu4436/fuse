@@ -11,7 +11,7 @@ Date.now = () => Math.floor(epoch + performance.now() - start);
 
 
 const bytes = readFileSync(new globalThis.URL('./fulcrum-coins.json', import.meta.url));
-if (createHash('sha256').update(bytes).digest('hex') !== '316900b7a7e5257e602f51e0faf2572a98512c2795eccc7e7e700582bc9138dc') throw Error('Independent UTXO fixture integrity check failed');
+if (createHash('sha256').update(bytes).digest('hex') !== 'af08edea670df087021e0a4ee901b20a5fd17ba16ec4912418dbbec9d8f776de') throw Error('Independent UTXO fixture integrity check failed');
 const {responses} = JSON.parse(bytes);
 globalThis.WebSocket = class FixtureSocket {
   constructor() { globalThis.queueMicrotask(() => this.onopen?.()); }

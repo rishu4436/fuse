@@ -41,6 +41,7 @@ export default function Home() {
             <a href="https://bchexplorer.cash/tx/994b63ba75533bb36506a406ac09737fb96812c45e9224ba089f0f3e66a3dd3f">Two-pool transaction</a>
             <a href="https://bchexplorer.cash/tx/cb003c5645ec52aea77b896e7f29fba22a751ad937a8a44f4d1649f954733c3c">Solver settlement</a>
             <a href="https://github.com/rishu4436/fuse/tree/feat/phase-0-1-foundation/evidence/mainnet/wizardconnect-cashonize">Cashonize approval</a>
+            <a href="/judging/FUSE-demo.mp4">Watch the recorded demo</a>
             <Link href="/developers/sdk">Developer SDK</Link>
           </nav>
         </motion.div>
@@ -55,10 +56,10 @@ export default function Home() {
             <Stat label="Transitions" value={v ? v.history.length - 1 : '—'} />
           </div>
         </Panel>
-        <Panel title="Bitcoin Cash mainnet" kicker={status.data ? `block ${status.data.tipHeight}` : '—'} mode="LIVE">
+        <Panel title="Bitcoin Cash mainnet" kicker={status.data?.tipHeight ? `block ${status.data.tipHeight}` : '—'} mode="LIVE">
           <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
             <Stat label="Cauldron pools" value={pools.data ? `${pools.data.pools.length}/${pools.data.indexerCount}` : '—'} sub="verified / listed" />
-            <Stat label="Paryon oracle" value={paryon.data?.live ? usd(paryon.data.live.latestPrice.priceRaw) : '—'} sub="BCH/USD, on-chain" />
+            <Stat label="Paryon oracle" value={paryon.data?.live?.latestPrice ? usd(paryon.data.live.latestPrice.priceRaw) : '—'} sub="BCH/USD, on-chain" />
             <Stat label="Paryon loans" value={paryon.data?.live?.activeLoans ?? '—'} />
             <Stat label="Broadcast" value={status.data ? (status.data.broadcast.startsWith('ENABLED') ? 'ON' : 'OFF') : '—'} sub="signed hex only" />
           </div>

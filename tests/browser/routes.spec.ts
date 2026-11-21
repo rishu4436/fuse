@@ -34,8 +34,7 @@ test('LIVE is the default mode: mainnet pages are labeled LIVE; sandbox pages SA
   const r = await page.goto('/app/execute/new'); expect(r?.url()).toMatch(/\/app\/execute\/new$/);
 });
 
-test('LIVE execute: compose a mainnet flash loan, VM simulation + Guardian pass, signing package exported (no key, no broadcast)', async ({ page }, info) => {
-  test.skip(info.project.name === 'mobile', 'desktop only');
+test('LIVE execute: compose a mainnet flash loan, VM simulation + Guardian pass, signing package exported (no key, no broadcast)', async ({ page }) => {
   test.setTimeout(120_000);
   await page.goto('/app/execute/live');
   await expect(page.getByTestId('live-vault')).toContainText('fuse-live-1', { timeout: 45_000 });
@@ -79,8 +78,7 @@ test('Demo: run an auction in the Studio, adversary rejected, settlement + certi
   await expect(page.getByTestId('replay-result')).not.toContainText('error');
 });
 
-test('WizardConnect: pairing QR is generated in the browser (no wallet needed)', async ({ page }, info) => {
-  test.skip(info.project.name === 'mobile', 'desktop only');
+test('WizardConnect: pairing QR is generated in the browser (no wallet needed)', async ({ page }) => {
   await page.goto('/app/execute/new');
   await page.getByTestId('wc-connect').click();
   await expect(page.getByTestId('wc-qr').or(page.getByRole('alert'))).toBeVisible({ timeout: 15_000 });
@@ -168,4 +166,12 @@ test.describe('feature flows', () => {
     await page.getByTestId('xo-compile').click();
     await expect(page.getByTestId('xo-payout')).toContainText('76a914');
   });
+});
+
+test('unavailable vault reader exposes a retry and cannot reach signing', async ({ page }) => {
+  await page.route('**/api/live/vaults', route => route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ message: 'BCH reader unavailable' }) }));
+  await page.goto('/app/execute/live');
+  await expect(page.getByRole('button', {name:'Retry chain read'})).toBeVisible();
+  await expect(page.getByTestId('live-sign-wc')).toHaveCount(0);
+  await expect(page.getByTestId('live-broadcast')).toHaveCount(0);
 });

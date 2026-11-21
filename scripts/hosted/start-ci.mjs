@@ -8,7 +8,7 @@ import process from 'node:process';
 import console from 'node:console';
 
 const bytes = readFileSync('tests/fixtures/browser-chain.json');
-if (createHash('sha256').update(bytes).digest('hex') !== 'c4b0428d74d37453b3cedc00c104b80f8c3a41a9f450f854363564edf8eb78fd') throw Error('Fixture integrity check failed');
+if (createHash('sha256').update(bytes).digest('hex') !== '2e29eb7114166f131dc7d6bfe10c94730ce8c780eee4d8fa1d00ba5c61521802') throw Error('Fixture integrity check failed');
 const {responses} = JSON.parse(bytes);
 const fixture = createServer((req, res) => {
   if (req.method !== 'GET' || !Object.hasOwn(responses, req.url)) {

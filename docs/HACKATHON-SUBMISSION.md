@@ -1,5 +1,7 @@
 # BCH BLAZE 2026: submission checklist
 
+Historical report. See the [release handoff](RELEASE-READINESS.md) and [verified submission evidence](SUBMISSION-EVIDENCE.md) for the judging release.
+
 | Requirement | State |
 |---|---|
 | Public repo | ✅ https://github.com/rishu4436/fuse |
