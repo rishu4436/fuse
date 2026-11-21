@@ -1,5 +1,5 @@
 {
-  "verifiedAt": "2026-11-21T01:34:30.542Z",
+  "verifiedAt": "2026-11-21T02:06:52.626Z",
   "attestationPubkey": "037e044ab06145cc82956a836cb712f0f422a5bc05371e49eabd4936592419401f",
   "verifier": "packages/proof-verifier levels + services/api/src/live/verify.ts rederivers",
   "results": [
@@ -96,6 +96,30 @@
         "INTENT_BOUND": {
           "ok": false,
           "detail": "no execution authorization for this transaction (it predates intent binding, or none was supplied)"
+        }
+      }
+    },
+    {
+      "txid": "cb003c5645ec52aea77b896e7f29fba22a751ad937a8a44f4d1649f954733c3c",
+      "kind": "FLASH_VIA_CAULDRON",
+      "status": "VERIFIED",
+      "level": "INTENT_BOUND",
+      "levels": {
+        "INCLUDED": {
+          "ok": true,
+          "detail": "1 tx(s) found, re-hashed and confirmed"
+        },
+        "STRUCTURE_VERIFIED": {
+          "ok": true,
+          "detail": "4 inputs, 4 outputs, 1 vault continuation(s) and the owner outcome match chain data"
+        },
+        "OUTCOME_VERIFIED": {
+          "ok": true,
+          "detail": "7 contract-specific facts re-derived from chain data"
+        },
+        "INTENT_BOUND": {
+          "ok": true,
+          "detail": "tx matches authorization int_92ac5b65a8228e12bec96f7a (attestation key 037e044ab0…, Guardian PASS); wallet key 16ce0ac40f684f525f7d2fd58ae797d30f914dd3 signed the authorization hash; auction lauc_48599487f2e7e5bc1549 winner lsol_e9cca4f7068bcf64"
         }
       }
     },

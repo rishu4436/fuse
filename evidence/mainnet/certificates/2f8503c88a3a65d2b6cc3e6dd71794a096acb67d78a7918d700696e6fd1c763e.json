@@ -36,7 +36,7 @@
     "transactions": [
       {
         "txid": "2f8503c88a3a65d2b6cc3e6dd71794a096acb67d78a7918d700696e6fd1c763e",
-        "blockHeight": 978200,
+        "blockHeight": 978207,
         "blockHash": "000000000000000001d57e2f9ac4278184625d374b10fc2474b05a733447fb1c"
       }
     ],
@@ -112,9 +112,9 @@
     ],
     "confirmation": "CONFIRMED",
     "simulated": false,
-    "issuedAt": 1795224814,
+    "issuedAt": 1795226763,
     "issuer": "fuse-live-api",
-    "commitment": "8c8b7bb3c41eff7b68031a29684c53550815c9d138ed37105cc85fb68b41d5b6"
+    "commitment": "f1499ef5695d25b671a463e62b6971be995f9c11ede7214678ddd5b0e0278be9"
   },
   "verification": {
     "status": "VERIFIED",
@@ -134,7 +134,7 @@
       {
         "name": "confirmations:2f8503c88a3a",
         "ok": true,
-        "detail": "22"
+        "detail": "24"
       },
       {
         "name": "input:994b63ba7553",

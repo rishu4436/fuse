@@ -108,9 +108,9 @@
     ],
     "confirmation": "CONFIRMED",
     "simulated": false,
-    "issuedAt": 1795224790,
+    "issuedAt": 1795226750,
     "issuer": "fuse-live-api",
-    "commitment": "c445852aa91e67a9679cc84192faac5c54175c18bb319822b8fbeb8c8681a454"
+    "commitment": "0716ad5cc5a02eb094359f0b509134e584a009b6748d56ea96a9d1fba9e954af"
   },
   "verification": {
     "status": "VERIFIED",
@@ -130,7 +130,7 @@
       {
         "name": "confirmations:1cb032299e50",
         "ok": true,
-        "detail": "22"
+        "detail": "24"
       },
       {
         "name": "input:2f8503c88a3a",
