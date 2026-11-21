@@ -1,6 +1,6 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { api, fromJson } from './api';
+import { api, fromJson, sandboxToken } from './api';
 import type { FuseEvent } from './types';
 
 export function usePoll<T>(path: string | null, intervalMs = 1500) {
@@ -29,7 +29,7 @@ export function useEvents(limit = 60) {
     let es: EventSource | undefined; let poll: ReturnType<typeof setInterval> | undefined;
     const add = (e: FuseEvent) => setEvents((prev) => (prev.some((p) => p.id === e.id) ? prev : [e, ...prev].slice(0, limit)));
     try {
-      es = new EventSource('/api/events');
+      const tok = sandboxToken(); es = new EventSource(tok ? `/api/events?sbx=${encodeURIComponent(tok)}` : '/api/events');
       es.onopen = () => setLive(true);
       es.onmessage = (m) => add(fromJson<FuseEvent>(m.data));
       es.onerror = () => { setLive(false); es?.close(); poll = setInterval(async () => { try { const r = await api<FuseEvent[]>('/api/events/recent'); r.forEach(add); } catch { /* api offline */ } }, 2000); };
