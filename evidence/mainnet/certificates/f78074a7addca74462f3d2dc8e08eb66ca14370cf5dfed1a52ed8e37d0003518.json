@@ -1,0 +1,231 @@
+{
+  "kind": "FLASH_USE",
+  "auction": null,
+  "authorization": {
+    "payload": "eyJ2IjoxLCJraW5kIjoiZnVzZS5leGVjdXRpb24tYXV0aG9yaXphdGlvbi92MSIsImludGVudElkIjoiaW50XzQ2YzM3YjcxMGNhZDAxOTJjOWIxNWMxYSIsIm5ldHdvcmsiOiJtYWlubmV0IiwiaXNzdWVkQXQiOjE3OTUyMjQxMzAsImV4cGlyZXNBdCI6MTc5NTIyNDQzMCwic3RydWN0dXJlSGFzaCI6IjYzMmVhNGFkN2UzMzM0YzgwOTEyNmY5MDNmMDhhNjUwNTliYjg1ZDc3NWE0YzVhOTRhMmZmOWRkNGFiY2JlN2YiLCJhY3Rpb24iOiJmbGFzaCIsImFkZHJlc3MiOiJiaXRjb2luY2FzaDpxcXR2dXpreXBhNXk3NWpsMDVoYXR6aDhqbGZzbHkyZDZ2MjhtaDhnZTkiLCJ0ZW1wbGF0ZUhhc2giOiIzMWE5M2QzZTI1MjhhNmZjMGFiNTc5ZmE4YzY1NDJhODRhMjhkYjljNTcwYmNjNGZjZTlhMmFhNTgxM2U2ZDNlIiwidGVtcGxhdGUiOnsidmVyc2lvbiI6MiwibG9ja3RpbWUiOjAsImlucHV0cyI6W3sidHhpZCI6IjFjYjAzMjI5OWU1MDA5Yzk2MTk1ZWNkMzYxNWQ2YTgxNGM3NjcwZTlhNDM3ZmMxNWIxOGQwOTEyZDAzZDU5MzAiLCJ2b3V0IjowLCJzYXRvc2hpcyI6IjMwMjAwbiIsImxvY2tpbmdCeXRlY29kZSI6ImFhMjAxNGZhMzYwNWQ1MWRkOGM5Y2YyOTg3ODAzOGE0NmM3MmVhYjE4NjJjNjVhZDQyOTY2ZDE3MDQyZDU5YTcyM2RiODciLCJ0b2tlbiI6eyJjYXRlZ29yeSI6ImZhMGM1MTYzYjg0OTBhMTJkOTk1ZjA5ZWJjNmM1Y2MzMmViZTNiM2ZjMTA0OTUxODE5YjdjZmVlNWQ3NDU0OWIiLCJhbW91bnQiOiIwbiIsIm5mdCI6eyJjYXBhYmlsaXR5IjoibXV0YWJsZSIsImNvbW1pdG1lbnQiOiIwMjAwMDAwMDAwMDAwMDAwYzgwMDAwMDAwMDAwMDAwMDAwIn19LCJyb2xlIjoidmF1bHQiLCJ1bmxvY2siOnsia2luZCI6ImZsYXNodmF1bHQtYmNoIiwicGFyYW1zIjp7InZhdWx0Q2F0ZWdvcnkiOiJmYTBjNTE2M2I4NDkwYTEyZDk5NWYwOWViYzZjNWNjMzJlYmUzYjNmYzEwNDk1MTgxOWI3Y2ZlZTVkNzQ1NDliIiwiZmVlQnBzIjoiOW4iLCJtaW5GZWUiOiIxMDBuIiwibWF4RXhwb3N1cmUiOiIxMDAwMDBuIiwib3duZXJQa2giOiIxNmNlMGFjNDBmNjg0ZjUyNWY3ZDJmZDU4YWU3OTdkMzBmOTE0ZGQzIn0sImZuIjoiZmxhc2gifX0seyJ0eGlkIjoiNjAzYmNkM2FiYzI0NTE1ODcwMzllYTg4ZGRmMTM2NmUzZTc5OGZmOWE1ZTNlOWVhZWVmMDc0Zjc0NDcyYzQ5NCIsInZvdXQiOjAsInNhdG9zaGlzIjoiNzA5Njk3biIsImxvY2tpbmdCeXRlY29kZSI6Ijc2YTkxNDE2Y2UwYWM0MGY2ODRmNTI1ZjdkMmZkNThhZTc5N2QzMGY5MTRkZDM4OGFjIiwicm9sZSI6IndhbGxldCIsInVubG9jayI6eyJraW5kIjoicDJwa2giLCJzaWduZXIiOiJ1c2VyIn19XSwib3V0cHV0cyI6W3sibG9ja2luZ0J5dGVjb2RlIjoiYWEyMDE0ZmEzNjA1ZDUxZGQ4YzljZjI5ODc4MDM4YTQ2YzcyZWFiMTg2MmM2NWFkNDI5NjZkMTcwNDJkNTlhNzIzZGI4NyIsInNhdG9zaGlzIjoiMzAzMDBuIiwidG9rZW4iOnsiY2F0ZWdvcnkiOiJmYTBjNTE2M2I4NDkwYTEyZDk5NWYwOWViYzZjNWNjMzJlYmUzYjNmYzEwNDk1MTgxOWI3Y2ZlZTVkNzQ1NDliIiwiYW1vdW50IjoiMG4iLCJuZnQiOnsiY2FwYWJpbGl0eSI6Im11dGFibGUiLCJjb21taXRtZW50IjoiMDMwMDAwMDAwMDAwMDAwMDJjMDEwMDAwMDAwMDAwMDAwMCJ9fSwicm9sZSI6InZhdWx0LWNvbnRpbnVhdGlvbiIsImxhYmVsIjoicHJpbmNpcGFsIDMwMjAwICsgZmxhc2ggZmVlIDEwMCJ9LHsibG9ja2luZ0J5dGVjb2RlIjoiNzZhOTE0MTZjZTBhYzQwZjY4NGY1MjVmN2QyZmQ1OGFlNzk3ZDMwZjkxNGRkMzg4YWMiLCJzYXRvc2hpcyI6IjcwODUxMW4iLCJyb2xlIjoiY2hhbmdlIn1dfSwiY29uc3RyYWludHMiOnsidXNlckxvY2tpbmdCeXRlY29kZSI6Ijc2YTkxNDE2Y2UwYWM0MGY2ODRmNTI1ZjdkMmZkNThhZTc5N2QzMGY5MTRkZDM4OGFjIiwibWF4TWluZXJGZWUiOiI1MDAwbiIsImV4cGVjdGVkVXNlckNvc3QiOiIxMTg2biIsImNhcGl0YWwiOiIwbiIsIm1heFVzZXJDb3N0IjoiMTE4Nm4iLCJhbGxvd2VkUmVjaXBpZW50cyI6WyJhYTIwMTRmYTM2MDVkNTFkZDhjOWNmMjk4NzgwMzhhNDZjNzJlYWIxODYyYzY1YWQ0Mjk2NmQxNzA0MmQ1OWE3MjNkYjg3IiwiNzZhOTE0MTZjZTBhYzQwZjY4NGY1MjVmN2QyZmQ1OGFlNzk3ZDMwZjkxNGRkMzg4YWMiXSwidmF1bHQiOnsiaWQiOiJmdXNlLWxpdmUtMSIsImxvY2tpbmdCeXRlY29kZSI6ImFhMjAxNGZhMzYwNWQ1MWRkOGM5Y2YyOTg3ODAzOGE0NmM3MmVhYjE4NjJjNjVhZDQyOTY2ZDE3MDQyZDU5YTcyM2RiODciLCJjYXRlZ29yeSI6ImZhMGM1MTYzYjg0OTBhMTJkOTk1ZjA5ZWJjNmM1Y2MzMmViZTNiM2ZjMTA0OTUxODE5YjdjZmVlNWQ3NDU0OWIiLCJmZWVCcHMiOiI5biIsIm1pbkZlZSI6IjEwMG4iLCJtYXhFeHBvc3VyZSI6IjEwMDAwMG4iLCJvd25lclBraCI6IjE2Y2UwYWM0MGY2ODRmNTI1ZjdkMmZkNThhZTc5N2QzMGY5MTRkZDMiLCJyZXF1aXJlZFJldHVybiI6IjMwMzAwbiJ9LCJyb3V0ZSI6bnVsbH0sImd1YXJkaWFuIjp7ImxldmVsIjoiUEFTUyIsIm9rIjp0cnVlLCJjaGVja3MiOlsib2s6Y292ZW5hbnQgc2ltdWxhdGlvbiIsIm9rOm5vIGhpZGRlbiB0cmFuc2ZlcnMiLCJvazptaW5lciBmZWUgd2l0aGluIGNhcCIsIm9rOnlvdXIgbmV0IGNvc3QiLCJvazp2YXVsdCByZXBhaWQgaW4gdGhlIHNhbWUgdHgiLCJvazpubyB0b2tlbiBzaWRlIGVmZmVjdHMgb24geW91ciB3YWxsZXQiLCJvazp5b3VyIGNvaW5zIGFyZSBjb25maXJtZWQiXX0sImF1Y3Rpb24iOm51bGx9",
+    "authHash": "b6f52d53216debea764e82176ed3fcd55710402e82aa634b9ffa7bfea7941718",
+    "serverPubkey": "037e044ab06145cc82956a836cb712f0f422a5bc05371e49eabd4936592419401f",
+    "serverSig": "6e3e5d669cf086c3ce158902c58e2b2306ee03212b339f75f18497e8df5cb3e5c8c5d5b547d3b5f47d7afb993a004d221b0a613208b4fa3e227fe62295c293e1"
+  },
+  "userSignature": {
+    "pubkey": "0214d0bdc77664f55acb8537aa3808a3c82ccffbd5157a74cbb37efe44c51c92e3",
+    "sig": "2471b0d2af7968d4208b9e2953b46e0f7f4d57f77831c5e0b8540baa4085478434cef0010ab185fae26d058dcc85e1e010ed9486f93012b5d5e05a20c041aa3c"
+  },
+  "vault": "fuse-live-1",
+  "explorer": "https://bchexplorer.cash/tx/f78074a7addca74462f3d2dc8e08eb66ca14370cf5dfed1a52ed8e37d0003518",
+  "vaultStateBefore": {
+    "flashCount": "2",
+    "cumulativeFees": "200",
+    "paused": false
+  },
+  "vaultStateAfter": {
+    "flashCount": "3",
+    "cumulativeFees": "300",
+    "paused": false
+  },
+  "routing": [],
+  "certificate": {
+    "schema": "fuse.certificate/v1",
+    "certificateId": "cert_f78074a7addca74462f3d2dc",
+    "intentId": "mainnet_flash_use_f78074a7addc",
+    "intentCommitment": "bd00b8d73dc3133db11fa58f32bc206165f7105df5093c6a37e4f483fa5d5ba9",
+    "policyCommitment": null,
+    "network": "mainnet",
+    "executionClass": "ATOMIC_SINGLE_TX",
+    "solverId": "fuse-live",
+    "quoteCommitment": "2e62462e2ed9f52b55cef56ff8311372c780fe8e1f5761c160403d01eeaa57ee",
+    "contracts": [
+      {
+        "role": "vault",
+        "name": "FlashVaultBCH",
+        "lockingBytecode": "aa2014fa3605d51dd8c9cf29878038a46c72eab1862c65ad42966d17042d59a723db87"
+      }
+    ],
+    "transactions": [
+      {
+        "txid": "f78074a7addca74462f3d2dc8e08eb66ca14370cf5dfed1a52ed8e37d0003518",
+        "blockHeight": null,
+        "blockHash": null
+      }
+    ],
+    "inputs": [
+      {
+        "txid": "f78074a7addca74462f3d2dc8e08eb66ca14370cf5dfed1a52ed8e37d0003518",
+        "outpoint": "1cb032299e5009c96195ecd3615d6a814c7670e9a437fc15b18d0912d03d5930:0"
+      },
+      {
+        "txid": "f78074a7addca74462f3d2dc8e08eb66ca14370cf5dfed1a52ed8e37d0003518",
+        "outpoint": "603bcd3abc2451587039ea88ddf1366e3e798ff9a5e3e9eaeef074f74472c494:0"
+      }
+    ],
+    "outputs": [
+      {
+        "txid": "f78074a7addca74462f3d2dc8e08eb66ca14370cf5dfed1a52ed8e37d0003518",
+        "vout": 0,
+        "lockingBytecode": "aa2014fa3605d51dd8c9cf29878038a46c72eab1862c65ad42966d17042d59a723db87",
+        "satoshis": "30300",
+        "token": {
+          "category": "fa0c5163b8490a12d995f09ebc6c5cc32ebe3b3fc104951819b7cfee5d74549b",
+          "amount": "0",
+          "nft": {
+            "capability": "mutable",
+            "commitment": "03000000000000002c0100000000000000"
+          }
+        },
+        "role": "vault-continuation"
+      },
+      {
+        "txid": "f78074a7addca74462f3d2dc8e08eb66ca14370cf5dfed1a52ed8e37d0003518",
+        "vout": 1,
+        "lockingBytecode": "76a91416ce0ac40f684f525f7d2fd58ae797d30f914dd388ac",
+        "satoshis": "708511",
+        "role": "owner"
+      }
+    ],
+    "vaultContinuations": [
+      {
+        "txid": "f78074a7addca74462f3d2dc8e08eb66ca14370cf5dfed1a52ed8e37d0003518",
+        "inputIndex": 0,
+        "minReturn": "30300",
+        "asset": "BCH"
+      }
+    ],
+    "fees": {
+      "minerFeeSats": "1086",
+      "liquidityFee": "100",
+      "solverFee": "0"
+    },
+    "outcome": {
+      "ownerLockingBytecode": "76a91416ce0ac40f684f525f7d2fd58ae797d30f914dd388ac",
+      "ownerReceives": [
+        {
+          "asset": "BCH",
+          "amount": "708511"
+        }
+      ]
+    },
+    "checks": [
+      {
+        "name": "chain-derived",
+        "ok": true
+      },
+      {
+        "name": "vault-repayment",
+        "ok": true
+      },
+      {
+        "name": "vault-state-transition",
+        "ok": true
+      },
+      {
+        "name": "fee-accounting",
+        "ok": true
+      }
+    ],
+    "confirmation": "UNCONFIRMED",
+    "simulated": false,
+    "issuedAt": 1795224375,
+    "issuer": "fuse-live-api",
+    "commitment": "0f4c3f661f8ea403cca75a988d636a006425415c3bc195ff91acdd02ba3d989b"
+  },
+  "verification": {
+    "status": "INSUFFICIENT_EVIDENCE",
+    "checks": [
+      {
+        "name": "schema",
+        "ok": true
+      },
+      {
+        "name": "certificate-commitment",
+        "ok": true
+      },
+      {
+        "name": "tx-hash:f78074a7addc",
+        "ok": true
+      },
+      {
+        "name": "confirmations:f78074a7addc",
+        "ok": false,
+        "detail": "0 < 1"
+      },
+      {
+        "name": "input:1cb032299e50",
+        "ok": true
+      },
+      {
+        "name": "input:603bcd3abc24",
+        "ok": true
+      },
+      {
+        "name": "output:f78074a7:0",
+        "ok": true,
+        "detail": "vault-continuation"
+      },
+      {
+        "name": "output:f78074a7:1",
+        "ok": true,
+        "detail": "owner"
+      },
+      {
+        "name": "vault-continuation:0",
+        "ok": true,
+        "detail": "returned 30300, required 30300"
+      },
+      {
+        "name": "owner-receives:BCH",
+        "ok": true,
+        "detail": "chain shows 708511, claimed 708511"
+      },
+      {
+        "name": "rederived:vault-params",
+        "ok": true,
+        "detail": "script rebuilt from fuse-live-1 params (feeBps 9, minFee 100) equals the claimed vault contract"
+      },
+      {
+        "name": "rederived:vault-input",
+        "ok": true,
+        "detail": "input 0 spends the vault identity NFT fa0c5163…"
+      },
+      {
+        "name": "rederived:vault-repayment",
+        "ok": true,
+        "detail": "vault in 30200, out 30300, required ≥ 30300 (fee = max(100, ⌈30200·9/10⁴⌉) = 100)"
+      },
+      {
+        "name": "rederived:vault-state-transition",
+        "ok": true,
+        "detail": "flashCount 2→3, cumulativeFees 200→300 (+100)"
+      },
+      {
+        "name": "rederived:fee-accounting",
+        "ok": true,
+        "detail": "miner fee 1086 (claimed 1086), liquidity fee 100 (claimed 100)"
+      },
+      {
+        "name": "intent-binding",
+        "ok": true,
+        "detail": "tx matches authorization int_46c37b710cad0192c9b15c1a (attestation key 037e044ab0…, Guardian PASS); wallet key 16ce0ac40f684f525f7d2fd58ae797d30f914dd3 signed the authorization hash"
+      }
+    ],
+    "note": "transactions not yet sufficiently confirmed",
+    "level": "NONE",
+    "levels": {
+      "INCLUDED": {
+        "ok": false,
+        "detail": "confirmations:f78074a7addc 0 < 1"
+      },
+      "STRUCTURE_VERIFIED": {
+        "ok": true,
+        "detail": "2 inputs, 2 outputs, 1 vault continuation(s) and the owner outcome match chain data"
+      },
+      "OUTCOME_VERIFIED": {
+        "ok": true,
+        "detail": "5 contract-specific facts re-derived from chain data"
+      },
+      "INTENT_BOUND": {
+        "ok": true,
+        "detail": "tx matches authorization int_46c37b710cad0192c9b15c1a (attestation key 037e044ab0…, Guardian PASS); wallet key 16ce0ac40f684f525f7d2fd58ae797d30f914dd3 signed the authorization hash"
+      }
+    }
+  }
+}

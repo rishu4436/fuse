@@ -1,4 +1,5 @@
 'use client';
+import { VerifyResult, type Verification } from '@/components/verify-result';
 // LIVE execute path on BCH mainnet: compose → simulate (BCH 2026 VM) → Guardian risk → sign in YOUR wallet →
 // broadcast (relay of already-signed hex) → confirmation tracking → certificate verified against mainnet.
 // The server never sees a private key. Signing happens in WizardConnect, or offline with the exported package.
@@ -54,7 +55,7 @@ export default function LiveExecute() {
   const [ver, setVer] = useState<Verified>();
   const [sent, setSent] = useState<Verified>();
   const [st, setSt] = useState<TxStatus>();
-  const [cert, setCert] = useState<{ kind: string; verification: { status: string; note: string }; certificate: { id?: string } } & Record<string, unknown>>();
+  const [cert, setCert] = useState<{ kind: string; verification: Verification; certificate: { id?: string } } & Record<string, unknown>>();
   const address = wallet?.address ?? manual.trim();
   const open = (vaults.data ?? []).filter((v) => v.open && !v.error);
   useEffect(() => { if (!vaultId && open[0]) setVaultId(open[0].id); }, [open, vaultId]);
@@ -79,7 +80,7 @@ export default function LiveExecute() {
     const tick = async () => { try { const s = await api<TxStatus>(`/api/live/tx/${sent.txid}`); if (!stop) setSt(s); } catch { /* retry */ } };
     tick(); const t = setInterval(tick, 15000); return () => { stop = true; clearInterval(t); };
   }, [sent?.txid]);
-  const certify = () => run('Building and verifying the certificate against mainnet…', async () => { if (sent) setCert(await api('/api/live/certificate', { method: 'POST', json: { txid: sent.txid } })); });
+  const certify = () => run('Building and verifying the certificate against mainnet…', async () => { if (sent) setCert(await api('/api/live/certificate', { method: 'POST', json: { txid: sent.txid, authorization: pf?.authorization ?? null } })); });
 
   const stage = cert ? 6 : sent ? 5 : ver?.vmValid ? 4 : pf ? (pf.risk.ok ? 3 : 2) : 0;
   return (
@@ -176,7 +177,7 @@ export default function LiveExecute() {
                   <div className="text-[11.5px] text-fog-400">Public indexers can lag the mempool by up to a minute: wait until this tx shows in the vault history before composing another action on the same vault, or the node will reject it as a double-spend (nothing is lost).</div>
                   <div className="text-fog-300">{st ? (st.confirmations > 0 ? `${st.confirmations} confirmation(s) · block ${st.block_height}` : 'in mempool · waiting for a block (~10 min)') : 'checking…'}</div>
                   <Button variant="ghost" onClick={certify} disabled={!st || st.confirmations < 1 || Boolean(busy)} className="self-start" data-testid="live-certify">Verify certificate against mainnet</Button>
-                  {cert && <div className={cert.verification.status === 'VERIFIED' ? 'text-volt-300' : 'text-rose-bad'} data-testid="live-cert">{cert.verification.status === 'VERIFIED' ? '✓' : '✗'} certificate {cert.verification.status} — {cert.verification.note} · {cert.kind}<pre className="mt-2 max-h-72 overflow-auto rounded-md bg-ink-900 p-2 text-[10.5px] text-fog-400">{JSON.stringify(cert, (_k, v) => (typeof v === 'bigint' ? v.toString() : v), 1)}</pre></div>}
+                  {cert && <div className={cert.verification.status === 'VERIFIED' ? 'text-volt-300' : 'text-rose-bad'} data-testid="live-cert">{cert.kind} certificate<div className="mt-2"><VerifyResult v={cert.verification as Verification} /></div><pre className="mt-2 max-h-72 overflow-auto rounded-md bg-ink-900 p-2 text-[10.5px] text-fog-400">{JSON.stringify(cert, (_k, v) => (typeof v === 'bigint' ? v.toString() : v), 1)}</pre></div>}
                 </div>
               )}
             </Panel>

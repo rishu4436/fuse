@@ -11,11 +11,15 @@ export default function VerifyPage() {
   const run = async () => {
     setErr(undefined); setV(undefined);
     let parsed: unknown; try { parsed = JSON.parse(text); } catch { setErr('That is not valid JSON.'); return; }
-    try { setV(await api<Verification>('/api/certificates/verify', { method: 'POST', body: JSON.stringify(parsed) })); } catch (e) { setErr((e as Error).message); }
+    // a mainnet certificate (or a live result {certificate, authorization, userSignature}) is re-derived from mainnet data
+    // with the contract rederivers and, if an authorization is attached, checked for INTENT_BOUND
+    const o = parsed as { network?: string; certificate?: { network?: string }; authorization?: unknown; userSignature?: unknown };
+    const cert = o.certificate ?? parsed; const net = (cert as { network?: string }).network;
+    try { setV(net === 'mainnet' ? await api<Verification>('/api/live/verify-certificate', { method: 'POST', body: JSON.stringify({ certificate: cert, authorization: o.authorization ?? null, userSignature: o.userSignature ?? null }) }) : await api<Verification>('/api/certificates/verify', { method: 'POST', body: JSON.stringify(parsed) })); } catch (e) { setErr((e as Error).message); }
   };
   return (
     <div className="mx-auto max-w-4xl">
-      <PageHeader eyebrow="Verifier" title="Paste a certificate, check it yourself" lede="The verifier never trusts the certificate. It re-derives the commitment, re-fetches the transaction, re-hashes it, and checks every claimed output and outcome against chain data. The same code ships as @fuse/proof-verifier." />
+      <PageHeader eyebrow="Verifier" title="Paste a certificate, check it yourself" lede="The verifier never trusts the certificate. It re-derives the commitment, re-fetches the transaction, re-hashes it, and checks every claimed output and outcome against chain data. Mainnet certificates are graded INCLUDED → STRUCTURE_VERIFIED → OUTCOME_VERIFIED (contract checks re-derived from chain) → INTENT_BOUND (matches a signed execution authorization). Paste a full live result to include its authorization. The same code ships as @fuse/proof-verifier." />
       <Panel title="Certificate JSON" actions={<Button onClick={run} disabled={!text.trim()} data-testid="verify-paste">Verify</Button>}>
         <label htmlFor="cert" className="sr-only">Certificate JSON</label>
         <textarea id="cert" value={text} onChange={(e) => setText(e.target.value)} spellCheck={false} placeholder='{ "schema": "fuse.certificate/v1", … }' className="num h-64 w-full resize-y rounded-lg border hairline bg-ink-950 p-4 text-[12px] text-fog-200 outline-none focus:border-volt-400/50" />

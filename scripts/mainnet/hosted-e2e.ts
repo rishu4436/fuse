@@ -38,8 +38,10 @@ async function main() {
   if (action === 'certificate' || action === 'status') {
     const txid = args[1];
     if (action === 'status') { console.log(await call('GET', `/api/live/tx/${txid}`)); return; }
-    const c = await call<{ kind: string; verification: { status: string; checks: Array<{ name: string; ok: boolean; detail?: string }> }; routing: unknown[]; certificate: { certificateId: string } }>('POST', '/api/live/certificate', { txid });
-    console.log(`${c.kind} ${c.certificate.certificateId}: ${c.verification.status}`); for (const k of c.verification.checks) console.log(`  ${k.ok ? '✓' : '✕'} ${k.name} ${k.detail ?? ''}`);
+    const authFile = new URL(`../../evidence/mainnet/authorizations/${txid}.json`, import.meta.url);
+    const bound = existsSync(authFile) ? JSON.parse(readFileSync(authFile, 'utf8')) : {};
+    const c = await call<{ kind: string; verification: { status: string; level: string; checks: Array<{ name: string; ok: boolean; detail?: string }> }; routing: unknown[]; certificate: { certificateId: string } }>('POST', '/api/live/certificate', { txid, authorization: bound.authorization ?? null, userSignature: bound.userSignature ?? null, auction: bound.auction });
+    console.log(`${c.kind} ${c.certificate.certificateId}: ${c.verification.status} · level ${c.verification.level}`); for (const k of c.verification.checks) console.log(`  ${k.ok ? '✓' : '✕'} ${k.name} ${k.detail ?? ''}`);
     if (c.routing.length) console.log('routing (recomputed from chain):', JSON.stringify(c.routing));
     mkdirSync(new URL('../../evidence/mainnet/certificates/', import.meta.url).pathname, { recursive: true });
     writeFileSync(new URL(`../../evidence/mainnet/certificates/${txid}.json`, import.meta.url), JSON.stringify(c, (_k, v) => (typeof v === 'bigint' ? v.toString() : v), 1));

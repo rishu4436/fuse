@@ -1,7 +1,7 @@
 'use client';
 import { motion } from 'motion/react';
 import clsx from 'clsx';
-export interface Verification { status: 'VERIFIED' | 'FAILED' | 'INSUFFICIENT_EVIDENCE'; checks: Array<{ name: string; ok: boolean; detail?: string }>; note: string }
+export interface Verification { status: 'VERIFIED' | 'FAILED' | 'INSUFFICIENT_EVIDENCE'; checks: Array<{ name: string; ok: boolean; detail?: string }>; note: string; level?: string; levels?: Record<'INCLUDED' | 'STRUCTURE_VERIFIED' | 'OUTCOME_VERIFIED' | 'INTENT_BOUND', { ok: boolean; detail: string }> }
 export function VerifyResult({ v }: { v: Verification }) {
   const good = v.status === 'VERIFIED';
   return (
@@ -10,6 +10,14 @@ export function VerifyResult({ v }: { v: Verification }) {
         <span className={clsx('flex size-8 items-center justify-center rounded-full text-[15px]', good ? 'bg-volt-400/15 text-volt-300' : 'bg-rose-bad/15 text-rose-bad')} aria-hidden>{good ? '✓' : '✕'}</span>
         <div><div className={clsx('text-[14px] font-semibold tracking-wide', good ? 'text-volt-300' : 'text-rose-bad')}>{v.status}</div><div className="text-[12px] text-fog-300">{v.note}</div></div>
       </div>
+      {v.levels && (
+        <ol className="mt-4 grid gap-1.5 sm:grid-cols-4" data-testid="verify-levels">
+          {(['INCLUDED', 'STRUCTURE_VERIFIED', 'OUTCOME_VERIFIED', 'INTENT_BOUND'] as const).map((k) => { const l = v.levels![k]; return (
+            <li key={k} className={clsx('rounded-lg border px-2.5 py-2 text-[11px]', l?.ok ? 'border-volt-400/35 text-volt-300' : 'border-ink-600 text-fog-400')} title={l?.detail} data-testid={`level-${k}`}>
+              <div className="font-semibold tracking-wide">{l?.ok ? '✓' : '·'} {k.replace('_', ' ')}</div><div className="mt-0.5 line-clamp-3 text-fog-400">{l?.detail}</div>
+            </li>); })}
+        </ol>
+      )}
       <ul className="mt-4 grid gap-1.5 sm:grid-cols-2">
         {v.checks.map((c, i) => (
           <li key={i} className="flex items-start gap-2 text-[12px]"><span className={clsx('mt-1.5 size-1.5 shrink-0 rounded-full', c.ok ? 'bg-volt-400' : 'bg-rose-bad')} /><span className="min-w-0"><span className="text-fog-100">{c.name}</span>{c.detail && <span className="block truncate text-fog-400" title={c.detail}>{c.detail}</span>}</span></li>

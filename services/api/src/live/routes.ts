@@ -9,7 +9,9 @@ import { liveParyon } from './paryon.js';
 import { prepare, LIVE_CAPS } from './execute.js';
 import { broadcast, verifySigned, rateLimit } from './relay.js';
 import { issueAuthorization, serverKey } from './authz.js';
-import { liveCertificate } from './certificate.js';
+import { liveCertificate, esploraReader } from './certificate.js';
+import { liveRederiver, intentBinder } from './verify.js';
+import { verifyCertificate } from '@fuse/proof-verifier';
 import { radar, sentinel } from '@fuse/risk-engine';
 import { parseLoan } from '@fuse/risk-engine';
 
@@ -61,5 +63,11 @@ export function registerLive(app: FastifyInstance, ctx: { root: string; paryonSn
     return broadcast(b, { enabled: broadcastEnabled(), trustedPubkey: serverKey()?.pub ?? null });
   });
   app.get('/api/live/tx/:txid', async (req) => { const t = Txid.parse((req.params as { txid: string }).txid); return { txid: t, explorer: EXPLORER_TX + t, ...(await confirmations(t)) }; });
-  app.post('/api/live/certificate', async (req) => liveCertificate(configs(), Txid.parse(z.object({ txid: z.string() }).parse(req.body).txid)));
+  const CertReq = z.object({ txid: Txid, authorization: z.object({ payload: z.string(), authHash: z.string(), serverPubkey: z.string(), serverSig: z.string() }).nullish(), userSignature: z.object({ pubkey: z.string(), sig: z.string() }).nullish(), auction: z.unknown().optional() });
+  app.post('/api/live/certificate', async (req) => { const b = CertReq.parse(req.body); return liveCertificate(configs(), b.txid, { authorization: b.authorization, userSignature: b.userSignature, trustedPubkey: serverKey()?.pub ?? null, auction: b.auction }); });
+  // third-party re-verification of a submitted certificate (+ optional authorization) under the four levels
+  app.post('/api/live/verify-certificate', async (req) => {
+    const b = z.object({ certificate: z.unknown(), authorization: CertReq.shape.authorization, userSignature: CertReq.shape.userSignature, attestationPubkey: z.string().regex(/^0[23][0-9a-f]{64}$/).optional() }).parse(req.body);
+    return verifyCertificate(b.certificate, esploraReader, { rederive: liveRederiver(configs()), intent: intentBinder({ authorization: b.authorization, userSignature: b.userSignature, trustedPubkey: b.attestationPubkey ?? serverKey()?.pub ?? null }) });
+  });
 }

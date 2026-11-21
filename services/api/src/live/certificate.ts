@@ -9,13 +9,15 @@ import { decoded, outputAt, rawTx, status, tip, EXPLORER_TX } from './chain.js';
 import { paramsOfConfig, vaultLb, type VaultConfig } from './vault.js';
 import { flashFee } from './execute.js';
 import { PUSD } from './cauldron.js';
+import { liveRederiver, intentBinder } from './verify.js';
+import type { Authorization } from './authz.js';
 
 export const esploraReader: ChainReader = {
   network: 'mainnet', tipHeight: tip,
   getRawTransaction: async (t) => { try { const [raw, s] = await Promise.all([rawTx(t), status(t)]); return { rawHex: raw, blockHeight: s.block_height ?? null, blockHash: s.block_hash ?? null }; } catch { return null; } },
 };
 
-export async function liveCertificate(configs: VaultConfig[], txid: string) {
+export async function liveCertificate(configs: VaultConfig[], txid: string, bind: { authorization?: Authorization | null; userSignature?: { pubkey: string; sig: string } | null; trustedPubkey?: string | null; auction?: unknown } = {}) {
   const tx = await decoded(txid);
   const src = await Promise.all(tx.inputs.map((i) => outputAt(binToHex(i.outpointTransactionHash), i.outpointIndex)));
   const vi = src.findIndex((o) => o.token?.nft && configs.some((c) => c.category === o.token!.category));
@@ -44,9 +46,10 @@ export async function liveCertificate(configs: VaultConfig[], txid: string) {
     vaultContinuations: outIdx >= 0 ? [{ txid, inputIndex: outIdx, minReturn: isFlash ? src[vi].satoshis + fee : tx.outputs[outIdx].valueSatoshis, asset: 'BCH' }] : [],
     fees: { minerFeeSats: minerFee, liquidityFee: fee, solverFee: 0n },
     outcome: { ownerLockingBytecode: owner, ownerReceives: [{ asset: 'BCH', amount: ownerIdx >= 0 ? tx.outputs[ownerIdx].valueSatoshis : 0n }] },
-    checks: [{ name: 'chain-derived', ok: true }, ...routing.map((r) => ({ name: `cauldron-invariant:${r.inputIndex}`, ok: r.invariantHolds && r.sameScriptContinuation }))],
+    // issuer claims; the verifier re-derives every one of them from chain data (they are not trusted)
+    checks: [{ name: 'chain-derived', ok: true }, ...(outIdx < 0 ? [{ name: 'vault-close', ok: true }] : isFlash ? [{ name: 'vault-repayment', ok: true }, { name: 'vault-state-transition', ok: true }] : [{ name: 'lp-share-math', ok: true }]), { name: 'fee-accounting', ok: true }, ...routing.map((r) => ({ name: `cauldron-invariant:${r.inputIndex}`, ok: r.invariantHolds && r.sameScriptContinuation }))],
     confirmation: s.block_height ? 'CONFIRMED' : 'UNCONFIRMED', simulated: false, issuedAt: Math.floor(Date.now() / 1000), issuer: 'fuse-live-api',
   });
-  const verification = await verifyCertificate(cert, esploraReader);
-  return { kind, vault: cfg.id, explorer: EXPLORER_TX + txid, vaultStateBefore: before, vaultStateAfter: after, routing, certificate: cert, verification };
+  const verification = await verifyCertificate(cert, esploraReader, { rederive: liveRederiver(configs), intent: intentBinder({ authorization: bind.authorization, userSignature: bind.userSignature, trustedPubkey: bind.trustedPubkey ?? null }) });
+  return { kind, auction: bind.auction ?? null, authorization: bind.authorization ?? null, userSignature: bind.userSignature ?? null, vault: cfg.id, explorer: EXPLORER_TX + txid, vaultStateBefore: before, vaultStateAfter: after, routing, certificate: cert, verification };
 }

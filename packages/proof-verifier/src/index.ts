@@ -47,11 +47,25 @@ export const certificateCommitment = (c: UnsignedCertificate) => commitment('cer
 export function sealCertificate(c: UnsignedCertificate): Certificate { return { ...c, commitment: certificateCommitment(c) }; }
 
 export type VerificationStatus = 'VERIFIED' | 'FAILED' | 'INSUFFICIENT_EVIDENCE';
-export interface CertificateVerification { status: VerificationStatus; checks: Array<{ name: string; ok: boolean; detail?: string }>; note: string }
+/** Verification levels (security review issue B), each strictly stronger than the previous one:
+ *  INCLUDED            every transaction exists (raw tx re-hashed) and has the required confirmations
+ *  STRUCTURE_VERIFIED  every claimed input/output/continuation matches chain data byte-for-byte
+ *  OUTCOME_VERIFIED    every contract-specific claim was RE-DERIVED from chain data by a rederiver (never trusted)
+ *  INTENT_BOUND        the transaction matches a verifiable execution authorization (+ user wallet signature when present) */
+export type VerificationLevel = 'NONE' | 'INCLUDED' | 'STRUCTURE_VERIFIED' | 'OUTCOME_VERIFIED' | 'INTENT_BOUND';
+export const LEVELS: VerificationLevel[] = ['INCLUDED', 'STRUCTURE_VERIFIED', 'OUTCOME_VERIFIED', 'INTENT_BOUND'];
+type Check = { name: string; ok: boolean; detail?: string };
+export interface CertificateVerification { status: VerificationStatus; checks: Check[]; note: string; level: VerificationLevel; levels: Record<Exclude<VerificationLevel, 'NONE'>, { ok: boolean; detail: string }> }
+export type DecodedTx = NonNullable<ReturnType<typeof decodeOk>>;
+/** Re-derives contract-specific facts from chain data. `covers` names the certificate.checks it substantiates. */
+export type Rederiver = (cert: Certificate, txs: Map<string, DecodedTx>, reader: ChainReader) => Promise<Array<Check & { covers?: string[] }>>;
+export type IntentBinder = (cert: Certificate, txs: Map<string, DecodedTx>) => Promise<{ present: boolean; ok: boolean; detail: string }>;
 
-export async function verifyCertificate(input: unknown, reader: ChainReader, ctx: { intentCommitment?: string; policyCommitment?: string | null; minConfirmations?: number } = {}): Promise<CertificateVerification> {
+export async function verifyCertificate(input: unknown, reader: ChainReader, ctx: { intentCommitment?: string; policyCommitment?: string | null; minConfirmations?: number; rederive?: Rederiver; intent?: IntentBinder } = {}): Promise<CertificateVerification> {
   const checks: CertificateVerification['checks'] = [];
-  const fail = (note: string): CertificateVerification => ({ status: 'FAILED', checks, note });
+  const levels: CertificateVerification['levels'] = { INCLUDED: { ok: false, detail: 'not checked' }, STRUCTURE_VERIFIED: { ok: false, detail: 'not checked' }, OUTCOME_VERIFIED: { ok: false, detail: 'not checked' }, INTENT_BOUND: { ok: false, detail: 'not checked' } };
+  const levelOf = (): VerificationLevel => { let l: VerificationLevel = 'NONE'; for (const k of LEVELS) { if (!levels[k as Exclude<VerificationLevel, 'NONE'>].ok) break; l = k; } return l; };
+  const fail = (note: string): CertificateVerification => ({ status: 'FAILED', checks, note, level: levelOf(), levels });
   const parsed = CertificateSchema.safeParse(input);
   if (!parsed.success) { checks.push({ name: 'schema', ok: false, detail: parsed.error.issues.map((i) => i.path.join('.') + ': ' + i.message).join('; ') }); return fail('malformed certificate'); }
   const cert = parsed.data;
@@ -82,6 +96,11 @@ export async function verifyCertificate(input: unknown, reader: ChainReader, ctx
       if (cert.confirmation === 'CONFIRMED' && got.blockHeight == null) checks.push({ name: 'claimed-confirmed', ok: false, detail: 'certificate claims CONFIRMED but tx is unconfirmed' });
     }
   }
+  const txChecks = checks.filter((c) => /^(tx-exists|tx-hash|tx-decode|confirmations|claimed-confirmed)/.test(c.name));
+  levels.INCLUDED = txChecks.every((c) => c.ok) && decoded.size === cert.transactions.length
+    ? { ok: true, detail: reader.network === 'local' ? 'accepted by the LOCAL mock chain (simulation, not on-chain)' : `${cert.transactions.length} tx(s) found, re-hashed and confirmed` }
+    : { ok: false, detail: txChecks.filter((c) => !c.ok).map((c) => `${c.name} ${c.detail ?? ''}`).join('; ') || 'transaction missing' };
+  const structStart = checks.length;
   for (const i of cert.inputs) {
     const tx = decoded.get(i.txid);
     const [h, n] = i.outpoint.split(':');
@@ -112,10 +131,33 @@ export async function verifyCertificate(input: unknown, reader: ChainReader, ctx
     }
     checks.push({ name: `owner-receives:${r.asset.slice(0, 8)}`, ok: got >= r.amount, detail: `chain shows ${got}, claimed ${r.amount}` });
   }
+  const structFailed = checks.slice(structStart).filter((c) => !c.ok).concat(checks.filter((c) => (c.name === 'certificate-commitment' || c.name === 'schema') && !c.ok));
+  levels.STRUCTURE_VERIFIED = structFailed.length ? { ok: false, detail: `${structFailed.length} structural mismatch(es): ${structFailed.map((c) => c.name).join(', ')}` } : { ok: true, detail: `${cert.inputs.length} inputs, ${cert.outputs.length} outputs, ${cert.vaultContinuations.length} vault continuation(s) and the owner outcome match chain data` };
+
+  // Contract-specific claims are NEVER trusted: a claim that says it failed fails the certificate; a claim that says it
+  // passed counts only if a rederiver recomputed it from chain data. Unsubstantiated claims block OUTCOME_VERIFIED.
+  const declaredFalse = cert.checks.filter((c) => !c.ok);
+  for (const c of declaredFalse) checks.push({ name: `declared-failed:${c.name}`, ok: false, detail: 'the certificate itself records this check as failed' });
+  const derived = ctx.rederive && decoded.size ? await ctx.rederive(cert, decoded, reader).catch((e: Error): Array<Check & { covers?: string[] }> => [{ name: 'rederive', ok: false, detail: e.message }]) : [];
+  for (const d of derived) checks.push({ name: `rederived:${d.name}`, ok: d.ok, detail: d.detail });
+  const covered = new Set(derived.filter((d) => d.ok).flatMap((d) => d.covers ?? []));
+  const unsubstantiated = cert.checks.filter((c) => c.ok && !covered.has(c.name));
+  for (const c of unsubstantiated) checks.push({ name: `claim-not-rederived:${c.name}`, ok: true, detail: 'declared by the issuer, not independently re-derived (does not count toward OUTCOME_VERIFIED)' });
+  const derivedFailed = derived.filter((d) => !d.ok);
+  levels.OUTCOME_VERIFIED = !ctx.rederive ? { ok: false, detail: 'no contract rederiver for this certificate (sandbox / generic): outcome not independently re-derived' }
+    : derivedFailed.length || declaredFalse.length ? { ok: false, detail: `re-derived from chain and FAILED: ${[...derivedFailed.map((d) => `${d.name} (${d.detail ?? ''})`), ...declaredFalse.map((c) => c.name)].join('; ')}` }
+    : unsubstantiated.length ? { ok: false, detail: `claims not re-derived: ${unsubstantiated.map((c) => c.name).join(', ')}` }
+    : !derived.length ? { ok: false, detail: 'rederiver produced no checks' }
+    : { ok: true, detail: `${derived.length} contract-specific facts re-derived from chain data` };
+  const ib = ctx.intent && decoded.size ? await ctx.intent(cert, decoded).catch((e: Error) => ({ present: true, ok: false, detail: e.message })) : { present: false, ok: false, detail: 'no execution authorization supplied' };
+  if (ib.present) checks.push({ name: 'intent-binding', ok: ib.ok, detail: ib.detail });
+  levels.INTENT_BOUND = { ok: ib.present && ib.ok, detail: ib.detail };
+
   const failed = checks.filter((c) => !c.ok && !c.name.startsWith('confirmations'));
   if (failed.length) return fail(`${failed.length} check(s) failed`);
-  if (insufficient) return { status: 'INSUFFICIENT_EVIDENCE', checks, note: 'transactions not yet sufficiently confirmed' };
-  return { status: 'VERIFIED', checks, note: cert.network === 'local' ? 'Verified against the LOCAL mock network (simulation) — not on-chain evidence.' : 'Verified against independent chain data. This is execution verification, not a security audit.' };
+  if (insufficient) return { status: 'INSUFFICIENT_EVIDENCE', checks, note: 'transactions not yet sufficiently confirmed', level: levelOf(), levels };
+  const level = levelOf();
+  return { status: 'VERIFIED', checks, level, levels, note: (cert.network === 'local' ? 'Verified against the LOCAL mock network (simulation) — not on-chain evidence.' : 'Verified against independent chain data. This is execution verification, not a security audit.') + ` Highest level: ${level}.` };
 }
 
 function decodeOk(raw: string) {

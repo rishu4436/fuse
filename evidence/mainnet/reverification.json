@@ -1,0 +1,127 @@
+{
+  "verifiedAt": "2026-11-21T01:26:28.393Z",
+  "attestationPubkey": "037e044ab06145cc82956a836cb712f0f422a5bc05371e49eabd4936592419401f",
+  "verifier": "packages/proof-verifier levels + services/api/src/live/verify.ts rederivers",
+  "results": [
+    {
+      "txid": "1cb032299e5009c96195ecd3615d6a814c7670e9a437fc15b18d0912d03d5930",
+      "kind": "LP_WITHDRAW",
+      "status": "VERIFIED",
+      "level": "OUTCOME_VERIFIED",
+      "levels": {
+        "INCLUDED": {
+          "ok": true,
+          "detail": "1 tx(s) found, re-hashed and confirmed"
+        },
+        "STRUCTURE_VERIFIED": {
+          "ok": true,
+          "detail": "1 inputs, 2 outputs, 1 vault continuation(s) and the owner outcome match chain data"
+        },
+        "OUTCOME_VERIFIED": {
+          "ok": true,
+          "detail": "4 contract-specific facts re-derived from chain data"
+        },
+        "INTENT_BOUND": {
+          "ok": false,
+          "detail": "no execution authorization for this transaction (it predates intent binding, or none was supplied)"
+        }
+      }
+    },
+    {
+      "txid": "2f8503c88a3a65d2b6cc3e6dd71794a096acb67d78a7918d700696e6fd1c763e",
+      "kind": "LP_DEPOSIT",
+      "status": "VERIFIED",
+      "level": "OUTCOME_VERIFIED",
+      "levels": {
+        "INCLUDED": {
+          "ok": true,
+          "detail": "1 tx(s) found, re-hashed and confirmed"
+        },
+        "STRUCTURE_VERIFIED": {
+          "ok": true,
+          "detail": "2 inputs, 2 outputs, 1 vault continuation(s) and the owner outcome match chain data"
+        },
+        "OUTCOME_VERIFIED": {
+          "ok": true,
+          "detail": "4 contract-specific facts re-derived from chain data"
+        },
+        "INTENT_BOUND": {
+          "ok": false,
+          "detail": "no execution authorization for this transaction (it predates intent binding, or none was supplied)"
+        }
+      }
+    },
+    {
+      "txid": "7d5a261e800dd11f55f56e0756c5f82648d62e79cd4a01d248f222c8d59ebb79",
+      "kind": "FLASH_USE",
+      "status": "VERIFIED",
+      "level": "OUTCOME_VERIFIED",
+      "levels": {
+        "INCLUDED": {
+          "ok": true,
+          "detail": "1 tx(s) found, re-hashed and confirmed"
+        },
+        "STRUCTURE_VERIFIED": {
+          "ok": true,
+          "detail": "2 inputs, 2 outputs, 1 vault continuation(s) and the owner outcome match chain data"
+        },
+        "OUTCOME_VERIFIED": {
+          "ok": true,
+          "detail": "5 contract-specific facts re-derived from chain data"
+        },
+        "INTENT_BOUND": {
+          "ok": false,
+          "detail": "no execution authorization for this transaction (it predates intent binding, or none was supplied)"
+        }
+      }
+    },
+    {
+      "txid": "994b63ba75533bb36506a406ac09737fb96812c45e9224ba089f0f3e66a3dd3f",
+      "kind": "FLASH_VIA_CAULDRON",
+      "status": "VERIFIED",
+      "level": "OUTCOME_VERIFIED",
+      "levels": {
+        "INCLUDED": {
+          "ok": true,
+          "detail": "1 tx(s) found, re-hashed and confirmed"
+        },
+        "STRUCTURE_VERIFIED": {
+          "ok": true,
+          "detail": "4 inputs, 4 outputs, 1 vault continuation(s) and the owner outcome match chain data"
+        },
+        "OUTCOME_VERIFIED": {
+          "ok": true,
+          "detail": "7 contract-specific facts re-derived from chain data"
+        },
+        "INTENT_BOUND": {
+          "ok": false,
+          "detail": "no execution authorization for this transaction (it predates intent binding, or none was supplied)"
+        }
+      }
+    },
+    {
+      "txid": "f78074a7addca74462f3d2dc8e08eb66ca14370cf5dfed1a52ed8e37d0003518",
+      "kind": "FLASH_USE",
+      "status": "INSUFFICIENT_EVIDENCE",
+      "level": "NONE",
+      "levels": {
+        "INCLUDED": {
+          "ok": false,
+          "detail": "confirmations:f78074a7addc 0 < 1"
+        },
+        "STRUCTURE_VERIFIED": {
+          "ok": true,
+          "detail": "2 inputs, 2 outputs, 1 vault continuation(s) and the owner outcome match chain data"
+        },
+        "OUTCOME_VERIFIED": {
+          "ok": true,
+          "detail": "5 contract-specific facts re-derived from chain data"
+        },
+        "INTENT_BOUND": {
+          "ok": true,
+          "detail": "tx matches authorization int_46c37b710cad0192c9b15c1a (attestation key 037e044ab0…, Guardian PASS); wallet key 16ce0ac40f684f525f7d2fd58ae797d30f914dd3 signed the authorization hash"
+        }
+      }
+    }
+  ]
+}
