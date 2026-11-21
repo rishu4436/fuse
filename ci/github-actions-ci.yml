@@ -1,0 +1,49 @@
+name: CI
+on:
+  push:
+    branches: [main, 'feat/**']
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Install
+        run: pnpm install --frozen-lockfile
+      - name: Contracts compile and match the committed artifacts
+        run: pnpm compile:contracts && git diff --exit-code packages/contracts/artifacts
+      - name: Lint
+        run: pnpm lint
+      - name: Typecheck (root + web)
+        run: pnpm typecheck && pnpm --filter @fuse/web exec tsc --noEmit -p .
+      - name: Unit / integration / adversarial tests (vitest)
+        run: pnpm test
+      - name: Build (hosted single-process mode, the same build Vercel ships)
+        run: node scripts/hosted/build-embedded.mjs && FUSE_HOSTED=1 pnpm build
+      - name: Start the app locally
+        run: |
+          cd apps/web && (FUSE_HOSTED=1 npx next start -p 3000 > ../../next.log 2>&1 &)
+          for i in $(seq 1 60); do curl -sf http://127.0.0.1:3000/api/health >/dev/null && break; sleep 2; done
+          curl -sf http://127.0.0.1:3000/api/health
+      - name: Playwright (desktop + mobile) against the local server
+        # Live-mode specs read BCH mainnet through public explorers; no keys, no broadcasts. Chrome ships on the runner.
+        run: FUSE_WEB=http://127.0.0.1:3000 npx playwright test --workers=1 --reporter=line
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-output
+          path: |
+            test-results/
+            next.log

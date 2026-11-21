@@ -1,5 +1,5 @@
 {
-  "verifiedAt": "2026-11-21T01:26:28.393Z",
+  "verifiedAt": "2026-11-21T01:34:30.542Z",
   "attestationPubkey": "037e044ab06145cc82956a836cb712f0f422a5bc05371e49eabd4936592419401f",
   "verifier": "packages/proof-verifier levels + services/api/src/live/verify.ts rederivers",
   "results": [
@@ -102,12 +102,12 @@
     {
       "txid": "f78074a7addca74462f3d2dc8e08eb66ca14370cf5dfed1a52ed8e37d0003518",
       "kind": "FLASH_USE",
-      "status": "INSUFFICIENT_EVIDENCE",
-      "level": "NONE",
+      "status": "VERIFIED",
+      "level": "INTENT_BOUND",
       "levels": {
         "INCLUDED": {
-          "ok": false,
-          "detail": "confirmations:f78074a7addc 0 < 1"
+          "ok": true,
+          "detail": "1 tx(s) found, re-hashed and confirmed"
         },
         "STRUCTURE_VERIFIED": {
           "ok": true,

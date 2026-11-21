@@ -44,8 +44,8 @@
     "transactions": [
       {
         "txid": "f78074a7addca74462f3d2dc8e08eb66ca14370cf5dfed1a52ed8e37d0003518",
-        "blockHeight": null,
-        "blockHash": null
+        "blockHeight": 978218,
+        "blockHash": "000000000000000001b9aaa19d33cbf5c4ce3af1d6e95552cd206db846f8873e"
       }
     ],
     "inputs": [
@@ -122,14 +122,14 @@
         "ok": true
       }
     ],
-    "confirmation": "UNCONFIRMED",
+    "confirmation": "CONFIRMED",
     "simulated": false,
-    "issuedAt": 1795224375,
+    "issuedAt": 1795224834,
     "issuer": "fuse-live-api",
-    "commitment": "0f4c3f661f8ea403cca75a988d636a006425415c3bc195ff91acdd02ba3d989b"
+    "commitment": "588618edb04ecccba34b9f7ac6ff3e0eaf89cc913b8f1975c0cd291b240f791e"
   },
   "verification": {
-    "status": "INSUFFICIENT_EVIDENCE",
+    "status": "VERIFIED",
     "checks": [
       {
         "name": "schema",
@@ -145,8 +145,8 @@
       },
       {
         "name": "confirmations:f78074a7addc",
-        "ok": false,
-        "detail": "0 < 1"
+        "ok": true,
+        "detail": "4"
       },
       {
         "name": "input:1cb032299e50",
@@ -207,12 +207,11 @@
         "detail": "tx matches authorization int_46c37b710cad0192c9b15c1a (attestation key 037e044ab0…, Guardian PASS); wallet key 16ce0ac40f684f525f7d2fd58ae797d30f914dd3 signed the authorization hash"
       }
     ],
-    "note": "transactions not yet sufficiently confirmed",
-    "level": "NONE",
+    "level": "INTENT_BOUND",
     "levels": {
       "INCLUDED": {
-        "ok": false,
-        "detail": "confirmations:f78074a7addc 0 < 1"
+        "ok": true,
+        "detail": "1 tx(s) found, re-hashed and confirmed"
       },
       "STRUCTURE_VERIFIED": {
         "ok": true,
@@ -226,6 +225,7 @@
         "ok": true,
         "detail": "tx matches authorization int_46c37b710cad0192c9b15c1a (attestation key 037e044ab0…, Guardian PASS); wallet key 16ce0ac40f684f525f7d2fd58ae797d30f914dd3 signed the authorization hash"
       }
-    }
+    },
+    "note": "Verified against independent chain data. This is execution verification, not a security audit. Highest level: INTENT_BOUND."
   }
 }

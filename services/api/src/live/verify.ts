@@ -1,6 +1,6 @@
 // Live certificate rederivation (security review issue B). Every contract-specific fact is RE-DERIVED from raw chain data
 // fetched through the independent reader; nothing in certificate.checks is taken on trust.
-import { binToHex, hexToBin, decodeTransaction, hash256 } from '@bitauth/libauth';
+import { binToHex, hexToBin, decodeTransaction, hash256, sha256 } from '@bitauth/libauth';
 import { decodeVaultState, cauldronSwapIsValid } from '@fuse/contracts';
 import type { Rederiver, IntentBinder, ChainReader } from '@fuse/proof-verifier';
 import { paramsOfConfig, vaultLb, type VaultConfig } from './vault.js';
@@ -73,7 +73,7 @@ export function intentBinder(a: { authorization?: Authorization | null; userSign
     const tx = txs.get(cert.transactions[0].txid)!;
     const diff = structureDiff(p.template, tx);
     if (diff) return { present: true, ok: false, detail: `on-chain tx differs from the authorization: ${diff}` };
-    const h = binToHex((await import('@bitauth/libauth')).sha256.hash(strippedStructure(tx)));
+    const h = binToHex(sha256.hash(strippedStructure(tx)));
     if (h !== p.structureHash || h !== structureHashOfTemplate(p.template)) return { present: true, ok: false, detail: 'structure hash mismatch' };
     const us = verifyUserSignature(a.authorization.authHash, a.userSignature ?? undefined, p.constraints.userLockingBytecode);
     if (us.present && !us.ok) return { present: true, ok: false, detail: us.detail };

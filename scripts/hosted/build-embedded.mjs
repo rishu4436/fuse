@@ -16,3 +16,7 @@ for (const f of ['cauldron-pool-verification.json', 'paryon-deployment-verificat
 mkdirSync(resolve(out, 'evidence/mainnet'), { recursive: true });
 cpSync(resolve(root, 'evidence/mainnet/live-vaults.json'), resolve(out, 'evidence/mainnet/live-vaults.json'));
 console.log('embedded API bundle →', out);
+// smoke-load the bundle so a broken module graph fails the build instead of 500-ing production
+const m = await import(resolve(out, 'fuse-api.mjs'));
+if (typeof m.handle !== 'function') throw new Error('embedded bundle does not export handle()');
+console.log('embedded bundle smoke-load ok');
