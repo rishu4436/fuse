@@ -13,7 +13,7 @@ const big = (_: string, v: unknown) => (typeof v === 'bigint' ? v.toString() : v
 const summary: unknown[] = [];
 for (const txid of txids) {
   const a = existsSync(join(authDir, `${txid}.json`)) ? JSON.parse(readFileSync(join(authDir, `${txid}.json`), 'utf8')) : null;
-  const r = await liveCertificate(loadVaultConfigs(root), txid, { authorization: a?.authorization ?? null, userSignature: a?.userSignature ?? null, trustedPubkey: ATTESTATION });
+  const r = await liveCertificate(loadVaultConfigs(root), txid, { authorization: a?.authorization ?? null, userSignature: a?.userSignature ?? null, trustedPubkey: ATTESTATION, auction: a?.auction });
   writeFileSync(join(certDir, `${txid}.json`), JSON.stringify(r, big, 2) + '\n');
   const v = r.verification;
   summary.push({ txid, kind: r.kind, status: v.status, level: v.level, levels: v.levels });
