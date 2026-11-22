@@ -7,7 +7,8 @@ import { useEffect, useState } from 'react';
 import clsx from 'clsx';
 import { api, sats, short, toJson } from '@/lib/api';
 import { usePoll } from '@/lib/hooks';
-import { PageHeader, Panel, Badge, Button, Mono } from '@/components/ui';
+import Image from 'next/image';
+import { Panel, Button, Mono } from '@/components/ui';
 import { WalletConnect } from '@/components/wallet-connect';
 import type { WalletHandle } from '@/components/preflight';
 
@@ -35,8 +36,8 @@ interface TxStatus { confirmations: number; confirmed: boolean; block_height?: n
 interface LiveVault { id: string; label: string; open: boolean; address: string; params: { ownerPkh: string; feeBps: bigint; minFee: bigint }; current: { satoshis: bigint; state: { flashCount: bigint; cumulativeFees: bigint } } | null; error?: string }
 
 const Step = ({ n, t, done, active }: { n: number; t: string; done: boolean; active: boolean }) => (
-  <li className={clsx('flex items-center gap-2 text-[12px]', done ? 'text-volt-300' : active ? 'text-fog-100' : 'text-fog-500')}>
-    <span className={clsx('grid size-5 place-items-center rounded-full border text-[10px]', done ? 'border-volt-400 bg-volt-400/10' : 'hairline')}>{done ? '✓' : n}</span>{t}
+  <li className="execution-step" aria-current={active ? 'step' : undefined} data-complete={done}>
+    <span aria-hidden>{done ? '✓' : String(n).padStart(2, '0')}</span>{t}
   </li>
 );
 
@@ -84,19 +85,33 @@ export default function LiveExecute() {
   }, [sent?.txid]);
   const certify = () => run('Building and verifying the certificate against mainnet…', async () => { if (sent) setCert(await api('/api/live/certificate', { method: 'POST', json: { txid: sent.txid, authorization: pf?.authorization ?? null } })); });
 
-  const stage = cert ? 6 : sent ? 5 : ver?.vmValid ? 4 : pf ? (pf.risk.ok ? 3 : 2) : 0;
+  const stage = cert?.verification.status === 'VERIFIED' ? 6 : sent ? 5 : ver?.vmValid ? 4 : pf ? (pf.risk.ok ? 3 : 2) : 0;
+  const selected = ACTIONS.find(item => item.id === action)!;
+  const selectedVault = open.find(v => v.id === vaultId);
+  const usesVault = action !== 'deploy-vault' && action !== 'consolidate';
   return (
-    <div className="mx-auto max-w-6xl">
-      <PageHeader eyebrow="Execute · BCH mainnet" title="Live execution" lede="FUSE composes the transaction from live chain state, simulates every covenant in the BCH 2026 VM and runs Guardian before you sign. Your wallet signs; FUSE only relays the signed hex. No key ever reaches the server." right={<Badge mode="LIVE" />} />
-      {(vaults.error || vaults.data?.some(v => v.error)) && <div role="alert">Current vault data unavailable. <Button onClick={vaults.reload}>Retry chain read</Button></div>}
-      <div className="grid gap-5 lg:grid-cols-[300px_1fr]">
-        <div className="flex flex-col gap-5">
-          <Panel title="Pipeline">
-            <ol className="grid gap-2" data-testid="live-steps">
-              {['Compose from live state', 'Simulate (BCH 2026 VM)', 'Guardian risk check', 'Sign in your wallet', 'Broadcast', 'Confirm + certificate'].map((t, i) => <Step key={t} n={i + 1} t={t} done={stage > i} active={stage === i} />)}
-            </ol>
-          </Panel>
-          <Panel title="Wallet" kicker="keys stay in your wallet">
+    <div className="execution-desk mx-auto">
+      <header className="execution-header">
+        <div>
+          <p className="atlas-caption"><i /> Workspace / Bitcoin Cash mainnet</p>
+          <h1>Live <em>execution.</em></h1>
+          <p>Compose from current chain state. Review the covenant simulation, fees and Guardian checks before signing in your wallet.</p>
+        </div>
+        <figure className="execution-assembly">
+          <div className="execution-parts" aria-hidden="true">
+            {[0, 1, 2, 3].map(i => <Image key={i} src={`/atlas/part-${i}.webp`} width={500} height={500} alt="" draggable={false} />)}
+          </div>
+          <figcaption><span>Selected operation</span><strong>{selected.t}</strong></figcaption>
+        </figure>
+      </header>
+      <ol className="execution-sequence" aria-label="Execution progress" data-testid="live-steps">
+        {['Compose', 'VM simulation', 'Guardian', 'Wallet signature', 'Broadcast', 'Confirmation'].map((t, i) =>
+          <Step key={t} n={i + 1} t={t} done={stage > i} active={stage === i} />)}
+      </ol>
+      {(vaults.error || vaults.data?.some(v => v.error)) && <div role="alert" className="execution-alert">Current vault data unavailable. <Button onClick={vaults.reload}>Retry chain read</Button></div>}
+      <div className="execution-layout">
+        <aside className="execution-sidebar">
+          <Panel title="Signing wallet" kicker="Wallet connection">
             <WalletConnect onHandle={(handle) => { reset(); setWallet(handle); }} />
             {!wallet && (
               <label className="mt-4 block text-[11.5px] text-fog-400">or paste a BCH address (sign offline with the exported package)
@@ -104,16 +119,22 @@ export default function LiveExecute() {
               </label>
             )}
           </Panel>
-        </div>
-        <div className="flex flex-col gap-5">
-          <Panel title="1 · Choose an action">
-            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3" data-testid="live-actions">
-              {ACTIONS.map((a) => (
-                <button key={a.id} data-testid={`live-action-${a.id}`} onClick={() => { setAction(a.id); reset(); }} className={clsx('rounded-lg border p-3 text-left transition-colors', action === a.id ? 'border-volt-400/60 bg-volt-400/5' : 'hairline hover:border-fog-500')}>
-                  <div className="text-[13px] font-medium text-fog-100">{a.t}</div><div className="mt-1 text-[11.5px] leading-relaxed text-fog-400">{a.d}</div>
+          {usesVault && selectedVault?.current && <section className="execution-vault">
+            <span>Selected vault balance</span><strong>{sats(selectedVault.current.satoshis)} <small>sats</small></strong>
+            <p>{selectedVault.id}</p>
+          </section>}
+        </aside>
+        <div className="execution-sheet">
+          <Panel title="Transaction setup" kicker="Composer">
+            <div className="execution-actions" role="group" aria-label="Choose an operation" data-testid="live-actions">
+              {ACTIONS.map(a => (
+                <button type="button" key={a.id} aria-pressed={action === a.id} data-testid={`live-action-${a.id}`}
+                  onClick={() => { setAction(a.id); reset(); }}>
+                  <span className="execution-selector" aria-hidden="true" />{a.t}
                 </button>
               ))}
             </div>
+            <p className="execution-action-note" aria-live="polite">{selected.d}</p>
             <div className="mt-4 flex flex-wrap items-end gap-3 text-[12px]">
               {action !== 'deploy-vault' && action !== 'consolidate' && (
                 <label className="text-fog-400">Vault
@@ -125,7 +146,7 @@ export default function LiveExecute() {
               )}
               {(action === 'deposit' || action === 'withdraw') && <label className="text-fog-400">Amount (sats)<input value={amount} onChange={(e) => { reset(); setAmount(e.target.value); }} className="ml-2 w-28 rounded-md border hairline bg-ink-900 px-2 py-1 font-mono text-fog-100" /></label>}
               {action === 'deploy-vault' && <label className="text-fog-400">Principal (sats)<input value={principal} onChange={(e) => { reset(); setPrincipal(e.target.value); }} className="ml-2 w-28 rounded-md border hairline bg-ink-900 px-2 py-1 font-mono text-fog-100" /></label>}
-              <Button onClick={compose} disabled={!address || Boolean(busy)} data-testid="live-compose">Compose + preflight</Button>
+              <Button onClick={compose} disabled={!address || (usesVault && !selectedVault) || Boolean(busy)} data-testid="live-compose">Compose + preflight</Button>
             </div>
             {!address && <p className="mt-2 text-[11.5px] text-fog-500">Connect a wallet or paste an address to compose.</p>}
           </Panel>
@@ -134,7 +155,7 @@ export default function LiveExecute() {
           {err && <div role="alert" className="rounded-lg border border-rose-bad/30 bg-rose-bad/5 p-3 text-[12px] text-rose-bad">{err}</div>}
 
           {pf && (
-            <Panel title="2 · Simulation and Guardian" actions={<span className={clsx('num text-[12px]', pf.risk.ok ? 'text-volt-300' : 'text-rose-bad')} data-testid="live-guardian">Guardian {pf.risk.level}</span>}>
+            <Panel title="Simulation and Guardian" actions={<span className={clsx('num text-[12px]', pf.risk.ok ? 'text-volt-300' : 'text-rose-bad')} data-testid="live-guardian">Guardian {pf.risk.level}</span>}>
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
                   <div className="mb-1 text-[11px] uppercase tracking-wide text-fog-500">Transaction</div>
@@ -159,20 +180,20 @@ export default function LiveExecute() {
           )}
 
           {pf?.risk.ok && pf.authorization && (
-            <Panel title="3 · Sign in your wallet" kicker="FUSE never sees your key">
+            <Panel title="Sign in your wallet" kicker="FUSE never sees your key">
               <div className="flex flex-wrap gap-3">
                 {wallet && <Button onClick={signWallet} disabled={Boolean(busy)} data-testid="live-sign-wc">Sign with {`WizardConnect`}</Button>}
                 <Button variant="ghost" onClick={exportPkg} data-testid="live-export">Export signing package (.json)</Button>
               </div>
               <p className="mt-2 text-[11.5px] text-fog-400">The package holds the unsigned transaction hex (covenant unlocks already filled), every source output (with tokens) and the input indexes your key must sign with SIGHASH_ALL|FORKID|UTXOS. Sign it with any libauth-compatible signer, then paste the signed hex.</p>
-              <textarea data-testid="live-signed-hex" value={signedHex} onChange={(e) => { setVer(undefined); setSignedHex(e.target.value.trim()); }} placeholder="signed transaction hex" rows={3} className="mt-3 w-full rounded-md border hairline bg-ink-900 p-2 font-mono text-[11px] text-fog-100" />
+              <textarea aria-label="Signed transaction hex" data-testid="live-signed-hex" value={signedHex} onChange={(e) => { setVer(undefined); setSignedHex(e.target.value.trim()); }} placeholder="signed transaction hex" rows={3} className="mt-3 w-full rounded-md border hairline bg-ink-900 p-2 font-mono text-[11px] text-fog-100" />
               <Button variant="ghost" onClick={() => verify(signedHex)} disabled={!signedHex || Boolean(busy)} className="mt-2">Verify signed hex</Button>
               {ver && <div className={clsx('mt-3 text-[12px]', ver.vmValid ? 'text-volt-300' : 'text-rose-bad')} data-testid="live-verified">{ver.vmValid ? '✓' : '✗'} {ver.vmDetail} · txid <Mono>{short(ver.txid, 10)}</Mono> · fee {sats(ver.minerFee)} sats · {ver.sizeBytes} B</div>}
             </Panel>
           )}
 
           {ver?.vmValid && (
-            <Panel title="4 · Broadcast and track">
+            <Panel title="Broadcast and track">
               {!sent && <Button onClick={broadcast} disabled={Boolean(busy)} data-testid="live-broadcast">Broadcast to BCH mainnet</Button>}
               {sent && (
                 <div className="grid gap-2 text-[12px]" data-testid="live-sent">

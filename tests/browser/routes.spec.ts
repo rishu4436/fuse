@@ -37,6 +37,20 @@ test('dashboard replays recorded settlement and switches to the sandbox', async 
   await expect(page.getByRole('heading', { name: 'Sandbox execution world' })).toBeVisible();
 });
 
+test('the shared directory and execution controls work without a wallet', async ({ page }) => {
+  await page.goto('/verify');
+  await page.locator('summary').filter({ hasText: 'Directory' }).click();
+  await page.getByRole('navigation', { name: 'Route directory' }).getByRole('link', { name: /^Execute/ }).click();
+  await expect(page).toHaveURL(/\/app\/execute\/live$/);
+  await expect(page.getByTestId('live-compose')).toBeDisabled();
+  await page.getByTestId('live-action-deposit').click();
+  await expect(page.getByLabel('Amount (sats)')).toBeVisible();
+  await page.getByTestId('live-action-deploy-vault').click();
+  await expect(page.getByLabel('Principal (sats)')).toBeVisible();
+  await expect(page.getByTestId('live-vault')).toHaveCount(0);
+  await expect(page.getByTestId('live-broadcast')).toHaveCount(0);
+});
+
 test('LIVE is the default mode: mainnet pages are labeled LIVE; sandbox pages SANDBOX after the toggle', async ({ page }) => {
   await page.goto('/app/opportunities'); await expect(page.getByText('LIVE', { exact: true }).filter({ visible: true }).first()).toBeVisible();
   await expect(page.getByTestId('live-pools')).toBeVisible({ timeout: 45_000 });

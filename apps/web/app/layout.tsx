@@ -4,6 +4,8 @@ import { GeistMono } from 'geist/font/mono';
 import { AppShell } from '@/components/shell';
 import { ModeProvider } from '@/lib/mode';
 import './globals.css';
+import '@/components/transaction-atlas.css';
+import '@/components/workspace.css';
 
 export const metadata: Metadata = {
   title: { default: 'FUSE: live DeFi execution on Bitcoin Cash', template: '%s · FUSE' },

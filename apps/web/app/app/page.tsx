@@ -6,7 +6,7 @@ import { sats, bchTrim as bch } from '@/lib/api';
 import { PageHeader, Panel, Stat, Badge, ApiOffline, Mono, type DataMode } from '@/components/ui';
 import { useMode } from '@/lib/mode';
 import { short } from '@/lib/api';
-import { ATOMIC_TXID, SettlementReplay } from '@/components/settlement-replay';
+import { SettlementReplay } from '@/components/settlement-replay';
 import styles from './dashboard.module.css';
 
 interface Vault { totalSats: bigint; cumulativeFees: bigint; flashCount: bigint; shards: unknown[] }
@@ -54,18 +54,7 @@ function LiveOverview() {
           {chainError ? 'Chain reader unavailable' : status.data?.tipHeight ? 'BCH mainnet connected' : 'Connecting to BCH mainnet'}
         </Link>
       </div>
-      <div className="dashboard-hero">
-        <div className="dashboard-intro">
-          <p className="dashboard-eyebrow">Bitcoin Cash execution network</p>
-          <h1>Execution<br />control room<span>.</span></h1>
-          <p className="dashboard-lede">Borrow, trade and repay in a single BCH transaction. Review the exact route before your wallet signs.</p>
-          <div className="dashboard-actions">
-            <Link href="/app/execute/live" className="dashboard-primary">Open live execution <span aria-hidden>↗</span></Link>
-            <Link href={`https://bchexplorer.cash/tx/${ATOMIC_TXID}`} className="dashboard-secondary">Inspect settlement <span aria-hidden>↗</span></Link>
-          </div>
-        </div>
-        <SettlementReplay />
-      </div>
+      <SettlementReplay />
 
       <section aria-labelledby="live-metrics-title" data-testid="live-overview">
         <div className="dashboard-heading">

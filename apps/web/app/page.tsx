@@ -1,9 +1,10 @@
 'use client';
 import Link from 'next/link';
+import { SettlementReplay, ATOMIC_TXID } from '@/components/settlement-replay';
 import { motion } from 'motion/react';
 import { usePoll } from '@/lib/hooks';
 import { sats, usd } from '@/lib/api';
-import { Badge, Panel, Stat, Button } from '@/components/ui';
+import { Badge, Panel, Stat } from '@/components/ui';
 import type { LiveVault } from '@/components/live';
 
 const steps = [
@@ -21,32 +22,14 @@ export default function Home() {
   const v = (vaults.data ?? []).find((x) => x.open && !x.error);
   return (
     <div className="mx-auto max-w-6xl">
-      <section className="relative pb-14 pt-6 md:pt-12">
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}>
-          <div className="mb-5 inline-flex items-center gap-2 rounded-full border hairline bg-ink-850 px-3 py-1 text-[11.5px] text-fog-300">
-            <span className="size-1.5 animate-pulse rounded-full bg-emerald-400 shadow-[0_0_10px_#34d399]" /> Live on Bitcoin Cash mainnet
-          </div>
-          <h1 className="max-w-3xl text-[44px] font-semibold leading-[1.04] tracking-[-0.035em] text-fog-100 md:text-[60px]">
-            Live BCH DeFi execution.<br /><span className="text-fog-400">Simulated and risk-checked</span> <span className="text-volt-300">before you sign.</span>
-          </h1>
-          <p className="mt-6 max-w-2xl text-[15.5px] leading-relaxed text-fog-300">
-            FUSE executes flash loans, Cauldron routes and FlashVault liquidity moves on BCH mainnet. Each transaction is composed from live chain state, run through the BCH 2026 VM and the Guardian risk engine, signed in your own wallet and broadcast, then proven with a certificate anyone can re-verify.
-          </p>
-          <div className="mt-8 flex flex-wrap items-center gap-3">
-            <Link href="/app/execute/live"><Button>Execute on mainnet →</Button></Link>
-            <Link href="/app" className="inline-flex h-9 items-center rounded-[10px] border hairline bg-ink-800 px-4 text-[13px] font-medium hover:bg-ink-700">Open dashboard ↗</Link>
-            <span className="ml-1 text-[12px] text-fog-400">A local sandbox (simulated coins) is available from the mode switch.</span>
-          </div>
-          <nav aria-label="Recorded mainnet evidence" className="mt-4 flex flex-wrap gap-4 text-sm underline">
-            <a href="https://bchexplorer.cash/tx/994b63ba75533bb36506a406ac09737fb96812c45e9224ba089f0f3e66a3dd3f">Two-pool transaction</a>
-            <a href="https://bchexplorer.cash/tx/cb003c5645ec52aea77b896e7f29fba22a751ad937a8a44f4d1649f954733c3c">Solver settlement</a>
-            <a href="https://github.com/rishu4436/fuse/tree/feat/phase-0-1-foundation/evidence/mainnet/wizardconnect-cashonize">Cashonize approval</a>
-            <a href="/judging/FUSE-demo.mp4">Watch the recorded demo</a>
-            <Link href="/developers/sdk">Developer SDK</Link>
-          </nav>
-        </motion.div>
-      </section>
-
+      <SettlementReplay home />
+      <nav aria-label="Evidence library" className="atlas-evidence">
+        <h2>Evidence library</h2>
+        <a href={`https://bchexplorer.cash/tx/${ATOMIC_TXID}`}>Two-pool settlement ↗</a>
+        <a href="https://bchexplorer.cash/tx/cb003c5645ec52aea77b896e7f29fba22a751ad937a8a44f4d1649f954733c3c">Solver auction ↗</a>
+        <a href="https://github.com/rishu4436/fuse/tree/main/evidence/mainnet/wizardconnect-cashonize">Cashonize approval ↗</a>
+        <Link href="/developers/sdk">Developer SDK ↗</Link>
+      </nav>
       <div className="grid gap-5 lg:grid-cols-2">
         <Panel title="FlashVault on mainnet" kicker={v ? v.id : vaults.loading ? 'reading chain' : 'current data unavailable'} mode="LIVE">
           <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">

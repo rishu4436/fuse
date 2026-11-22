@@ -99,7 +99,7 @@ export function ApiOffline({ error }: { error?: string }) {
 
 export function PageHeader({ eyebrow, title, lede, right }: { eyebrow: string; title: string; lede?: ReactNode; right?: ReactNode }) {
   return (
-    <div className="mb-7 flex flex-wrap items-end justify-between gap-4">
+    <div className="workspace-heading mb-7 flex flex-wrap items-end justify-between gap-4">
       <div className="max-w-2xl">
         <div className="mb-2 text-[11px] uppercase tracking-[0.18em] text-volt-400">{eyebrow}</div>
         <h1 className="text-[28px] font-semibold leading-tight tracking-[-0.02em] text-fog-100">{title}</h1>

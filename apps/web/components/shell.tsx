@@ -1,10 +1,10 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState, type ReactNode } from 'react';
+import { useRef, type ReactNode } from 'react';
 import clsx from 'clsx';
 import { useMode } from '@/lib/mode';
-import { AnimatePresence, motion } from 'motion/react';
+import { motion } from 'motion/react';
 
 type Tag = 'LIVE' | 'SIM' | 'RO';
 const LIVE_NAV: Array<{ group: string; items: Array<{ href: string; label: string; tag?: Tag }> }> = [
@@ -64,12 +64,13 @@ function ModeToggle({ mode, setMode }: { mode: 'live' | 'sandbox'; setMode: (m: 
 
 export function AppShell({ children }: { children: ReactNode }) {
   const path = usePathname();
-  const [open, setOpen] = useState(false);
+  const directory = useRef<HTMLDetailsElement>(null);
+  const closeDirectory = () => { if (directory.current) directory.current.open = false; };
   const activeHref = ALL_HREFS.filter((h) => path === h || path.startsWith(h + '/')).sort((a, b) => b.length - a.length)[0];
   const { mode, setMode } = useMode();
   const NAV = mode === 'sandbox' ? [...SANDBOX_NAV, ...LIVE_NAV] : LIVE_NAV;
   const nav = (
-    <nav aria-label="Primary" className="flex flex-col gap-5">
+    <nav aria-label="Route directory" className="flex flex-col gap-5">
       <ModeToggle mode={mode} setMode={setMode} />
       {NAV.map((g) => (
         <div key={g.group}>
@@ -79,7 +80,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               const active = it.href === activeHref;
               return (
                 <li key={it.href}>
-                  <Link href={it.href} onClick={() => setOpen(false)} aria-current={active ? 'page' : undefined}
+                  <Link href={it.href} onClick={closeDirectory} aria-current={active ? 'page' : undefined}
                     className={clsx('group relative flex items-center justify-between rounded-lg px-3 py-1.5 text-[13px] transition-colors', active ? 'text-fog-100' : 'text-fog-300 hover:bg-ink-800 hover:text-fog-100')}>
                     {active && <motion.span layoutId="nav-active" className="absolute inset-0 rounded-lg border border-volt-400/25 bg-volt-400/[0.06]" transition={{ type: 'spring', stiffness: 500, damping: 40 }} />}
                     <span className="relative">{it.label}</span>
@@ -93,33 +94,31 @@ export function AppShell({ children }: { children: ReactNode }) {
       ))}
     </nav>
   );
+  const isOverview = path === '/' || (path === '/app' && mode === 'live');
   return (
-    <div className="backdrop min-h-dvh">
-      <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:rounded-lg focus:bg-ink-800 focus:px-3 focus:py-2">Skip to content</a>
-      <HackathonBanner />
-      <div className="mx-auto flex max-w-[1400px]">
-        <aside className="sticky top-0 hidden h-dvh w-[236px] shrink-0 flex-col border-r hairline px-3 py-6 lg:flex">
-          <Link href="/" className="mb-8 flex items-center gap-2.5 px-3"><Logo className="size-7" /><span className="text-[17px] font-semibold tracking-[-0.02em]">fuse</span></Link>
-          <div className="scrollbar-thin -mx-1 min-h-0 flex-1 overflow-y-auto px-1 pb-4">{nav}</div>
-          <div className="mt-3 px-3 text-[11px] leading-relaxed text-fog-400">
-            <div className="mb-1 flex items-center gap-1.5"><span className="size-1.5 rounded-full bg-emerald-400" />LIVE: BCH mainnet</div>
-            <div className="mb-1 flex items-center gap-1.5"><span className="size-1.5 rounded-full bg-sky-ro" />READ: mainnet analysis, advice only</div>
-            <div className="flex items-center gap-1.5"><span className="size-1.5 rounded-full bg-amber-sim" />SANDBOX: local BCH VM (opt-in)</div>
-          </div>
-        </aside>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center justify-between border-b hairline px-5 py-3 lg:hidden">
-            <Link href="/" className="flex items-center gap-2"><Logo className="size-6" /><span className="font-semibold">fuse</span></Link>
-            <button onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-controls="mobile-nav" className="rounded-lg border hairline px-3 py-1.5 text-[12px]">Menu</button>
-          </div>
-          <AnimatePresence>
-            {open && (
-              <motion.div id="mobile-nav" initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden border-b hairline px-3 py-4 lg:hidden">{nav}</motion.div>
-            )}
-          </AnimatePresence>
-          <main id="main" className="px-5 py-8 md:px-9 md:py-10">{children}</main>
-        </div>
-      </div>
+    <div className="atlas-shell">
+      <a className="atlas-skip" href="#main">Skip to content</a>
+      <header className="atlas-nav">
+        <Link href="/" aria-label="FUSE home" className="atlas-brand"><Logo className="size-9" />FUSE</Link>
+        <nav aria-label="Primary">
+          <Link aria-current={path === '/app' ? 'page' : undefined} href="/app">Workspace</Link>
+          <Link aria-current={path === '/app/execute/live' ? 'page' : undefined} href="/app/execute/live">Execute</Link>
+          <Link aria-current={path === '/verify' ? 'page' : undefined} href="/verify">Verifier</Link>
+          <Link aria-current={path === '/developers/sdk' ? 'page' : undefined} href="/developers/sdk">SDK</Link>
+        </nav>
+        <details ref={directory} className="atlas-menu" key={path}
+          onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) closeDirectory(); }}
+          onKeyDown={event => {
+            if (event.key === 'Escape') {
+              event.currentTarget.querySelector('summary')?.focus();
+              closeDirectory();
+            }
+          }}>
+          <summary>Directory <span aria-hidden>☰</span></summary><div>{nav}</div>
+        </details>
+      </header>
+      <main id="main" className={clsx('atlas-main', !isOverview && 'atlas-interior')}>{children}</main>
+      <footer><HackathonBanner /></footer>
     </div>
   );
 }
