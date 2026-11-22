@@ -20,10 +20,11 @@ export default function VerifyPage() {
   };
   return (
     <div className="mx-auto max-w-4xl">
-      <PageHeader eyebrow="Verifier" title="Paste a certificate, check it yourself" lede="The verifier never trusts the certificate. It re-derives the commitment, re-fetches the transaction, re-hashes it, and checks every claimed output and outcome against chain data. Mainnet certificates are graded INCLUDED → STRUCTURE_VERIFIED → OUTCOME_VERIFIED (contract checks re-derived from chain) → INTENT_BOUND (matches a signed execution authorization). Paste a full live result to include its authorization. The same code ships as @fuse/proof-verifier." />
+      <PageHeader eyebrow="Verifier" title="Verify an execution certificate" lede="FUSE fetches the transaction from chain data and checks the receipt against it. Mainnet verification progresses from inclusion to transaction structure, contract outcomes, and intent binding." />
       <Panel title="Certificate JSON" actions={<Button onClick={run} disabled={!text.trim()} data-testid="verify-paste">Verify</Button>}>
         <label htmlFor="cert" className="sr-only">Certificate JSON</label>
         <textarea id="cert" value={text} onChange={(e) => setText(e.target.value)} spellCheck={false} placeholder='{ "schema": "fuse.certificate/v1", … }' className="num h-64 w-full resize-y rounded-lg border hairline bg-ink-950 p-4 text-[12px] text-fog-200 outline-none focus:border-volt-400/50" />
+        <p className="mt-3 text-sm">INTENT_BOUND means the transaction matches an authorization signed by the FUSE deployment. A separate wallet signature over that authorization is optional. Paste the full live receipt to include both when available.</p>
         {err && <div role="alert" className="mt-3 text-[12.5px] text-rose-bad">{err}</div>}
         {v && <div className="mt-4"><VerifyResult v={v} /></div>}
       </Panel>

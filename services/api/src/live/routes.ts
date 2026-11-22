@@ -16,12 +16,13 @@ import { verifyCertificate } from '@fuse/proof-verifier';
 import { openRfq, settleAuction, loadSolverRegistry } from './auction.js';
 import { radar, sentinel } from '@fuse/risk-engine';
 import { parseLoan } from '@fuse/risk-engine';
+import type { LiveAuctionResult, LiveRfqEnvelope, LiveSignedVerification, LiveTransactionStatus, LiveVaultEntry } from '@fuse/sdk';
 
 export const broadcastEnabled = () => process.env.FUSE_BROADCAST === '1';
 /** Preflight result + an execution authorization when Guardian passed (none on BLOCK, so a blocked tx can never be relayed). */
 export function withAuthorization<T extends Awaited<ReturnType<typeof prepare>>>(p: T, auction: { auctionId: string; transcriptHash: string; winner: string } | null = null) {
   if (!p.risk.ok || !serverKey()) return { ...p, authorization: null, authorizationNote: !p.risk.ok ? 'Guardian BLOCK: no execution authorization issued' : 'authorizations not configured on this deployment' };
-  const authorization = issueAuthorization({ action: p.action, address: p.address, templateHash: p.templateHash, template: p.template, constraints: p.constraints as never, guardian: { level: p.risk.level, ok: p.risk.ok, checks: p.risk.checks.map((c) => `${c.ok ? 'ok' : 'FAIL'}:${c.name}`) }, auction });
+  const authorization = issueAuthorization({ action: p.action, address: p.address, templateHash: p.templateHash, template: p.template, constraints: p.constraints, guardian: { level: p.risk.level, ok: p.risk.ok, checks: p.risk.checks.map((c) => `${c.ok ? 'ok' : 'FAIL'}:${c.name}`) }, auction });
   return { ...p, authorization };
 }
 const Txid = z.string().regex(/^[0-9a-f]{64}$/);
@@ -33,7 +34,7 @@ export function registerLive(app: FastifyInstance, ctx: { root: string; paryonSn
     try { tipHeight = await tip(); } catch (e) { err = (e as Error).message; }
     return { mode: 'LIVE', network: 'mainnet', releaseSha: process.env.FUSE_RELEASE_SHA ?? process.env.VERCEL_GIT_COMMIT_SHA ?? null, tipHeight, sources: sourceHealth(), checkedAt: new Date().toISOString(), chainSource: new URL(ESPLORA).hostname, latencyMs: Date.now() - t0, error: err, broadcast: broadcastEnabled() && serverKey() ? 'ENABLED (relays only signed txs that match an unexpired, single-use execution authorization from preflight; full VM + constraint re-check; server holds no fund keys)' : 'DISABLED', authorization: serverKey() ? { scheme: 'Schnorr secp256k1 over sha256("fuse-authz/v1:" + payload)', attestationPubkey: serverKey()!.pub, ttlSeconds: 300, singleUse: 'per-instance used-set + exact input outpoints re-checked unspent' } : null, vaults: configs().map((c) => ({ id: c.id, status: c.status, category: c.category })), caps: LIVE_CAPS, sandbox: 'opt-in local BCH VM (toggle in the app)' };
   });
-  app.get('/api/live/vaults', async () => Promise.all(configs().map((c) => trackVault(c).catch((e: Error) => ({ id: c.id, error: e.message })))));
+  app.get('/api/live/vaults', async (): Promise<LiveVaultEntry[]> => Promise.all(configs().map((c) => trackVault(c).catch((e: Error) => ({ id: c.id, error: e.message })))));
   app.get('/api/live/vault/:id', async (req, reply) => { const c = configs().find((x) => x.id === (req.params as { id: string }).id); return c ? trackVault(c) : reply.status(404).send({ error: 'NOT_FOUND' }); });
   app.get('/api/live/cauldron', async () => { const r = await livePools(); const rt = bestRoundTrip(r.pools, 1n); return { ...r, bestRoundTrip1Unit: rt ? { buyPool: rt.a.poolId, sellPool: rt.b.poolId, satsIn: rt.satsIn, satsOut: rt.satsOut, loss: rt.loss } : null }; });
   app.get('/api/live/paryon', async () => liveParyon(ctx.paryonSnapshot() as never));
@@ -57,10 +58,10 @@ export function registerLive(app: FastifyInstance, ctx: { root: string; paryonSn
   app.get('/api/live/wallet/:address', async (req) => { const a = (req.params as { address: string }).address; const coins = await addressUtxos(a); return { address: a, balance: coins.reduce((s, c) => s + c.satoshis, 0n), coins }; });
   const PrepareZ = z.object({ action: z.enum(['flash', 'flash-cauldron', 'deposit', 'withdraw', 'deploy-vault', 'consolidate']), address: z.string().min(20).max(120), vaultId: z.string().max(40).optional(), amount: z.coerce.bigint().positive().optional(), principal: z.coerce.bigint().positive().optional(), units: z.coerce.bigint().min(1n).max(5n).optional(), maxUserCost: z.coerce.bigint().positive().optional() });
   app.post('/api/live/prepare', async (req) => withAuthorization(await prepare(configs(), PrepareZ.parse(req.body))));
-  app.post('/api/live/verify-signed', async (req) => { const { tx: _t, src: _s, ...v } = await verifySigned(z.object({ rawHex: z.string() }).parse(req.body).rawHex); return v; });
+  app.post('/api/live/verify-signed', async (req): Promise<LiveSignedVerification> => { const { tx: _t, src: _s, ...v } = await verifySigned(z.object({ rawHex: z.string() }).parse(req.body).rawHex); return v; });
   // D: mainnet solver auction — signed RFQ → signed solver quotes → verify + recompute + score → authorized winner
-  app.post('/api/live/auction/rfq', async (req) => { const b = z.object({ address: z.string().min(20).max(120), units: z.coerce.bigint().min(1n).max(5n).default(1n), vaultId: z.string().max(40).optional() }).parse(req.body); return { ...openRfq(b), solvers: loadSolverRegistry(ctx.root) }; });
-  app.post('/api/live/auction/settle', async (req) => {
+  app.post('/api/live/auction/rfq', async (req): Promise<LiveRfqEnvelope> => { const b = z.object({ address: z.string().min(20).max(120), units: z.coerce.bigint().min(1n).max(5n).default(1n), vaultId: z.string().max(40).optional() }).parse(req.body); return { ...openRfq(b), solvers: loadSolverRegistry(ctx.root) }; });
+  app.post('/api/live/auction/settle', async (req): Promise<LiveAuctionResult> => {
     const b = req.body as Parameters<typeof settleAuction>[2];
     if (!b?.rfq || !b.rfqSig || !Array.isArray(b.quotes)) throw Object.assign(new Error('rfq, rfqSig and quotes are required'), { statusCode: 400 });
     const r = await settleAuction(configs(), loadSolverRegistry(ctx.root), b);
@@ -72,7 +73,7 @@ export function registerLive(app: FastifyInstance, ctx: { root: string; paryonSn
     const p = openAuthorization(AuthZ.parse(req.body), serverKey()?.pub ?? '');
     const chainTip = await freshTip();
     await assertInputsUnspent(p.template.inputs);
-    if (Date.now() >= p.expiresAt * 1000) throw Object.assign(new Error('Authorization expired. Run preflight again.'), {statusCode: 409});
+    if (Date.now() >= p.expiresAt * 1000) throw Object.assign(new Error('Authorization expired. Run preflight again.'), { statusCode: 409, code: 'AUTHORIZATION_EXPIRED' });
     return { chainTip, intentId: p.intentId };
   });
   app.post('/api/broadcast', async (req) => {
@@ -80,7 +81,7 @@ export function registerLive(app: FastifyInstance, ctx: { root: string; paryonSn
     const b = z.object({ rawHex: z.string(), authorization: AuthZ.optional(), userSignature: z.object({ pubkey: z.string(), sig: z.string() }).optional() }).parse(req.body);
     return broadcast(b, { enabled: broadcastEnabled(), trustedPubkey: serverKey()?.pub ?? null });
   });
-  app.get('/api/live/tx/:txid', async (req) => { const t = Txid.parse((req.params as { txid: string }).txid); return { txid: t, explorer: EXPLORER_TX + t, ...(await confirmations(t)) }; });
+  app.get('/api/live/tx/:txid', async (req): Promise<LiveTransactionStatus> => { const t = Txid.parse((req.params as { txid: string }).txid); return { txid: t, explorer: EXPLORER_TX + t, ...(await confirmations(t)) }; });
   const CertReq = z.object({ txid: Txid, authorization: z.object({ payload: z.string(), authHash: z.string(), serverPubkey: z.string(), serverSig: z.string() }).nullish(), userSignature: z.object({ pubkey: z.string(), sig: z.string() }).nullish(), auction: z.unknown().optional() });
   app.post('/api/live/certificate', async (req) => { const b = CertReq.parse(req.body); return liveCertificate(configs(), b.txid, { authorization: b.authorization, userSignature: b.userSignature, trustedPubkey: serverKey()?.pub ?? null, auction: b.auction }); });
   // third-party re-verification of a submitted certificate (+ optional authorization) under the four levels

@@ -15,7 +15,7 @@ export async function livePools(maxVerify = 5): Promise<{ pools: LivePool[]; ind
   const base = process.env.FUSE_CAULDRON_INDEXER ?? 'https://indexer.cauldron.quest';
   const active = await readSource(base, async () => {
     const res = await fetch(base + '/cauldron/pool/active?token=' + PUSD, { signal: AbortSignal.timeout(6000), cache: 'no-store' });
-    if (!res.ok) throw Object.assign(new Error('Cauldron indexer HTTP ' + res.status), { statusCode: 503 });
+    if (!res.ok) throw Object.assign(new Error('Cauldron indexer unavailable. Retry shortly.'), { statusCode: 503, code: 'CHAIN_UNAVAILABLE' });
     const { active } = (await res.json()) as { active: Array<{ owner_pkh: string; txid: string; tx_pos: number; sats: number; tokens: number; pool_id: string }> };
     return active;
   });
@@ -52,5 +52,5 @@ export function bestRoundTrip(pools: LivePool[], units: bigint) {
 
 export async function assertPoolsUnspent(ps: LivePool[]) {
   const sp = await Promise.all(ps.map((p) => outspend(p.txid, p.vout)));
-  if (sp.some((x) => x.spent)) { cache = null; throw Object.assign(new Error('a Cauldron pool UTXO was just spent by another trader; prepare again to use the new pool state'), { statusCode: 409 }); }
+  if (sp.some((x) => x.spent)) { cache = null; throw Object.assign(new Error('a Cauldron pool UTXO was just spent by another trader; prepare again to use the new pool state'), { statusCode: 409, code: 'STALE_UTXO' }); }
 }
