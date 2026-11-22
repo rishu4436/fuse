@@ -18,7 +18,7 @@ export const esploraReader: ChainReader = {
   getRawTransaction: async (t) => { try { const [raw, s] = await Promise.all([rawTx(t), status(t)]); return { rawHex: raw, blockHeight: s.block_height ?? null, blockHash: s.block_hash ?? null }; } catch { return null; } },
 };
 
-export async function liveCertificate(configs: VaultConfig[], txid: string, bind: { authorization?: Authorization | null; userSignature?: { pubkey: string; sig: string } | null; trustedPubkey?: string | null; auction?: unknown } = {}) {
+export async function liveCertificate(configs: VaultConfig[], txid: string, bind: { authorization?: Authorization | null; userSignature?: { pubkey: string; sig: string } | null; trustedPubkey?: string | null; auction?: unknown } = {}): Promise<import('@fuse/sdk').LiveReceipt> {
   const auc = bind.auction as { transcript?: unknown; transcriptHash?: string; winner?: { solverId: string } } | undefined;
   if (auc?.transcriptHash && auc.transcript && transcriptHashOf(auc.transcript) !== auc.transcriptHash) throw Object.assign(new Error('auction transcript does not hash to transcriptHash'), { statusCode: 400 });
   const tx = await decoded(txid);

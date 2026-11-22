@@ -5,8 +5,9 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { decodeTransaction, encodeTransaction, hexToBin, binToHex, hash256 } from '@bitauth/libauth';
 import { verifyCertificate, sealCertificate, CertificateSchema, type ChainReader } from '@fuse/proof-verifier';
+import { FuseClient } from '@fuse/sdk';
 import { liveRederiver } from '../src/live/verify.js';
-import { loadVaultConfigs } from '../src/live/vault.js';
+import { loadVaultConfigs, paramsOfConfig } from '../src/live/vault.js';
 
 const root = join(__dirname, '../../..');
 const fx = JSON.parse(readFileSync(join(__dirname, 'fixtures/mainnet-txs.json'), 'utf8'));
@@ -128,6 +129,20 @@ describe('INTENT_BOUND (issue B + A)', () => {
     const v = await verifyCertificate(await f7cert(), reader(), { ...opts(), intent: intentBinder({ authorization: authEv.authorization, userSignature: authEv.userSignature, trustedPubkey: ATT }) });
     expect(v.status).toBe('VERIFIED'); expect(v.level).toBe('INTENT_BOUND');
     expect(v.levels.INTENT_BOUND.detail).toMatch(/user wallet signature|wallet/i);
+  });
+  it('SDK reports the separate wallet intent signature only when the receipt supplies it', async () => {
+    const fuse = new FuseClient('http://unused', async () => { throw new Error('SDK HTTP is unavailable'); });
+    const trust = {
+      attestationPubkey: ATT,
+      vaults: configs.map(c => ({ id: c.id, category: c.category, params: paramsOfConfig(c) })),
+    };
+    const data = { certificate: await f7cert(), authorization: authEv.authorization };
+    const operatorOnly = await fuse.verifyLiveReceiptLocally(data, reader(), trust);
+    expect(operatorOnly.level).toBe('INTENT_BOUND');
+    expect(operatorOnly.levels.INTENT_BOUND.detail).toMatch(/separate wallet authorization signature absent/i);
+    const both = await fuse.verifyLiveReceiptLocally({ ...data, userSignature: authEv.userSignature }, reader(), trust);
+    expect(both.level).toBe('INTENT_BOUND');
+    expect(both.levels.INTENT_BOUND.detail).toMatch(/separate wallet signature verified/i);
   });
   it('authorization checked against a key other than the published attestation key → FAILED', async () => {
     const v = await verifyCertificate(await f7cert(), reader(), { ...opts(), intent: intentBinder({ authorization: authEv.authorization, userSignature: authEv.userSignature, trustedPubkey: '02' + '11'.repeat(32) }) });

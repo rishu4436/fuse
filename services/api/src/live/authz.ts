@@ -13,19 +13,16 @@ import { randomBytes } from 'node:crypto';
 import { binToHex, hexToBin, sha256, utf8ToBin, secp256k1, hash160, encodeTransaction, type TransactionCommon } from '@bitauth/libauth';
 import { toUnsignedTransaction, type TxTemplate } from '@fuse/transaction-composer';
 import { toJson, fromJson } from '@fuse/solver-sdk';
+import type { ExecutionAuthorization, LiveConstraints } from '@fuse/sdk';
 
 export const AUTH_TTL_SECONDS = 300;
-export interface Constraints {
-  userLockingBytecode: string; maxMinerFee: bigint; expectedUserCost: bigint; capital: bigint; maxUserCost: bigint; allowedRecipients: string[];
-  vault: { id: string; lockingBytecode: string; category: string; feeBps: bigint; minFee: bigint; maxExposure: bigint; ownerPkh: string; requiredReturn: bigint | null } | null;
-  route: { units: unknown; buyOutpoint: unknown; sellOutpoint: unknown; satsIn: unknown; minSatsOut: unknown; slippageBps: number } | null;
-}
+export type Constraints = LiveConstraints;
 export interface AuthPayload {
   v: 1; kind: 'fuse.execution-authorization/v1'; intentId: string; network: 'mainnet'; action: string; address: string;
   issuedAt: number; expiresAt: number; templateHash: string; structureHash: string; template: TxTemplate; constraints: Constraints;
   guardian: { level: string; ok: boolean; checks: string[] }; auction: { auctionId: string; transcriptHash: string; winner: string } | null;
 }
-export interface Authorization { payload: string; authHash: string; serverPubkey: string; serverSig: string }
+export type Authorization = ExecutionAuthorization;
 
 const fail = (msg: string, code = 403): never => { throw Object.assign(new Error(msg), { statusCode: code, code: 'AUTHORIZATION' }); };
 const b64u = (s: string) => Buffer.from(s, 'utf8').toString('base64url');
@@ -66,7 +63,7 @@ export function openAuthorization(a: Authorization | undefined | null, trustedPu
   let p: AuthPayload; try { p = fromJson<AuthPayload>(unb64u(a!.payload)); } catch { return fail('authorization payload is not valid JSON'); }
   if (p.network !== 'mainnet' || p.kind !== 'fuse.execution-authorization/v1' || p.v !== 1) fail('unsupported authorization version');
   const now = opts.now ?? Math.floor(Date.now() / 1000);
-  if (!opts.ignoreExpiry && now >= p.expiresAt) fail(`authorization expired at ${new Date(p.expiresAt * 1000).toISOString()}: run preflight again`);
+  if (!opts.ignoreExpiry && now >= p.expiresAt) throw Object.assign(new Error('Authorization expired. Run preflight again.'), { statusCode: 403, code: 'AUTHORIZATION_EXPIRED' });
   return p;
 }
 

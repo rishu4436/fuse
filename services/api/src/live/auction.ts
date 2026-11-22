@@ -11,13 +11,14 @@ import { toJson } from '@fuse/solver-sdk';
 import { serverKey } from './authz.js';
 import { prepare, type PrepareInput } from './execute.js';
 import type { VaultConfig } from './vault.js';
+import type { LiveAuctionInput, LiveAuctionTranscript, LiveQuote, LiveQuoteRoute, LiveQuoteVerdict, LiveRfq, LiveSignedQuote, LiveSolver } from '@fuse/sdk';
 
 export const RFQ_TTL = 180; export const QUOTE_TTL = 120;
-export interface Rfq { v: 1; kind: 'fuse.rfq/v1'; auctionId: string; network: 'mainnet'; action: 'flash-cauldron'; address: string; vaultId: string | null; units: string; issuedAt: number; expiresAt: number }
-export interface QuoteRoute { units: string; buyOutpoint: string; sellOutpoint: string; satsIn: string; satsOut: string; loss: string }
-export interface Quote { v: 1; kind: 'fuse.solver-quote/v1'; auctionId: string; rfqHash: string; solverPubkey: string; strategy: string; route: QuoteRoute; quotedAt: number; expiresAt: number }
-export interface SignedQuote { quote: Quote; sig: string }
-export interface RegisteredSolver { solverId: string; pubkey: string; strategy: string; operator: string }
+export type Rfq = LiveRfq;
+export type QuoteRoute = LiveQuoteRoute;
+export type Quote = LiveQuote;
+export type SignedQuote = LiveSignedQuote;
+export type RegisteredSolver = LiveSolver;
 
 const fail = (msg: string, code = 422): never => { throw Object.assign(new Error(msg), { statusCode: code }); };
 const h = (tag: string, o: unknown) => sha256.hash(utf8ToBin(`${tag}:${toJson(o)}`));
@@ -44,9 +45,9 @@ export function openRfq(x: { address: string; units: bigint; vaultId?: string },
 /** Solver side: sign a quote for an RFQ. */
 export function signQuote(q: Omit<Quote, 'v' | 'kind'>, priv: Uint8Array): SignedQuote { const quote: Quote = { v: 1, kind: 'fuse.solver-quote/v1', ...q }; return { quote, sig: schnorr(quoteHash(quote), priv) }; }
 
-export interface QuoteVerdict { solverId: string; strategy: string; quoteHash: string; valid: boolean; reasons: string[]; recomputed?: { satsIn: string; satsOut: string; loss: string; expectedUserCost: string; minerFee: string; guardian: string }; score?: string; rank?: number }
+export type QuoteVerdict = LiveQuoteVerdict;
 
-export async function settleAuction(configs: VaultConfig[], registry: RegisteredSolver[], body: { rfq: Rfq; rfqSig: string; quotes: SignedQuote[] }, now = Math.floor(Date.now() / 1000)) {
+export async function settleAuction(configs: VaultConfig[], registry: RegisteredSolver[], body: LiveAuctionInput, now = Math.floor(Date.now() / 1000)) {
   const key = serverKey() ?? fail('auctions need the attestation key (FUSE_AUTH_KEY)', 503);
   const started = Date.now();
   const rh = rfqHash(body.rfq);
@@ -82,7 +83,7 @@ export async function settleAuction(configs: VaultConfig[], registry: Registered
   const ranked = verdicts.filter((v) => v.valid).sort((a, b) => { const d = BigInt(a.recomputed!.expectedUserCost) - BigInt(b.recomputed!.expectedUserCost); return d !== 0n ? (d < 0n ? -1 : 1) : a.quoteHash < b.quoteHash ? -1 : 1; });
   ranked.forEach((v, i) => { v.rank = i + 1; v.score = v.recomputed!.expectedUserCost; });
   const winner = ranked[0] ?? fail(`no valid quote: ${verdicts.map((v) => `${v.strategy}: ${v.reasons.join('; ')}`).join(' | ') || 'none submitted'}`, 409);
-  const transcript = { v: 1, kind: 'fuse.auction-transcript/v1', rfq: body.rfq, rfqHash: rh, rfqSig: body.rfqSig, quotes: body.quotes, verdicts, scoring: 'lowest recomputed total user cost (flash fee + round-trip pool loss + miner fee); ties by quote hash', winner: winner.solverId, settledAt: now };
+  const transcript: LiveAuctionTranscript = { v: 1, kind: 'fuse.auction-transcript/v1', rfq: body.rfq, rfqHash: rh, rfqSig: body.rfqSig, quotes: body.quotes, verdicts, scoring: 'lowest recomputed total user cost (flash fee + round-trip pool loss + miner fee); ties by quote hash', winner: winner.solverId, settledAt: now };
   const transcriptHash = transcriptHashOf(transcript);
   return { prepared: prepared.get(winner.solverId)!, transcript, transcriptHash, winner };
 }

@@ -222,7 +222,26 @@ importers:
 
   packages/risk-engine: {}
 
-  packages/sdk: {}
+  packages/sdk:
+    dependencies:
+      '@bitauth/libauth':
+        specifier: 3.1.0-next.8
+        version: 3.1.0-next.8
+      '@fuse/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      '@fuse/core':
+        specifier: workspace:*
+        version: link:../core
+      '@fuse/proof-verifier':
+        specifier: workspace:*
+        version: link:../proof-verifier
+      '@fuse/recipes':
+        specifier: workspace:*
+        version: link:../recipes
+      '@fuse/transaction-composer':
+        specifier: workspace:*
+        version: link:../transaction-composer
 
   packages/simulation: {}
 

@@ -192,7 +192,7 @@ export async function independentlyUnspent(inputs: Array<{ txid:string; vout:num
   await pool(scripts, 4, async script => {
     const coins = await unspentAtScript(script);
     if (!inputs.filter(i => i.lockingBytecode === script).every(i => coins.some(c => c.tx_hash === i.txid && c.tx_pos === i.vout))) {
-      throw Object.assign(new Error('Independent BCH node cannot confirm all selected inputs are unspent. Run preflight again.'), { statusCode: 409 });
+      throw Object.assign(new Error('Independent BCH node cannot confirm all selected inputs are unspent. Run preflight again.'), { statusCode: 409, code: 'STALE_UTXO' });
     }
   });
 }

@@ -8,9 +8,10 @@ import { contractUnlocks, toUnsignedTransaction, sourceOutputsOf, templateHash, 
 import { independentlyUnspent, outspend, freshTip, pool, addressUtxos, type LiveUtxo } from './chain.js';
 import { trackVault, paramsOfConfig, vaultLb, type VaultConfig } from './vault.js';
 import { livePools, bestRoundTrip, roundTripVia, assertPoolsUnspent, PUSD } from './cauldron.js';
+import type { LiveAction, LivePrepareInput, LivePreflight, LiveRoute } from '@fuse/sdk';
 
 export const LIVE_CAPS = { maxMinerFee: 5_000n, feeRate: 2n, minPrincipal: 10_000n, maxPrincipal: 50_000n, dust: 546n };
-export type Action = 'flash' | 'flash-cauldron' | 'deposit' | 'withdraw' | 'deploy-vault' | 'consolidate';
+export type Action = LiveAction;
 const ZERO = encodeVaultState({ flashCount: 0n, cumulativeFees: 0n, paused: false });
 const fail = (msg: string, code = 400): never => { throw Object.assign(new Error(msg), { statusCode: code }); };
 export const flashFee = (p: BchVaultParams, v: bigint) => { const f = (v * p.feeBps + 9_999n) / 10_000n; return f > p.minFee ? f : p.minFee; };
@@ -62,13 +63,16 @@ function pickCoins(coins: LiveUtxo[], need: bigint) {
   return { coins: out, total };
 }
 
-export interface PrepareInput { action: Action; address: string; vaultId?: string; amount?: bigint; principal?: bigint; units?: bigint; maxUserCost?: bigint; /** solver-auction winner: compose exactly this pool pair */ route?: { buyOutpoint: string; sellOutpoint: string } }
-export async function prepare(configs: VaultConfig[], req: PrepareInput) {
+export interface PrepareInput extends LivePrepareInput {
+  /** Solver-auction winner: compose exactly this pool pair. */
+  route?: Pick<LiveRoute, 'buyOutpoint' | 'sellOutpoint'>;
+}
+export async function prepare(configs: VaultConfig[], req: PrepareInput): Promise<Omit<LivePreflight, 'authorization' | 'authorizationNote'>> {
   const user = userLockingBytecode(req.address);
   const coins = await addressUtxos(req.address);
   if (coins.some(coin => coin.lockingBytecode !== user.lb)) fail('Chain reader returned a coin for another wallet', 503);
   const notes: string[] = [];
-  let built: ReturnType<typeof sized>; let vaultInfo: Awaited<ReturnType<typeof trackVault>> | null = null; let route: Record<string, unknown> | null = null;
+  let built: ReturnType<typeof sized>; let vaultInfo: Awaited<ReturnType<typeof trackVault>> | null = null; let route: LiveRoute | null = null;
   let p: BchVaultParams | null = null; let requiredReturn: bigint | null = null; let expectedUserCost = 0n; let capital = 0n;
   if (req.action === 'consolidate') {
     // sweep every plain coin of the wallet into ONE coin at output 0 of the same wallet (no contract involved)
@@ -171,10 +175,10 @@ export async function prepare(configs: VaultConfig[], req: PrepareInput) {
 export async function assertInputsUnspent(inputs: TxTemplate['inputs']) {
   await independentlyUnspent(inputs);
   const states = await pool(inputs, 4, (i) => outspend(i.txid, i.vout));
-  if (states.some(state => state.spent !== false)) fail('An input was spent. Run preflight again.', 409);
+  if (states.some(state => state.spent !== false)) throw Object.assign(new Error('An input was spent. Run preflight again.'), { statusCode: 409, code: 'STALE_UTXO' });
 }
 
-export function guardianPreflight(t: TxTemplate, x: { userLb: string; vaultLb: string | null; fee: bigint; expectedUserCost: bigint; capital: bigint; maxUserCost?: bigint; sim: ReturnType<typeof simulate>; requiredReturn: bigint | null; coins: LiveUtxo[] }) {
+export function guardianPreflight(t: TxTemplate, x: { userLb: string; vaultLb: string | null; fee: bigint; expectedUserCost: bigint; capital: bigint; maxUserCost?: bigint; sim: ReturnType<typeof simulate>; requiredReturn: bigint | null; coins: LiveUtxo[] }): LivePreflight['risk'] {
   const checks: Array<{ name: string; ok: boolean; level: 'block' | 'warn'; detail: string }> = [];
   const add = (name: string, ok: boolean, detail: string, level: 'block' | 'warn' = 'block') => checks.push({ name, ok, level, detail });
   const userIn = t.inputs.filter((i) => i.lockingBytecode === x.userLb).reduce((a, i) => a + i.satoshis, 0n);

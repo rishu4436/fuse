@@ -58,8 +58,13 @@ test('LIVE is the default mode: mainnet pages are labeled LIVE; sandbox pages SA
   await page.goto('/app/guardian'); await expect(page.getByText('READ-ONLY').first()).toBeVisible();
   await expect(page.getByTestId('paryon-coverage')).toBeVisible({ timeout: 60_000 });
   await expect(page.getByTestId('sentinel').locator('div.rounded-lg').first()).toBeVisible({ timeout: 45_000 }); // real signals (the panel retries every 30 s)
-  await sandbox(page);
-  await page.goto('/app/liquidity'); await expect(page.getByText('SANDBOX').first()).toBeVisible();
+  await page.locator('summary').filter({ hasText: 'Directory' }).click();
+  await page.getByTestId('mode-sandbox').click();
+  await expect(page.getByTestId('mode-sandbox')).toHaveAttribute('aria-pressed', 'true');
+  await page.goto('/app/liquidity');
+  const main = page.getByRole('main');
+  await expect(main.getByRole('heading', { name: 'FlashVault shards and LP operations' })).toBeVisible();
+  await expect(main.getByText('SANDBOX', { exact: true }).filter({ visible: true }).first()).toBeVisible();
   const r = await page.goto('/app/execute/new'); expect(r?.url()).toMatch(/\/app\/execute\/new$/);
 });
 
