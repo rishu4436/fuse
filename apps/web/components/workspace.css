@@ -55,7 +55,16 @@
 .execution-header { display:grid; grid-template-columns:minmax(0,1fr) minmax(300px,.72fr); align-items:center; gap:4vw; }
 .execution-header h1 { font-size:clamp(48px,6.8vw,105px); letter-spacing:-.079em; line-height:1.04; font-weight:530; margin:10px 0 14px; }
 .execution-header h1 em { font-family:Georgia,serif; font-weight:400; color:#394c3b; }
-.execution-header > div > p:last-child { max-width:57ch; color:#48574b; font-size:clamp(14px,1.2vw,18px); line-height:1.55; }
+.execution-intro { max-width:57ch; color:#48574b; font-size:clamp(14px,1.2vw,18px); line-height:1.55; }
+.execution-wallet { margin-top:18px; max-width:460px; }
+.execution-wallet-entry { display:flex; gap:8px 14px; flex-wrap:wrap; align-items:center; }
+.execution-wallet-entry button { min-height:44px; padding-inline:16px; border-radius:2px; background:#273c30; color:#fffaf1; box-shadow:none; }
+.execution-wallet-entry button:enabled:hover { background:#394f41; }
+.execution-wallet-entry p { color:#48574b; font-size:13px; }
+.execution-wallet .text-fog-400,.execution-wallet .text-fog-300,.execution-wallet .text-fog-200 { color:#394c3b; }
+.execution-wallet [role=alert] { color:#912b2b; }
+.execution-wallet :focus-visible { outline-color:#994520; }
+.execution-wallet img { max-width:100%; }
 .execution-assembly { min-width:0; position:relative; border:1px solid #b4bdad; background:#e5e7dc; }
 .execution-parts { position:relative; height:clamp(116px,10.5vw,173px); overflow:hidden; background:radial-gradient(circle at 1px 1px,#75836c48 .8px,transparent 1px); background-size:12px 12px; }
 .execution-parts::before { content:""; position:absolute; width:83%; inset:50% auto auto 8%; border-top:1px dashed #7d8976; transform:rotate(-6deg); }

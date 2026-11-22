@@ -12,10 +12,12 @@ type State = { kind: 'idle' } | { kind: 'pairing'; uri: string; qr: string; rela
 
 export function WalletConnect({ onHandle }: { onHandle?: (h: WalletHandle | null) => void } = {}) {
   const [st, setSt] = useState<State>({ kind: 'idle' });
+  const [starting, setStarting] = useState(false);
   const ref = useRef<{ cleanup?: () => void; disconnect?: () => Promise<void> }>({});
   useEffect(() => () => ref.current.cleanup?.(), []);
 
   const connect = async () => {
+    setStarting(true);
     ref.current.cleanup?.();
     onHandle?.(null);
     try {
@@ -43,8 +45,13 @@ export function WalletConnect({ onHandle }: { onHandle?: (h: WalletHandle | null
       mgr.on('disconnect', (_r, m) => { onHandle?.(null); setSt({ kind: 'error', message: m || 'Wallet disconnected' }); });
       ref.current = { cleanup: () => relay.cleanup(), disconnect: async () => { await mgr.sendDisconnect('FUSE Studio closed the session').catch(() => undefined); relay.cleanup(); } };
       const qr = await QRCode.toDataURL(relay.qrUri, { margin: 1, width: 220, color: { dark: '#e3e9ef', light: '#0b0f15' } });
-      setSt({ kind: 'pairing', uri: relay.uri, qr, relay: relayState });
-    } catch (e) { setSt({ kind: 'error', message: (e as Error).message }); }
+      setSt(s => s.kind === 'connected' ? s : { kind: 'pairing', uri: relay.uri, qr, relay: relayState });
+    } catch (e) {
+      ref.current.cleanup?.();
+      setSt({ kind: 'error', message: (e as Error).message });
+    } finally {
+      setStarting(false);
+    }
   };
   const disconnect = async () => { await ref.current.disconnect?.(); setSt({ kind: 'idle' }); onHandle?.(null); };
 
@@ -53,8 +60,17 @@ export function WalletConnect({ onHandle }: { onHandle?: (h: WalletHandle | null
       <AnimatePresence mode="wait">
         {st.kind === 'idle' && (
           <motion.div key="idle" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <p className="mb-3 text-[12px] leading-relaxed text-fog-400">Pair a BCH wallet over WizardConnect (hdwalletv1). FUSE reads your receive address; in Execute it asks your wallet to sign the composed transaction. Keys never leave your wallet.</p>
-            <Button variant="ghost" onClick={connect} data-testid="wc-connect">Connect with WizardConnect</Button>
+            {onHandle ? (
+              <div className="execution-wallet-entry">
+                <Button onClick={connect} disabled={starting} data-testid="wc-connect">{starting ? 'Starting pairing…' : 'Connect wallet'}</Button>
+                <p>Use a BCH wallet with WizardConnect, such as Cashonize.</p>
+              </div>
+            ) : (
+              <>
+                <p className="mb-3 text-[12px] leading-relaxed text-fog-400">Pair a BCH wallet over WizardConnect (hdwalletv1) to read its receive address.</p>
+                <Button variant="ghost" onClick={connect} disabled={starting} data-testid="wc-connect">{starting ? 'Starting pairing…' : 'Connect with WizardConnect'}</Button>
+              </>
+            )}
           </motion.div>
         )}
         {st.kind === 'pairing' && (
@@ -62,7 +78,7 @@ export function WalletConnect({ onHandle }: { onHandle?: (h: WalletHandle | null
             
             <img src={st.qr} alt="WizardConnect pairing QR code" className="size-[180px] rounded-lg border hairline" data-testid="wc-qr" />
             <div className="text-center text-[11.5px] text-fog-400">Scan with a WizardConnect wallet · relay <span className="text-fog-200">{st.relay}</span></div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap items-center justify-center gap-2">
               <a className="underline" href={st.uri}>Open wallet</a>
               <Button variant="ghost" onClick={() => navigator.clipboard?.writeText(st.uri)}>Copy link</Button>
               <Button variant="quiet" onClick={disconnect}>Cancel</Button>

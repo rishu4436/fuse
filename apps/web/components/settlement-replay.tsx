@@ -35,7 +35,7 @@ export function SettlementReplay({ home = false }: { home?: boolean }) {
         <h1>{home ? <>Liquidity,<br /><em>in motion.</em></> : <>Inside the<br /><em>settlement.</em></>}</h1>
         <p className="atlas-deck">{home ? 'Borrow from a vault, trade across two pools and repay in one Bitcoin Cash transaction. Inspect each movement before you sign.' : 'Take apart a confirmed flash loan. Follow the same satoshis from the vault through two Cauldron pools and back.'}</p>
         <div className="atlas-links">
-          <Link className="atlas-cta" href={home ? '/app' : '/app/execute/live'}>{home ? 'Open workspace' : 'Open live execution'} <span>↗</span></Link>
+          <Link className="atlas-cta" href="/app/execute/live">Open live execution <span aria-hidden>↗</span></Link>
           <a href={home ? '/judging/FUSE-demo.mp4' : 'https://bchexplorer.cash/tx/'+ATOMIC_TXID}>{home ? 'Watch the film' : 'Inspect settlement'} <span>{home ? '▷' : '↗'}</span></a>
         </div>
         <div className="atlas-cost"><span>Recorded wallet cost</span><strong>1,991 <small>sats</small></strong></div>

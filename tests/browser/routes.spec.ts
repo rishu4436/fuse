@@ -116,6 +116,23 @@ test('WizardConnect: pairing QR is generated in the browser (no wallet needed)',
   expect(src).toMatch(/^data:image\/png;base64,/);
 });
 
+test('the homepage opens live execution with wallet pairing in view', async ({ page }) => {
+  await page.goto('/');
+  const open = page.getByRole('link', { name: 'Open live execution', exact: true });
+  await expect(open).toHaveAttribute('href', '/app/execute/live');
+  await open.click();
+  await expect(page).toHaveURL(/\/app\/execute\/live$/);
+  const connect = page.getByRole('button', { name: 'Connect wallet', exact: true });
+  await expect(connect).toBeInViewport();
+  await connect.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('img', { name: 'WizardConnect pairing QR code' })).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole('link', { name: 'Open wallet' })).toBeVisible();
+  await page.getByRole('button', { name: 'Cancel' }).click();
+  await expect(connect).toBeVisible();
+  await expect(page.getByTestId('live-address')).toBeVisible();
+});
+
 test.describe('feature flows', () => {
   test.beforeEach(async ({ page }, info) => { test.skip(info.project.name === 'mobile', 'desktop only'); await sandbox(page); });
   test('compiler preview shows all 10 stages and an explanation', async ({ page }) => {

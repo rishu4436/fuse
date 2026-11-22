@@ -95,7 +95,10 @@ export default function LiveExecute() {
         <div>
           <p className="atlas-caption"><i /> Workspace / Bitcoin Cash mainnet</p>
           <h1>Live <em>execution.</em></h1>
-          <p>Compose from current chain state. Review the covenant simulation, fees and Guardian checks before signing in your wallet.</p>
+          <p className="execution-intro">Compose from current chain state. Review the covenant simulation, fees and Guardian checks before signing in your wallet.</p>
+          <div className="execution-wallet">
+            <WalletConnect onHandle={(handle) => { reset(); setWallet(handle); }} />
+          </div>
         </div>
         <figure className="execution-assembly">
           <div className="execution-parts" aria-hidden="true">
@@ -111,14 +114,13 @@ export default function LiveExecute() {
       {(vaults.error || vaults.data?.some(v => v.error)) && <div role="alert" className="execution-alert">Current vault data unavailable. <Button onClick={vaults.reload}>Retry chain read</Button></div>}
       <div className="execution-layout">
         <aside className="execution-sidebar">
-          <Panel title="Signing wallet" kicker="Wallet connection">
-            <WalletConnect onHandle={(handle) => { reset(); setWallet(handle); }} />
-            {!wallet && (
-              <label className="mt-4 block text-[11.5px] text-fog-400">or paste a BCH address (sign offline with the exported package)
+          {!wallet && (
+            <Panel title="Sign offline">
+              <label className="block text-[12px] text-fog-300">Paste a BCH address to prepare a transaction and export it for offline signing.
                 <input data-testid="live-address" value={manual} onChange={(e) => { reset(); setManual(e.target.value); }} placeholder="bitcoincash:q…" className="mt-1 w-full rounded-md border hairline bg-ink-900 px-2 py-1.5 font-mono text-[11.5px] text-fog-100" />
               </label>
-            )}
-          </Panel>
+            </Panel>
+          )}
           {usesVault && selectedVault?.current && <section className="execution-vault">
             <span>Selected vault balance</span><strong>{sats(selectedVault.current.satoshis)} <small>sats</small></strong>
             <p>{selectedVault.id}</p>
